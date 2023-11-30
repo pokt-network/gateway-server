@@ -21,6 +21,7 @@ FROM scratch
 WORKDIR /app
 
 # Copy only the necessary files from the builder stage
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /app/main .
 
 # Set default value for port exposed
