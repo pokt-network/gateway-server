@@ -48,6 +48,6 @@ We have implemented our own lightweight Pocket client to enhance speed and effic
 3. Create new branch with `git checkout -b "branch_name"` where branch name describes the feature.
     - All branches should be based off `main`
 3. Write your code
-4. Make sure your code lints with `yarn lint` (This will Lint and Prettify)
+4. Make sure your code lints with `go fmt ./...` (This will Lint and Prettify)
 5. Commit code to your branch and issue a pull request and wait for at least one review.
     - Always ensure changes are rebased on top of main branch.
