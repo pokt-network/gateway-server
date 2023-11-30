@@ -9,7 +9,7 @@ This project is currently in the alpha stage and actively under development. Bef
 
 ## What is POKT Gateway Stack?
 
-The [POKT Gateway Stack](https://docs.nodies.app/pokt-integration-wip/nodies-gateway-stack) is a comprehensive solution designed to simplify the integration of applications with the POKT Network. Our goal is to reduce the complexities associated with directly interfacing with the protocol, making it accessible to a wide range of users, including application developers, existing centralized RPC platforms, and future gateway operators.
+The [POKT Gateway Stack](https://docs.nodies.app/pokt-integration-wip/nodies-gateway-stack) is a comprehensive solution designed to simplify the integration of applications with the POKT Network. Our goal is to reduce the complexities associated withdirectly interfacing with the protocol, making it accessible to a wide range of users, including application developers, existing centralized RPC platforms, and future gateway operators.
 
 Learn more about the vision and overall architecture [here](https://docs.nodies.app/pokt-integration-wip/nodies-gateway-stack).
 
