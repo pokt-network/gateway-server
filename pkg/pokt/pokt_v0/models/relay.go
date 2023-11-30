@@ -1,0 +1,66 @@
+//go:generate ffjson $GOFILE
+package models
+
+import (
+	"os-gateway/pkg/common"
+)
+
+type SendRelayRequest struct {
+	Payload            *Payload
+	Signer             *Ed25519Account
+	Chain              string
+	SelectedNodePubKey string
+	Session            *Session
+}
+
+type SendRelayResponse struct {
+	Response string `json:"response"`
+}
+
+type Payload struct {
+	Data    string            `json:"data"`
+	Method  string            `json:"method"`
+	Path    string            `json:"path"`
+	Headers map[string]string `json:"headers"`
+}
+
+type Relay struct {
+	Payload    *Payload    `json:"payload"`
+	Metadata   *RelayMeta  `json:"meta"`
+	RelayProof *RelayProof `json:"proof"`
+}
+
+type RelayMeta struct {
+	BlockHeight uint `json:"block_height"`
+}
+
+// RelayProof represents proof of a relay
+type RelayProof struct {
+	Entropy            uint64 `json:"entropy"`
+	SessionBlockHeight uint   `json:"session_block_height"`
+	ServicerPubKey     string `json:"servicer_pub_key"`
+	Blockchain         string `json:"blockchain"`
+	AAT                *AAT   `json:"aat"`
+	Signature          string `json:"signature"`
+	RequestHash        string `json:"request_hash"`
+}
+
+// RequestHashPayload struct holding data needed to create a request hash
+type RequestHashPayload struct {
+	Payload  *Payload   `json:"payload"`
+	Metadata *RelayMeta `json:"meta"`
+}
+
+func (a *RequestHashPayload) Hash() string {
+	return common.Sha3_256HashHex(a)
+}
+
+type RelayProofHashPayload struct {
+	Entropy            uint64 `json:"entropy"`
+	SessionBlockHeight uint   `json:"session_block_height"`
+	ServicerPubKey     string `json:"servicer_pub_key"`
+	Blockchain         string `json:"blockchain"`
+	Signature          string `json:"signature"`
+	UnsignedAAT        string `json:"token"`
+	RequestHash        string `json:"request_hash"`
+}

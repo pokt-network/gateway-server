@@ -1,0 +1,11 @@
+version: '3'
+
+services:
+  gateway-server:
+    build: .
+    volumes:
+      - .env:/app/.env
+    ports:
+      - "${HTTP_SERVER_PORT}:${HTTP_SERVER_PORT}"
+    env_file:
+      - ./.env
