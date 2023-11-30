@@ -1,4 +1,4 @@
-package pokt_client
+package pokt_client_decorators
 
 import (
 	"errors"
@@ -61,10 +61,24 @@ func (c *CachedClient) GetSession(req *models.GetSessionRequest) (*models.GetSes
 		return nil, err
 	}
 
-	// Setting cache
 	c.sessionCache.Set(cacheKey, response, ttlcache.DefaultTTL)
 	c.lastFailure = time.Time{} // Reset last failure since it succeeded
 	return response, nil
+}
+
+func (r *CachedClient) SendRelay(req *models.SendRelayRequest) (*models.SendRelayResponse, error) {
+
+	if err := req.Validate(); err != nil {
+		return nil, err
+	}
+
+	session, err := r.GetSession(&models.GetSessionRequest{AppPubKey: req.Signer.PublicKey, Chain: req.Chain})
+	if err != nil {
+		return nil, err
+	}
+
+	req.Session = session.Session
+	return r.PocketService.SendRelay(req)
 }
 
 func (c *CachedClient) shouldBackoff() bool {

@@ -13,6 +13,13 @@ type SendRelayRequest struct {
 	Session            *Session
 }
 
+func (req SendRelayRequest) Validate() error {
+	if req.Payload == nil || req.Signer == nil {
+		return ErrMalformedSendRelayRequest
+	}
+	return nil
+}
+
 type SendRelayResponse struct {
 	Response string `json:"response"`
 }

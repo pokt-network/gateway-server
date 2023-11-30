@@ -2,7 +2,6 @@ package pokt_v0
 
 import (
 	"encoding/hex"
-	"errors"
 	"github.com/pquerna/ffjson/ffjson"
 	"github.com/valyala/fasthttp"
 	"math/rand"
@@ -18,13 +17,6 @@ const (
 	endpointDispatch     = endpointClientPrefix + "/dispatch"
 	endpointSendRelay    = endpointClientPrefix + "/relay"
 	endpointGetHeight    = endpointQueryPrefix + "/height"
-)
-
-var (
-	ErrMissingFullNodes          = errors.New("require full node host")
-	ErrSessionHasZeroNodes       = errors.New("session missing valid nodes")
-	ErrNodeNotFound              = errors.New("node not found")
-	ErrMalformedSendRelayRequest = errors.New("malformed send relay request")
 )
 
 // BasicClient represents a basic client with a logging, full node host, and a global request timeout.
@@ -44,7 +36,7 @@ type BasicClient struct {
 //   - (error): Error, if any.
 func NewBasicClient(fullNodeHost string, timeout time.Duration) (*BasicClient, error) {
 	if len(fullNodeHost) == 0 {
-		return nil, ErrMissingFullNodes
+		return nil, models.ErrMissingFullNodes
 	}
 	return &BasicClient{
 		fullNodeHost:         fullNodeHost,
@@ -77,9 +69,6 @@ func (r BasicClient) GetSession(req *models.GetSessionRequest) (*models.GetSessi
 //   - (error): Error, if any.
 func (r BasicClient) SendRelay(req *models.SendRelayRequest) (*models.SendRelayResponse, error) {
 
-	if req.Payload == nil || req.Signer == nil {
-		return nil, ErrMalformedSendRelayRequest
-	}
 	// Get a session from the request or retrieve from full node
 	session, err := r.getSessionFromRequest(req)
 
@@ -255,9 +244,9 @@ func (r BasicClient) getSessionFromRequest(req *models.SendRelayRequest) (*model
 //   - (error): Error, if any.
 func (r BasicClient) getNodeFromRequest(session *models.Session, selectedNodePubKey string) (*models.Node, error) {
 	if selectedNodePubKey == "" {
-		return getRandomNodeOrError(session.Nodes, ErrSessionHasZeroNodes)
+		return getRandomNodeOrError(session.Nodes, models.ErrSessionHasZeroNodes)
 	}
-	return findNodeOrError(session.Nodes, selectedNodePubKey, ErrNodeNotFound)
+	return findNodeOrError(session.Nodes, selectedNodePubKey, models.ErrNodeNotFound)
 }
 
 // getRandomNodeOrError gets a random node or returns an error if the node list is empty.
