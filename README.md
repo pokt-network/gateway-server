@@ -1,9 +1,8 @@
-# POKT Gateway Stack (Work in Progress)
-
 <div align="center">
 <img src="https://github.com/baaspoolsllc/os-gateway/assets/99137075/ced8035d-87da-4fd3-a51b-6c336fadc14c" width="500" alt="POKT Gateway Stack">
 </div>
 
+# POKT Gateway Stack
 
 This project is currently in the alpha stage and actively under development. Before contributing, please reach out to [@nodiesBlade](https://github.com/nodiesBlade).
 
