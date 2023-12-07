@@ -87,6 +87,7 @@ func (c *RelayController) HandleRelay(ctx *fasthttp.RequestCtx) {
 func (c *RelayController) concurrentRelay(req *models.SendRelayRequest, session *models.Session) (*models.SendRelayResponse, error) {
 	// Create a channel to receive results
 	resultCh := make(chan *models.SendRelayResponse, 1)
+	defer close(resultCh)
 	wg := sync.WaitGroup{}
 	for _, node := range session.Nodes {
 		node := node
