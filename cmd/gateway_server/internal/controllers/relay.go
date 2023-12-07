@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
 	"os-gateway/cmd/gateway_server/internal/common"
@@ -8,7 +9,10 @@ import (
 	"os-gateway/pkg/pokt/pokt_v0"
 	"os-gateway/pkg/pokt/pokt_v0/models"
 	"strings"
+	"sync"
 )
+
+var ErrRelayChannelClosed = errors.New("concurrent relay channel closed")
 
 // RelayController handles relay requests for a specific chain.
 type RelayController struct {
@@ -46,8 +50,18 @@ func (c *RelayController) HandleRelay(ctx *fasthttp.RequestCtx) {
 		return
 	}
 
-	// Send relay request to the Pocket Network.
-	relayRsp, err := c.poktClient.SendRelay(&models.SendRelayRequest{
+	sessionResp, err := c.poktClient.GetSession(&models.GetSessionRequest{
+		AppPubKey: appStake.PublicKey,
+		Chain:     chainID,
+	})
+
+	if err != nil {
+		c.logger.Error("Error dispatching session", zap.Error(err))
+		common.JSONError(ctx, "Something went wrong", fasthttp.StatusInternalServerError)
+		return
+	}
+
+	req := &models.SendRelayRequest{
 		Payload: &models.Payload{
 			Data:   string(ctx.PostBody()),
 			Method: string(ctx.Method()),
@@ -55,8 +69,9 @@ func (c *RelayController) HandleRelay(ctx *fasthttp.RequestCtx) {
 		},
 		Signer: appStake,
 		Chain:  chainID,
-	})
+	}
 
+	relay, err := c.concurrentRelay(req, sessionResp.Session)
 	if err != nil {
 		c.logger.Error("Error relaying", zap.Error(err))
 		common.JSONError(ctx, "Something went wrong", fasthttp.StatusInternalServerError)
@@ -66,7 +81,46 @@ func (c *RelayController) HandleRelay(ctx *fasthttp.RequestCtx) {
 	// Send a successful response back to the client.
 	ctx.Response.SetStatusCode(fasthttp.StatusOK)
 	ctx.Response.Header.Set("Content-Type", "application/json")
-	ctx.Response.SetBodyString(relayRsp.Response)
+	ctx.Response.SetBodyString(relay.Response)
+}
+
+func (c *RelayController) concurrentRelay(req *models.SendRelayRequest, session *models.Session) (*models.SendRelayResponse, error) {
+	// Create a channel to receive results
+	resultCh := make(chan *models.SendRelayResponse, 1)
+	wg := sync.WaitGroup{}
+	for _, node := range session.Nodes {
+		node := node
+		req := *req
+		req.SelectedNodePubKey = node.PublicKey
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			response, err := c.poktClient.SendRelay(&req)
+			if err == nil {
+				select {
+				case resultCh <- response:
+				default:
+				}
+			}
+		}()
+	}
+
+	// Close the channel once all goroutines are completed
+	// Needed if all responses are errors
+	go func() {
+		wg.Wait()
+		close(resultCh)
+	}()
+
+	// Wait for the first result or until all Goroutines finish
+	select {
+	case result, ok := <-resultCh:
+		if !ok {
+			return nil, ErrRelayChannelClosed
+		}
+		close(resultCh) // Close the channel after receiving the first result
+		return result, nil
+	}
 }
 
 func getPathSegmented(path []byte) (chain, otherParts string) {

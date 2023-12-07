@@ -70,7 +70,7 @@ func (r BasicClient) GetSession(req *models.GetSessionRequest) (*models.GetSessi
 func (r BasicClient) SendRelay(req *models.SendRelayRequest) (*models.SendRelayResponse, error) {
 
 	// Get a session from the request or retrieve from full node
-	session, err := r.getSessionFromRequest(req)
+	session, err := GetSessionFromRequest(r, req)
 
 	if err != nil {
 		return nil, err
@@ -221,11 +221,11 @@ func (r BasicClient) generateRelayProof(chainId string, sessionHeight uint, serv
 // Returns:
 //   - (*GetSessionResponse): Session response.
 //   - (error): Error, if any.
-func (r BasicClient) getSessionFromRequest(req *models.SendRelayRequest) (*models.Session, error) {
+func GetSessionFromRequest(pocketService PocketService, req *models.SendRelayRequest) (*models.Session, error) {
 	if req.Session != nil {
 		return req.Session, nil
 	}
-	sessionResp, err := r.GetSession(&models.GetSessionRequest{
+	sessionResp, err := pocketService.GetSession(&models.GetSessionRequest{
 		AppPubKey: req.Signer.PublicKey,
 		Chain:     req.Chain,
 	})

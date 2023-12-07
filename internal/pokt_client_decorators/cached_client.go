@@ -72,12 +72,13 @@ func (r *CachedClient) SendRelay(req *models.SendRelayRequest) (*models.SendRela
 		return nil, err
 	}
 
-	session, err := r.GetSession(&models.GetSessionRequest{AppPubKey: req.Signer.PublicKey, Chain: req.Chain})
+	session, err := pokt_v0.GetSessionFromRequest(r, req)
+
 	if err != nil {
 		return nil, err
 	}
 
-	req.Session = session.Session
+	req.Session = session
 	return r.PocketService.SendRelay(req)
 }
 
