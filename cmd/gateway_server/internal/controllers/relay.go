@@ -118,7 +118,6 @@ func (c *RelayController) concurrentRelay(req *models.SendRelayRequest, session 
 		if !ok {
 			return nil, ErrRelayChannelClosed
 		}
-		close(resultCh) // Close the channel after receiving the first result
 		return result, nil
 	}
 }
