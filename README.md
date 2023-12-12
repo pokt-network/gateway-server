@@ -42,6 +42,20 @@ We have implemented our own lightweight Pocket client to enhance speed and effic
       ```
   3. Run the binary `./main`
 
+## Running Tests
+Before running any tests make sure to have the mock files in placed at `./mocks` folder.
+You can generate the mock files through:
+```sh
+./scripts/mockgen.sh
+```
+By running this command, it will generate the mock files in `./mocks` folder.
+Reference for creating a mock implementation https://vektra.github.io/mockery/latest/
+
+Run this command to run some tests:
+```sh
+go test
+```
+
 ## Contributing Guidelines
 1. Create a Github Issue on the feature/issue you're working on.
 2. Fork the project
