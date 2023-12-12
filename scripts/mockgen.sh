@@ -1,0 +1,1 @@
+mockery --dir=./pkg/pokt/pokt_v0 --name=PocketService --filename=pocket_service_mock.go  --output=./mocks --outpkg=mocks --with-expecter
