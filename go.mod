@@ -6,6 +6,7 @@ require (
 	github.com/fasthttp/router v1.4.22
 	github.com/jellydator/ttlcache/v3 v3.1.0
 	github.com/joho/godotenv v1.5.1
+	github.com/pkg/errors v0.9.1
 	github.com/pquerna/ffjson v0.0.0-20190930134022-aa0246cd15f7
 	github.com/stretchr/testify v1.8.4
 	github.com/valyala/fasthttp v1.51.0
