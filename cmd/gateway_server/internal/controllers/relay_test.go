@@ -39,97 +39,136 @@ func mockAppStakePrivateKeys() []*models.Ed25519Account {
 
 }
 
+// mock send relay request function
+func (suite *RelayTestSuite) mockSendRelayRequest() *models.SendRelayRequest {
+
+	chainID, path := getPathSegmented(suite.context.Path()) // get the chainID and path from the request path
+
+	return &models.SendRelayRequest{
+		Payload: &models.Payload{
+			Data:   string(suite.context.PostBody()),
+			Method: string(suite.context.Method()),
+			Path:   path,
+		},
+		Signer: suite.mockAppStakePrivateKeys[0],
+		Chain:  chainID,
+	}
+}
+
 // test for the HandleRelay function in relay.go file using table driven tests to test different scenarios for the function
 func (suite *RelayTestSuite) TestHandleRelay() {
-	// table driven tests
+
+	var testResponse string = "test"
+
 	tests := []struct {
 		name             string
 		setupMocks       func(*fasthttp.RequestCtx)
 		path             string
 		expectedSatus    int
-		expectedResponse func() *string
+		expectedResponse *string
 	}{
 		{
 			name: "EmptyChainID",
 			setupMocks: func(ctx *fasthttp.RequestCtx) {
 				suite.mockRelayController = NewRelayController(suite.mockPocketService, suite.mockAppStakePrivateKeys, zap.NewNop())
 			},
-			path:          "/relay/",
-			expectedSatus: fasthttp.StatusBadRequest,
-			expectedResponse: func() *string {
-				return nil
-			},
+			path:             "/relay/",
+			expectedSatus:    fasthttp.StatusBadRequest,
+			expectedResponse: nil,
 		},
 		{
 			name: "AppStakeNotProvided",
 			setupMocks: func(ctx *fasthttp.RequestCtx) {
 				suite.mockRelayController = NewRelayController(suite.mockPocketService, []*models.Ed25519Account{}, zap.NewNop())
 			},
-			path:          "/relay/1234",
-			expectedSatus: fasthttp.StatusInternalServerError,
-			expectedResponse: func() *string {
-				return nil
-			},
+			path:             "/relay/1234",
+			expectedSatus:    fasthttp.StatusInternalServerError,
+			expectedResponse: nil,
 		},
 		{
-			name: "ErrorSendingRelayRequest",
+			name: "ErrorDispatchingSession",
 			setupMocks: func(ctx *fasthttp.RequestCtx) {
 
-				chainID, path := getPathSegmented(ctx.Path())
+				chainID, _ := getPathSegmented(ctx.Path())
 
-				mockAppStakePrivateKeys := suite.mockAppStakePrivateKeys
+				suite.mockRelayController = NewRelayController(suite.mockPocketService, suite.mockAppStakePrivateKeys, zap.NewNop())
 
-				suite.mockRelayController = NewRelayController(suite.mockPocketService, mockAppStakePrivateKeys, zap.NewNop())
-
-				suite.mockPocketService.EXPECT().SendRelay(&models.SendRelayRequest{
-					Payload: &models.Payload{
-						Data:   string(ctx.PostBody()),
-						Method: string(ctx.Method()),
-						Path:   path,
-					},
-					Signer: mockAppStakePrivateKeys[0],
-					Chain:  chainID,
-				}).Return(nil, errors.New("error"))
+				suite.mockPocketService.EXPECT().GetSession(&models.GetSessionRequest{
+					AppPubKey: suite.mockAppStakePrivateKeys[0].PublicKey,
+					Chain:     chainID,
+				}).Return(nil, errors.New("error dispatching session"))
 
 			},
-			path:          "/relay/1234",
-			expectedSatus: fasthttp.StatusInternalServerError,
-			expectedResponse: func() *string {
-				return nil
-			},
+			path:             "/relay/1234",
+			expectedSatus:    fasthttp.StatusInternalServerError,
+			expectedResponse: nil,
 		},
 		{
-			name: "SuccessfullRelayRequest",
+			name: "ErrorSendingRelay",
 			setupMocks: func(ctx *fasthttp.RequestCtx) {
 
-				chainID, path := getPathSegmented(ctx.Path())
+				chainID, _ := getPathSegmented(ctx.Path())
 
-				mockAppStakePrivateKeys := suite.mockAppStakePrivateKeys
+				suite.mockRelayController = NewRelayController(suite.mockPocketService, suite.mockAppStakePrivateKeys, zap.NewNop())
 
-				suite.mockRelayController = NewRelayController(suite.mockPocketService, mockAppStakePrivateKeys, zap.NewNop())
-
-				suite.mockPocketService.EXPECT().SendRelay(&models.SendRelayRequest{
-					Payload: &models.Payload{
-						Data:   string(ctx.PostBody()),
-						Method: string(ctx.Method()),
-						Path:   path,
+				suite.mockPocketService.EXPECT().GetSession(&models.GetSessionRequest{
+					AppPubKey: suite.mockAppStakePrivateKeys[0].PublicKey,
+					Chain:     chainID,
+				}).Return(&models.GetSessionResponse{
+					Session: &models.Session{
+						Nodes: []*models.Node{
+							{
+								ServiceUrl: "test",
+								PublicKey:  "",
+							},
+						},
+						SessionHeader: &models.SessionHeader{
+							SessionHeight: 1,
+						},
 					},
-					Signer: mockAppStakePrivateKeys[0],
-					Chain:  chainID,
-				}).Return(&models.SendRelayResponse{
-					Response: "test",
 				}, nil)
 
-			},
-			path:          "/relay/1234",
-			expectedSatus: fasthttp.StatusOK,
-			expectedResponse: func() *string {
-
-				response := "test"
-
-				return &response
+				suite.mockPocketService.EXPECT().SendRelay(suite.mockSendRelayRequest()).Return(nil, ErrRelayChannelClosed)
 
 			},
+			path:             "/relay/1234",
+			expectedSatus:    fasthttp.StatusInternalServerError,
+			expectedResponse: nil,
+		},
+		{
+			name: "Success",
+			setupMocks: func(ctx *fasthttp.RequestCtx) {
+
+				chainID, _ := getPathSegmented(ctx.Path())
+
+				suite.mockRelayController = NewRelayController(suite.mockPocketService, suite.mockAppStakePrivateKeys, zap.NewNop())
+
+				suite.mockPocketService.EXPECT().GetSession(&models.GetSessionRequest{
+					AppPubKey: suite.mockAppStakePrivateKeys[0].PublicKey,
+					Chain:     chainID,
+				}).Return(&models.GetSessionResponse{
+					Session: &models.Session{
+						Nodes: []*models.Node{
+							{
+								ServiceUrl: "test",
+								PublicKey:  "",
+							},
+						},
+						SessionHeader: &models.SessionHeader{
+							SessionHeight: 1,
+						},
+					},
+				}, nil)
+
+				suite.mockPocketService.EXPECT().SendRelay(suite.mockSendRelayRequest()).
+					Return(&models.SendRelayResponse{
+						Response: testResponse,
+					}, nil)
+
+			},
+			path:             "/relay/1234",
+			expectedSatus:    fasthttp.StatusOK,
+			expectedResponse: &testResponse,
 		},
 	}
 	for _, test := range tests {
@@ -147,8 +186,78 @@ func (suite *RelayTestSuite) TestHandleRelay() {
 
 			suite.Equal(test.expectedSatus, suite.context.Response.StatusCode())
 
-			if test.expectedResponse() != nil {
-				suite.Equal(*test.expectedResponse(), string(suite.context.Response.Body()))
+			if test.expectedResponse != nil {
+				suite.Equal(*test.expectedResponse, string(suite.context.Response.Body()))
+			}
+
+		})
+	}
+}
+
+// test for concurrentRelay function in relay.go file using table driven tests to test different scenarios for the function
+func (suite *RelayTestSuite) TestConcurrentRelay() {
+
+	var testResponse string = "test"
+
+	tests := []struct {
+		name             string
+		setupMocks       func(*fasthttp.RequestCtx)
+		expectedResponse *string
+		expectedError    error
+	}{
+		{
+			name: "ErrorSendingRelay",
+			setupMocks: func(ctx *fasthttp.RequestCtx) {
+				suite.mockPocketService.EXPECT().SendRelay(suite.mockSendRelayRequest()).Return(nil, ErrRelayChannelClosed)
+			},
+			expectedResponse: nil,
+			expectedError:    ErrRelayChannelClosed,
+		},
+		{
+			name: "Success",
+			setupMocks: func(ctx *fasthttp.RequestCtx) {
+
+				suite.mockPocketService.EXPECT().SendRelay(suite.mockSendRelayRequest()).
+					Return(&models.SendRelayResponse{
+						Response: testResponse,
+					}, nil)
+
+			},
+			expectedResponse: &testResponse,
+			expectedError:    nil,
+		},
+	}
+	for _, test := range tests {
+		suite.Run(test.name, func() {
+
+			suite.SetupTest() // reset the test suite
+
+			suite.context.Request.SetBody([]byte("test"))
+			suite.context.Request.Header.SetMethod("POST")
+			suite.context.Request.SetRequestURI("/relay/1234")
+
+			test.setupMocks(suite.context) // setup the mocks for the test
+
+			relayController := NewRelayController(suite.mockPocketService, suite.mockAppStakePrivateKeys, zap.NewNop())
+
+			session := &models.Session{
+				Nodes: []*models.Node{
+					{
+						ServiceUrl: "test",
+						PublicKey:  "",
+					},
+				},
+				SessionHeader: &models.SessionHeader{
+					SessionHeight: 1,
+				},
+			}
+
+			response, err := relayController.concurrentRelay(suite.mockSendRelayRequest(), session)
+
+			suite.Equal(test.expectedError, err)
+
+			if test.expectedResponse != nil {
+				suite.Equal(*test.expectedResponse, response.Response)
 			}
 
 		})
