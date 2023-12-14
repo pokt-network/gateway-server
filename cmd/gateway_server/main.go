@@ -2,14 +2,17 @@ package main
 
 import (
 	"fmt"
-	"github.com/fasthttp/router"
-	"github.com/valyala/fasthttp"
 	"log"
 	"os-gateway/cmd/gateway_server/internal/config"
 	"os-gateway/cmd/gateway_server/internal/controllers"
 	"os-gateway/internal/logging"
 	"os-gateway/internal/pokt_client_decorators"
 	"os-gateway/pkg/pokt/pokt_v0"
+	"os-gateway/pkg/pokt/pokt_v0/models"
+	"os-gateway/pkg/ttl_cache"
+
+	"github.com/fasthttp/router"
+	"github.com/valyala/fasthttp"
 )
 
 func main() {
@@ -31,8 +34,13 @@ func main() {
 		return
 	}
 
-	// Create a relay controller with a cached POKT client and the logger
-	relayController := controllers.NewRelayController(pokt_client_decorators.NewCachedClient(client), gatewayConfigProvider.GetAppStakes(), logger)
+	// Initialize a TTL cache for session caching
+	sessionCache := ttl_cache.NewTTLCacheClient[string, *models.GetSessionResponse]() // Initialize the cache client
+
+	sessionCache.Start() // Start the cache client
+
+	// Create a relay controller with a cached POKT client and the loggeri
+	relayController := controllers.NewRelayController(pokt_client_decorators.NewCachedClient(client, sessionCache), gatewayConfigProvider.GetAppStakes(), logger)
 
 	// Define routers
 	r := router.New()

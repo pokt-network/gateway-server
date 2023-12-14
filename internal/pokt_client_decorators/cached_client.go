@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os-gateway/pkg/pokt/pokt_v0"
 	"os-gateway/pkg/pokt/pokt_v0/models"
+	"os-gateway/pkg/ttl_cache"
 	"time"
 
 	"github.com/jellydator/ttlcache/v3"
@@ -19,16 +20,10 @@ type CachedClient struct {
 	pokt_v0.PocketService
 	lastFailure            time.Time
 	concurrentDispatchPool chan struct{}
-	sessionCache           *ttlcache.Cache[string, *models.GetSessionResponse]
+	sessionCache           ttl_cache.TTLCacheService[string, *models.GetSessionResponse]
 }
 
-func NewCachedClient(pocketService pokt_v0.PocketService) *CachedClient {
-
-	sessionCache := ttlcache.New[string, *models.GetSessionResponse](
-		ttlcache.WithTTL[string, *models.GetSessionResponse](sessionExpirationTtl),
-	)
-
-	go sessionCache.Start()
+func NewCachedClient(pocketService pokt_v0.PocketService, sessionCache ttl_cache.TTLCacheService[string, *models.GetSessionResponse]) *CachedClient {
 
 	return &CachedClient{
 		PocketService:          pocketService,
