@@ -24,7 +24,9 @@ type CachedClient struct {
 
 func NewCachedClient(pocketService pokt_v0.PocketService) *CachedClient {
 
-	sessionCache := pokt_v0.NewCache(sessionExpirationTtl)
+	sessionCache := ttlcache.New[string, *models.GetSessionResponse](
+		ttlcache.WithTTL[string, *models.GetSessionResponse](sessionExpirationTtl),
+	)
 
 	go sessionCache.Start()
 
