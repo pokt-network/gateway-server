@@ -2,10 +2,11 @@ package pokt_client_decorators
 
 import (
 	"errors"
-	"github.com/jellydator/ttlcache/v3"
 	"os-gateway/pkg/pokt/pokt_v0"
 	"os-gateway/pkg/pokt/pokt_v0/models"
 	"time"
+
+	"github.com/jellydator/ttlcache/v3"
 )
 
 const backoffThreshold = time.Second * 5
@@ -22,9 +23,9 @@ type CachedClient struct {
 }
 
 func NewCachedClient(pocketService pokt_v0.PocketService) *CachedClient {
-	sessionCache := ttlcache.New[string, *models.GetSessionResponse](
-		ttlcache.WithTTL[string, *models.GetSessionResponse](sessionExpirationTtl),
-	)
+
+	sessionCache := pokt_v0.NewCache(sessionExpirationTtl)
+
 	go sessionCache.Start()
 
 	return &CachedClient{
@@ -33,6 +34,7 @@ func NewCachedClient(pocketService pokt_v0.PocketService) *CachedClient {
 		sessionCache:           sessionCache,
 		concurrentDispatchPool: make(chan struct{}, maxConcurrentDispatch),
 	}
+
 }
 
 func (c *CachedClient) GetSession(req *models.GetSessionRequest) (*models.GetSessionResponse, error) {
