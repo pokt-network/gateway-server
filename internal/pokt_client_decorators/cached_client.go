@@ -11,7 +11,6 @@ import (
 )
 
 const backoffThreshold = time.Second * 5
-const sessionExpirationTtl = time.Minute * 75
 const maxConcurrentDispatch = 50
 
 var ErrRecentlyFailed = errors.New("dispatch recently failed, returning early")

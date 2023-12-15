@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	fasthttpprometheus "github.com/flf2ko/fasthttp-prometheus"
 	"log"
 	"os-gateway/cmd/gateway_server/internal/config"
 	"os-gateway/cmd/gateway_server/internal/controllers"
@@ -47,9 +48,13 @@ func main() {
 	r := router.New()
 	r.POST(controllers.RelayHandlerPath, relayController.HandleRelay)
 
+	// Add Middleware for Generic E2E Prom Tracking
+	p := fasthttpprometheus.NewPrometheus("fasthttp")
+	fastpHandler := p.WrapHandler(r)
+
 	logger.Info("Gateway Server Started")
 	// Start the fasthttp server and listen on the configured server port
-	if err := fasthttp.ListenAndServe(fmt.Sprintf(":%d", gatewayConfigProvider.GetHTTPServerPort()), r.Handler); err != nil {
+	if err := fasthttp.ListenAndServe(fmt.Sprintf(":%d", gatewayConfigProvider.GetHTTPServerPort()), fastpHandler); err != nil {
 		// If an error occurs during server startup, log the error and exit
 		log.Fatalf("Error in ListenAndServe: %s", err)
 	}
