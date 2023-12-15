@@ -23,13 +23,20 @@ func (_m *TTLCacheService[K, V]) EXPECT() *TTLCacheService_Expecter[K, V] {
 	return &TTLCacheService_Expecter[K, V]{mock: &_m.Mock}
 }
 
-// Get provides a mock function with given fields: key
-func (_m *TTLCacheService[K, V]) Get(key K) *ttlcache.Item[K, V] {
-	ret := _m.Called(key)
+// Get provides a mock function with given fields: key, opts
+func (_m *TTLCacheService[K, V]) Get(key K, opts ...ttlcache.Option[K, V]) *ttlcache.Item[K, V] {
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, key)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 *ttlcache.Item[K, V]
-	if rf, ok := ret.Get(0).(func(K) *ttlcache.Item[K, V]); ok {
-		r0 = rf(key)
+	if rf, ok := ret.Get(0).(func(K, ...ttlcache.Option[K, V]) *ttlcache.Item[K, V]); ok {
+		r0 = rf(key, opts...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*ttlcache.Item[K, V])
@@ -46,13 +53,21 @@ type TTLCacheService_Get_Call[K comparable, V interface{}] struct {
 
 // Get is a helper method to define mock.On call
 //   - key K
-func (_e *TTLCacheService_Expecter[K, V]) Get(key interface{}) *TTLCacheService_Get_Call[K, V] {
-	return &TTLCacheService_Get_Call[K, V]{Call: _e.mock.On("Get", key)}
+//   - opts ...ttlcache.Option[K,V]
+func (_e *TTLCacheService_Expecter[K, V]) Get(key interface{}, opts ...interface{}) *TTLCacheService_Get_Call[K, V] {
+	return &TTLCacheService_Get_Call[K, V]{Call: _e.mock.On("Get",
+		append([]interface{}{key}, opts...)...)}
 }
 
-func (_c *TTLCacheService_Get_Call[K, V]) Run(run func(key K)) *TTLCacheService_Get_Call[K, V] {
+func (_c *TTLCacheService_Get_Call[K, V]) Run(run func(key K, opts ...ttlcache.Option[K, V])) *TTLCacheService_Get_Call[K, V] {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(K))
+		variadicArgs := make([]ttlcache.Option[K, V], len(args)-1)
+		for i, a := range args[1:] {
+			if a != nil {
+				variadicArgs[i] = a.(ttlcache.Option[K, V])
+			}
+		}
+		run(args[0].(K), variadicArgs...)
 	})
 	return _c
 }
@@ -62,7 +77,7 @@ func (_c *TTLCacheService_Get_Call[K, V]) Return(_a0 *ttlcache.Item[K, V]) *TTLC
 	return _c
 }
 
-func (_c *TTLCacheService_Get_Call[K, V]) RunAndReturn(run func(K) *ttlcache.Item[K, V]) *TTLCacheService_Get_Call[K, V] {
+func (_c *TTLCacheService_Get_Call[K, V]) RunAndReturn(run func(K, ...ttlcache.Option[K, V]) *ttlcache.Item[K, V]) *TTLCacheService_Get_Call[K, V] {
 	_c.Call.Return(run)
 	return _c
 }
@@ -109,38 +124,6 @@ func (_c *TTLCacheService_Set_Call[K, V]) Return(_a0 *ttlcache.Item[K, V]) *TTLC
 }
 
 func (_c *TTLCacheService_Set_Call[K, V]) RunAndReturn(run func(K, V, time.Duration) *ttlcache.Item[K, V]) *TTLCacheService_Set_Call[K, V] {
-	_c.Call.Return(run)
-	return _c
-}
-
-// Start provides a mock function with given fields:
-func (_m *TTLCacheService[K, V]) Start() {
-	_m.Called()
-}
-
-// TTLCacheService_Start_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Start'
-type TTLCacheService_Start_Call[K comparable, V interface{}] struct {
-	*mock.Call
-}
-
-// Start is a helper method to define mock.On call
-func (_e *TTLCacheService_Expecter[K, V]) Start() *TTLCacheService_Start_Call[K, V] {
-	return &TTLCacheService_Start_Call[K, V]{Call: _e.mock.On("Start")}
-}
-
-func (_c *TTLCacheService_Start_Call[K, V]) Run(run func()) *TTLCacheService_Start_Call[K, V] {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *TTLCacheService_Start_Call[K, V]) Return() *TTLCacheService_Start_Call[K, V] {
-	_c.Call.Return()
-	return _c
-}
-
-func (_c *TTLCacheService_Start_Call[K, V]) RunAndReturn(run func()) *TTLCacheService_Start_Call[K, V] {
 	_c.Call.Return(run)
 	return _c
 }

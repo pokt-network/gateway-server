@@ -9,9 +9,10 @@ import (
 	"os-gateway/internal/pokt_client_decorators"
 	"os-gateway/pkg/pokt/pokt_v0"
 	"os-gateway/pkg/pokt/pokt_v0/models"
-	"os-gateway/pkg/ttl_cache"
+	"time"
 
 	"github.com/fasthttp/router"
+	"github.com/jellydator/ttlcache/v3"
 	"github.com/valyala/fasthttp"
 )
 
@@ -35,9 +36,9 @@ func main() {
 	}
 
 	// Initialize a TTL cache for session caching
-	sessionCache := ttl_cache.NewTTLCacheClient[string, *models.GetSessionResponse]() // Initialize the cache client
-
-	sessionCache.Start() // Start the cache client
+	sessionCache := ttlcache.New[string, *models.GetSessionResponse](
+		ttlcache.WithTTL[string, *models.GetSessionResponse](time.Minute * 75), //@todo: make this configurable via env ?
+	)
 
 	// Create a relay controller with a cached POKT client and the loggeri
 	relayController := controllers.NewRelayController(pokt_client_decorators.NewCachedClient(client, sessionCache), gatewayConfigProvider.GetAppStakes(), logger)
