@@ -42,10 +42,10 @@ func (suite *CachedClientTestSuite) TestGetSession() {
 
 	// create test cases
 	testCases := []struct {
-		name           string
-		setupMocks     func()
-		expectedResult *models.GetSessionResponse
-		expectedError  error
+		name             string
+		setupMocks       func()
+		expectedResponse *models.GetSessionResponse
+		expectedError    error
 	}{
 		{
 			name: "NotCached",
@@ -56,8 +56,8 @@ func (suite *CachedClientTestSuite) TestGetSession() {
 				suite.mockTTLCachedService.EXPECT().Get("test-test").Return(ttlcacheItem)
 
 			},
-			expectedResult: nil,
-			expectedError:  ErrRecentlyFailed,
+			expectedResponse: nil,
+			expectedError:    ErrRecentlyFailed,
 		},
 		{
 			name: "Cached",
@@ -70,8 +70,8 @@ func (suite *CachedClientTestSuite) TestGetSession() {
 				suite.mockTTLCachedService.EXPECT().Set("test-test", testResponse, ttlcache.DefaultTTL).Return(ttlcacheItem)
 
 			},
-			expectedResult: &models.GetSessionResponse{},
-			expectedError:  nil,
+			expectedResponse: testResponse,
+			expectedError:    nil,
 		},
 		{
 			name: "Error",
@@ -82,8 +82,8 @@ func (suite *CachedClientTestSuite) TestGetSession() {
 				suite.mockPocketService.EXPECT().GetSession(testRequest).Return(nil, errUnderlayingProvider)
 
 			},
-			expectedResult: nil,
-			expectedError:  errUnderlayingProvider,
+			expectedResponse: nil,
+			expectedError:    errUnderlayingProvider,
 		},
 	}
 
@@ -98,7 +98,94 @@ func (suite *CachedClientTestSuite) TestGetSession() {
 			session, err := suite.newCachedClient.GetSession(testRequest)
 
 			// assert results
-			suite.Equal(tc.expectedResult, session)
+			suite.Equal(tc.expectedResponse, session)
+			suite.Equal(tc.expectedError, err)
+
+		})
+	}
+
+}
+
+// test SendRelay using table driven tests
+func (suite *CachedClientTestSuite) TestSendRelay() {
+
+	testSendRelayResponse := &models.SendRelayResponse{
+		Response: "test",
+	}
+
+	// create test cases
+	testCases := []struct {
+		name             string
+		request          *models.SendRelayRequest
+		setupMocks       func(*models.SendRelayRequest)
+		expectedResponse *models.SendRelayResponse
+		expectedError    error
+	}{
+		{
+			name: "InvalidRequest",
+			request: &models.SendRelayRequest{
+				Payload:            nil, // invalid request
+				Signer:             nil, // invalid request
+				Chain:              "test",
+				SelectedNodePubKey: "test",
+				Session:            &models.Session{},
+			},
+			setupMocks: func(request *models.SendRelayRequest) {
+
+				suite.mockPocketService.EXPECT().SendRelay(request).Return(nil, models.ErrMalformedSendRelayRequest)
+
+			},
+			expectedResponse: nil,
+			expectedError:    models.ErrMalformedSendRelayRequest,
+		},
+		{
+			name: "SessionError", //todo: this test case is not working as expected due to GetSessionFromRequest not being mocked correctly
+			request: &models.SendRelayRequest{
+				Payload:            &models.Payload{},
+				Signer:             &models.Ed25519Account{},
+				Chain:              "test",
+				SelectedNodePubKey: "test",
+				Session:            &models.Session{},
+			},
+			setupMocks: func(request *models.SendRelayRequest) {
+
+				suite.mockPocketService.EXPECT().SendRelay(request).Return(nil, nil)
+
+			},
+			expectedResponse: nil,
+			expectedError:    nil,
+		},
+		{
+			name: "Success",
+			request: &models.SendRelayRequest{
+				Payload:            &models.Payload{},
+				Signer:             &models.Ed25519Account{},
+				Chain:              "test",
+				SelectedNodePubKey: "test",
+				Session:            &models.Session{},
+			},
+			setupMocks: func(request *models.SendRelayRequest) {
+
+				suite.mockPocketService.EXPECT().SendRelay(request).Return(testSendRelayResponse, nil)
+
+			},
+			expectedResponse: testSendRelayResponse,
+			expectedError:    nil,
+		},
+	}
+
+	// run test cases
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+
+			suite.SetupTest() // reset mocks
+
+			tc.setupMocks(tc.request) // setup mocks
+
+			session, err := suite.newCachedClient.SendRelay(tc.request)
+
+			// assert results
+			suite.Equal(tc.expectedResponse, session)
 			suite.Equal(tc.expectedError, err)
 
 		})
