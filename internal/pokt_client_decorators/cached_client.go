@@ -25,10 +25,12 @@ var (
 )
 
 const (
-	reasonSessionFailedBackoff            = "session_backoff"
-	reasonSessionFailedUnderlyingProvider = "failed_from_client"
-	reasonRelayFailedSessionErr           = "session_failure"
-	reasonRelayFailedUnderlyingProvider   = "relay_failure"
+	reasonSessionSuccessCached            = "session_cached"
+	reasonSessionSuccessColdHit           = "session_cold_hit"
+	reasonSessionFailedBackoff            = "session_failed_backoff"
+	reasonSessionFailedUnderlyingProvider = "session_failed_from_client"
+	reasonRelayFailedSessionErr           = "relay_session_failure"
+	reasonRelayFailedUnderlyingProvider   = "relay_provider_failure"
 )
 
 func init() {
@@ -44,7 +46,7 @@ func init() {
 			Name: "cached_client_relay_counter",
 			Help: "Request to send an actual relay and if it succeeded",
 		},
-		[]string{},
+		[]string{"success", "reason"},
 	)
 	histogramSessionRequestLatency = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
@@ -92,6 +94,7 @@ func (c *CachedClient) GetSession(req *models.GetSessionRequest) (*models.GetSes
 	}()
 
 	if isCached {
+		counterSessionRequest.WithLabelValues("true", reasonSessionSuccessCached).Inc()
 		return cachedSession.Value(), nil
 	}
 
@@ -116,7 +119,7 @@ func (c *CachedClient) GetSession(req *models.GetSessionRequest) (*models.GetSes
 		return nil, err
 	}
 
-	counterSessionRequest.WithLabelValues("true").Inc()
+	counterSessionRequest.WithLabelValues("true", reasonSessionSuccessColdHit).Inc()
 	c.sessionCache.Set(cacheKey, response, ttlcache.DefaultTTL)
 	c.lastFailure = time.Time{} // Reset last failure since it succeeded
 	return response, nil
@@ -148,7 +151,7 @@ func (r *CachedClient) SendRelay(req *models.SendRelayRequest) (*models.SendRela
 	if err != nil {
 		counterRelayRequest.WithLabelValues("false", reasonRelayFailedUnderlyingProvider).Inc()
 	} else {
-		counterRelayRequest.WithLabelValues("true").Inc()
+		counterRelayRequest.WithLabelValues("true", "").Inc()
 	}
 
 	return rsp, err
