@@ -139,21 +139,27 @@ func (suite *CachedClientTestSuite) TestSendRelay() {
 			expectedError:    models.ErrMalformedSendRelayRequest,
 		},
 		{
-			name: "SessionError", //todo: this test case is not working as expected due to GetSessionFromRequest not being mocked correctly
+			name: "SessionError",
 			request: &models.SendRelayRequest{
-				Payload:            &models.Payload{},
-				Signer:             &models.Ed25519Account{},
+				Payload: &models.Payload{},
+				Signer: &models.Ed25519Account{
+					PublicKey: "test",
+				},
 				Chain:              "test",
 				SelectedNodePubKey: "test",
-				Session:            &models.Session{},
 			},
 			setupMocks: func(request *models.SendRelayRequest) {
 
-				suite.mockPocketService.EXPECT().SendRelay(request).Return(nil, nil)
+				suite.mockTTLCachedService.EXPECT().Get("test-test").Return(&ttlcache.Item[string, *models.GetSessionResponse]{})
+
+				suite.mockPocketService.EXPECT().GetSession(&models.GetSessionRequest{
+					AppPubKey: "test",
+					Chain:     "test",
+				}).Return(nil, errors.New("error"))
 
 			},
 			expectedResponse: nil,
-			expectedError:    nil,
+			expectedError:    errors.New("error"),
 		},
 		{
 			name: "Success",
