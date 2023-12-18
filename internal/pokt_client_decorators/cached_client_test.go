@@ -15,14 +15,14 @@ import (
 type CachedClientTestSuite struct {
 	suite.Suite
 	mockPocketService    *mocks.PocketService
-	newCachedClient      *CachedClient
+	cachedClient         *CachedClient
 	mockTTLCachedService *mocks.TTLCacheService[string, *models.GetSessionResponse]
 }
 
 func (suite *CachedClientTestSuite) SetupTest() {
 	suite.mockPocketService = new(mocks.PocketService)
 	suite.mockTTLCachedService = new(mocks.TTLCacheService[string, *models.GetSessionResponse])
-	suite.newCachedClient = NewCachedClient(suite.mockPocketService, suite.mockTTLCachedService)
+	suite.cachedClient = NewCachedClient(suite.mockPocketService, suite.mockTTLCachedService)
 }
 
 // test GetSession using table driven tests
@@ -48,10 +48,10 @@ func (suite *CachedClientTestSuite) TestGetSession() {
 		expectedError    error
 	}{
 		{
-			name: "NotCached",
+			name: "Reflect",
 			setupMocks: func() {
 
-				suite.newCachedClient.lastFailure = time.Now()
+				suite.cachedClient.lastFailure = time.Now()
 
 				suite.mockTTLCachedService.EXPECT().Get("test-test").Return(ttlcacheItem)
 
@@ -74,7 +74,7 @@ func (suite *CachedClientTestSuite) TestGetSession() {
 			expectedError:    nil,
 		},
 		{
-			name: "Error",
+			name: "Error", // not cached
 			setupMocks: func() {
 
 				suite.mockTTLCachedService.EXPECT().Get("test-test").Return(ttlcacheItem)
@@ -95,7 +95,7 @@ func (suite *CachedClientTestSuite) TestGetSession() {
 
 			tc.setupMocks() // setup mocks
 
-			session, err := suite.newCachedClient.GetSession(testRequest)
+			session, err := suite.cachedClient.GetSession(testRequest)
 
 			// assert results
 			suite.Equal(tc.expectedResponse, session)
@@ -108,6 +108,15 @@ func (suite *CachedClientTestSuite) TestGetSession() {
 
 // test SendRelay using table driven tests
 func (suite *CachedClientTestSuite) TestSendRelay() {
+
+	testGetSessionRequest := &models.GetSessionRequest{
+		AppPubKey: "test",
+		Chain:     "test",
+	}
+
+	ttlcacheItem := &ttlcache.Item[string, *models.GetSessionResponse]{}
+
+	testResponse := &models.GetSessionResponse{}
 
 	testSendRelayResponse := &models.SendRelayResponse{
 		Response: "test",
@@ -152,10 +161,7 @@ func (suite *CachedClientTestSuite) TestSendRelay() {
 
 				suite.mockTTLCachedService.EXPECT().Get("test-test").Return(&ttlcache.Item[string, *models.GetSessionResponse]{})
 
-				suite.mockPocketService.EXPECT().GetSession(&models.GetSessionRequest{
-					AppPubKey: "test",
-					Chain:     "test",
-				}).Return(nil, errors.New("error"))
+				suite.mockPocketService.EXPECT().GetSession(testGetSessionRequest).Return(nil, errors.New("error"))
 
 			},
 			expectedResponse: nil,
@@ -178,6 +184,30 @@ func (suite *CachedClientTestSuite) TestSendRelay() {
 			expectedResponse: testSendRelayResponse,
 			expectedError:    nil,
 		},
+		{
+			name: "UnderlyingProviderSuccess",
+			request: &models.SendRelayRequest{
+				Payload: &models.Payload{},
+				Signer: &models.Ed25519Account{
+					PublicKey: "test",
+				},
+				Chain:              "test",
+				SelectedNodePubKey: "test",
+			},
+			setupMocks: func(request *models.SendRelayRequest) {
+
+				suite.mockTTLCachedService.EXPECT().Get("test-test").Return(ttlcacheItem)
+
+				suite.mockPocketService.EXPECT().GetSession(testGetSessionRequest).Return(testResponse, nil)
+
+				suite.mockTTLCachedService.EXPECT().Set("test-test", testResponse, ttlcache.DefaultTTL).Return(ttlcacheItem)
+
+				suite.mockPocketService.EXPECT().SendRelay(request).Return(testSendRelayResponse, nil)
+
+			},
+			expectedResponse: testSendRelayResponse,
+			expectedError:    nil,
+		},
 	}
 
 	// run test cases
@@ -188,7 +218,7 @@ func (suite *CachedClientTestSuite) TestSendRelay() {
 
 			tc.setupMocks(tc.request) // setup mocks
 
-			session, err := suite.newCachedClient.SendRelay(tc.request)
+			session, err := suite.cachedClient.SendRelay(tc.request)
 
 			// assert results
 			suite.Equal(tc.expectedResponse, session)
