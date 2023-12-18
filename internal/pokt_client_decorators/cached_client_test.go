@@ -34,8 +34,6 @@ func (suite *CachedClientTestSuite) TestGetSession() {
 		Height:    1,
 	}
 
-	ttlcacheItem := &ttlcache.Item[string, *models.GetSessionResponse]{}
-
 	testResponse := &models.GetSessionResponse{}
 
 	errUnderlayingProvider := errors.New("error underlaying provider")
@@ -48,38 +46,39 @@ func (suite *CachedClientTestSuite) TestGetSession() {
 		expectedError    error
 	}{
 		{
-			name: "Reflect",
+			name: "FetchingSessionRecentlyFailed",
 			setupMocks: func() {
 
 				suite.cachedClient.lastFailure = time.Now()
 
-				suite.mockTTLCachedService.EXPECT().Get("test-test").Return(ttlcacheItem)
+				suite.mockTTLCachedService.EXPECT().Get("test-test").Return(nil).Times(1)
 
 			},
 			expectedResponse: nil,
 			expectedError:    ErrRecentlyFailed,
 		},
 		{
-			name: "Cached",
+			// Not possible to create test case for cached, as ttl item struct does not expose fields to insert a key and value field.
+			name: "SuccessNotInitiallyCached",
 			setupMocks: func() {
 
-				suite.mockTTLCachedService.EXPECT().Get("test-test").Return(ttlcacheItem)
+				suite.mockTTLCachedService.EXPECT().Get("test-test").Return(nil).Times(1)
 
-				suite.mockPocketService.EXPECT().GetSession(testRequest).Return(testResponse, nil)
+				suite.mockPocketService.EXPECT().GetSession(testRequest).Return(testResponse, nil).Times(1)
 
-				suite.mockTTLCachedService.EXPECT().Set("test-test", testResponse, ttlcache.DefaultTTL).Return(ttlcacheItem)
+				suite.mockTTLCachedService.EXPECT().Set("test-test", testResponse, ttlcache.DefaultTTL).Return(nil).Times(1)
 
 			},
 			expectedResponse: testResponse,
 			expectedError:    nil,
 		},
 		{
-			name: "Error", // not cached
+			name: "Error",
 			setupMocks: func() {
 
-				suite.mockTTLCachedService.EXPECT().Get("test-test").Return(ttlcacheItem)
+				suite.mockTTLCachedService.EXPECT().Get("test-test").Return(nil).Times(1)
 
-				suite.mockPocketService.EXPECT().GetSession(testRequest).Return(nil, errUnderlayingProvider)
+				suite.mockPocketService.EXPECT().GetSession(testRequest).Return(nil, errUnderlayingProvider).Times(1)
 
 			},
 			expectedResponse: nil,
@@ -114,8 +113,6 @@ func (suite *CachedClientTestSuite) TestSendRelay() {
 		Chain:     "test",
 	}
 
-	ttlcacheItem := &ttlcache.Item[string, *models.GetSessionResponse]{}
-
 	testResponse := &models.GetSessionResponse{}
 
 	testSendRelayResponse := &models.SendRelayResponse{
@@ -141,7 +138,7 @@ func (suite *CachedClientTestSuite) TestSendRelay() {
 			},
 			setupMocks: func(request *models.SendRelayRequest) {
 
-				suite.mockPocketService.EXPECT().SendRelay(request).Return(nil, models.ErrMalformedSendRelayRequest)
+				suite.mockPocketService.EXPECT().SendRelay(request).Return(nil, models.ErrMalformedSendRelayRequest).Times(1)
 
 			},
 			expectedResponse: nil,
@@ -159,9 +156,9 @@ func (suite *CachedClientTestSuite) TestSendRelay() {
 			},
 			setupMocks: func(request *models.SendRelayRequest) {
 
-				suite.mockTTLCachedService.EXPECT().Get("test-test").Return(&ttlcache.Item[string, *models.GetSessionResponse]{})
+				suite.mockTTLCachedService.EXPECT().Get("test-test").Return(nil).Times(1)
 
-				suite.mockPocketService.EXPECT().GetSession(testGetSessionRequest).Return(nil, errors.New("error"))
+				suite.mockPocketService.EXPECT().GetSession(testGetSessionRequest).Return(nil, errors.New("error")).Times(1)
 
 			},
 			expectedResponse: nil,
@@ -178,7 +175,7 @@ func (suite *CachedClientTestSuite) TestSendRelay() {
 			},
 			setupMocks: func(request *models.SendRelayRequest) {
 
-				suite.mockPocketService.EXPECT().SendRelay(request).Return(testSendRelayResponse, nil)
+				suite.mockPocketService.EXPECT().SendRelay(request).Return(testSendRelayResponse, nil).Times(1)
 
 			},
 			expectedResponse: testSendRelayResponse,
@@ -196,13 +193,13 @@ func (suite *CachedClientTestSuite) TestSendRelay() {
 			},
 			setupMocks: func(request *models.SendRelayRequest) {
 
-				suite.mockTTLCachedService.EXPECT().Get("test-test").Return(ttlcacheItem)
+				suite.mockTTLCachedService.EXPECT().Get("test-test").Return(nil).Times(1)
 
-				suite.mockPocketService.EXPECT().GetSession(testGetSessionRequest).Return(testResponse, nil)
+				suite.mockPocketService.EXPECT().GetSession(testGetSessionRequest).Return(testResponse, nil).Times(1)
 
-				suite.mockTTLCachedService.EXPECT().Set("test-test", testResponse, ttlcache.DefaultTTL).Return(ttlcacheItem)
+				suite.mockTTLCachedService.EXPECT().Set("test-test", testResponse, ttlcache.DefaultTTL).Return(nil).Times(1)
 
-				suite.mockPocketService.EXPECT().SendRelay(request).Return(testSendRelayResponse, nil)
+				suite.mockPocketService.EXPECT().SendRelay(request).Return(testSendRelayResponse, nil).Times(1)
 
 			},
 			expectedResponse: testSendRelayResponse,
