@@ -168,7 +168,7 @@ func (suite *CachedClientTestSuite) TestSendRelay() {
 			expectedError:    errors.New("error"),
 		},
 		{
-			name: "Success",
+			name: "WithSessionInRequestSuccess",
 			request: &models.SendRelayRequest{
 				Payload:            &models.Payload{},
 				Signer:             &models.Ed25519Account{},
@@ -185,7 +185,7 @@ func (suite *CachedClientTestSuite) TestSendRelay() {
 			expectedError:    nil,
 		},
 		{
-			name: "UnderlyingProviderSuccess",
+			name: "WithoutSessionInRequestSuccess",
 			request: &models.SendRelayRequest{
 				Payload: &models.Payload{},
 				Signer: &models.Ed25519Account{
