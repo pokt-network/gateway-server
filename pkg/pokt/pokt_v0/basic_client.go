@@ -3,6 +3,7 @@ package pokt_v0
 import (
 	"github.com/pquerna/ffjson/ffjson"
 	"github.com/valyala/fasthttp"
+	"math/rand"
 	"os-gateway/pkg/common"
 	"os-gateway/pkg/pokt/pokt_v0/models"
 	"time"
@@ -84,7 +85,8 @@ func (r BasicClient) SendRelay(req *models.SendRelayRequest) (*models.SendRelayR
 
 	relayMetadata := &models.RelayMeta{BlockHeight: currentSessionHeight}
 
-	relayProof := generateRelayProof(req.Chain, currentSessionHeight, node.PublicKey, relayMetadata, req.Payload, req.Signer)
+	entropy := uint64(rand.Int63())
+	relayProof := generateRelayProof(entropy, req.Chain, currentSessionHeight, node.PublicKey, relayMetadata, req.Payload, req.Signer)
 
 	// Relay created, generating a request to the servicer
 	var sessionResponse models.SendRelayResponse

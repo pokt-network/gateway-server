@@ -2,13 +2,13 @@ package pokt_v0
 
 import (
 	"encoding/hex"
-	"math/rand"
 	"os-gateway/pkg/common"
 	"os-gateway/pkg/pokt/pokt_v0/models"
 )
 
 // generateRelayProof generates a relay proof.
 // Parameters:
+//   - entropy - random generated number to signify unique proof
 //   - chainId: Blockchain ID.
 //   - sessionHeight: Session block height.
 //   - servicerPubKey: Servicer public key.
@@ -17,8 +17,7 @@ import (
 //
 // Returns:
 //   - models.RelayProof: Generated relay proof.
-func generateRelayProof(chainId string, sessionHeight uint, servicerPubKey string, relayMetadata *models.RelayMeta, reqPayload *models.Payload, account *models.Ed25519Account) *models.RelayProof {
-	entropy := uint64(rand.Int63())
+func generateRelayProof(entropy uint64, chainId string, sessionHeight uint, servicerPubKey string, relayMetadata *models.RelayMeta, reqPayload *models.Payload, account *models.Ed25519Account) *models.RelayProof {
 	aat := account.GetAAT()
 
 	requestMetadata := models.RequestHashPayload{
