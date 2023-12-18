@@ -1,81 +1,141 @@
 package pokt_v0
 
 import (
-	"fmt"
-	"github.com/stretchr/testify/assert"
 	"os-gateway/pkg/pokt/pokt_v0/models"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-func Test_findNodeOrError(t *testing.T) {
-	type args struct {
-		nodes  []*models.Node
-		pubKey string
-		err    error
+func TestGetNodeFromRequest(t *testing.T) {
+	// Prepare a mock session with nodes
+	mockNodes := []*models.Node{
+		{PublicKey: "pubKey1"},
+		{PublicKey: "pubKey2"},
+		{PublicKey: "pubKey3"},
 	}
-	tests := []struct {
-		name    string
-		args    args
-		want    *models.Node
-		wantErr assert.ErrorAssertionFunc
+	mockSession := &models.Session{Nodes: mockNodes}
+
+	testCases := []struct {
+		Name               string
+		SelectedNodePubKey string
+		ExpectedError      error
+		ExpectedNode       *models.Node
+		ExpectedRandom     bool
 	}{
-		// TODO: Add test cases.
+		{
+			"Get random node if selectedNodePubKey is empty",
+			"",
+			nil,
+			nil, // The expectation for the node can be adjusted based on the test case.
+			true,
+		},
+		{
+			"Get specific node by public key",
+			"pubKey2",
+			nil,
+			&models.Node{PublicKey: "pubKey2"},
+			false,
+		},
+		{
+			"Error if selectedNodePubKey is not found",
+			"nonexistentKey",
+			models.ErrNodeNotFound,
+			nil,
+			false,
+		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := findNodeOrError(tt.args.nodes, tt.args.pubKey, tt.args.err)
-			if !tt.wantErr(t, err, fmt.Sprintf("findNodeOrError(%v, %v, %v)", tt.args.nodes, tt.args.pubKey, tt.args.err)) {
-				return
+
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			node, err := getNodeFromRequest(mockSession, tc.SelectedNodePubKey)
+			assert.Equal(t, tc.ExpectedError, err)
+			if tc.ExpectedRandom {
+				assert.Contains(t, mockNodes, node)
+			} else {
+				assert.Equal(t, tc.ExpectedNode, node)
 			}
-			assert.Equalf(t, tt.want, got, "findNodeOrError(%v, %v, %v)", tt.args.nodes, tt.args.pubKey, tt.args.err)
 		})
 	}
 }
 
-func Test_getNodeFromRequest(t *testing.T) {
-	type args struct {
-		session            *models.Session
-		selectedNodePubKey string
+func TestGetRandomNodeOrError(t *testing.T) {
+	mockNodes := []*models.Node{
+		{PublicKey: "pubKey1"},
+		{PublicKey: "pubKey2"},
+		{PublicKey: "pubKey3"},
 	}
-	tests := []struct {
-		name    string
-		args    args
-		want    *models.Node
-		wantErr assert.ErrorAssertionFunc
+
+	testCases := []struct {
+		Name          string
+		Nodes         []*models.Node
+		ExpectedError error
+		ExpectedNode  *models.Node
 	}{
-		// TODO: Add test cases.
+		{
+			"Get random node successfully",
+			mockNodes,
+			nil,
+			nil,
+		},
+		{
+			"Error if node list is empty",
+			[]*models.Node{},
+			models.ErrSessionHasZeroNodes,
+			nil,
+		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := getNodeFromRequest(tt.args.session, tt.args.selectedNodePubKey)
-			if !tt.wantErr(t, err, fmt.Sprintf("getNodeFromRequest(%v, %v)", tt.args.session, tt.args.selectedNodePubKey)) {
-				return
+
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			node, err := getRandomNodeOrError(tc.Nodes, tc.ExpectedError)
+
+			assert.Equal(t, tc.ExpectedError, err)
+			if err == nil {
+				// use contains since random node to prevent flakiness
+				assert.Contains(t, tc.Nodes, node)
 			}
-			assert.Equalf(t, tt.want, got, "getNodeFromRequest(%v, %v)", tt.args.session, tt.args.selectedNodePubKey)
 		})
 	}
 }
 
-func Test_getRandomNodeOrError(t *testing.T) {
-	type args struct {
-		nodes []*models.Node
-		err   error
+func TestFindNodeOrError(t *testing.T) {
+	mockNodes := []*models.Node{
+		{PublicKey: "pubKey1"},
+		{PublicKey: "pubKey2"},
+		{PublicKey: "pubKey3"},
 	}
-	tests := []struct {
-		name    string
-		args    args
-		want    *models.Node
-		wantErr assert.ErrorAssertionFunc
+
+	testCases := []struct {
+		Name          string
+		Nodes         []*models.Node
+		PubKeyToFind  string
+		ExpectedError error
+		ExpectedNode  *models.Node
 	}{
-		// TODO: Add test cases.
+		{
+			"Find node by public key successfully",
+			mockNodes,
+			"pubKey2",
+			nil,
+			&models.Node{PublicKey: "pubKey2"},
+		},
+		{
+			"Error if node is not found",
+			mockNodes,
+			"nonexistentKey",
+			models.ErrNodeNotFound,
+			nil,
+		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := getRandomNodeOrError(tt.args.nodes, tt.args.err)
-			if !tt.wantErr(t, err, fmt.Sprintf("getRandomNodeOrError(%v, %v)", tt.args.nodes, tt.args.err)) {
-				return
-			}
-			assert.Equalf(t, tt.want, got, "getRandomNodeOrError(%v, %v)", tt.args.nodes, tt.args.err)
+
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			node, err := findNodeOrError(tc.Nodes, tc.PubKeyToFind, tc.ExpectedError)
+
+			assert.Equal(t, tc.ExpectedError, err)
+
+			assert.Equal(t, tc.ExpectedNode, node)
 		})
 	}
 }
