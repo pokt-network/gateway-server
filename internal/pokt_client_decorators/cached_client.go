@@ -147,7 +147,7 @@ func (r *CachedClient) SendRelay(req *models.SendRelayRequest) (*models.SendRela
 	req.Session = session
 	rsp, err := r.PocketService.SendRelay(req)
 
-	// Emit metrics on success
+	// Emit on underlying provider's success
 	if err != nil {
 		counterRelayRequest.WithLabelValues("false", reasonRelayFailedUnderlyingProvider).Inc()
 	} else {
