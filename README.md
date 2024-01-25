@@ -11,11 +11,12 @@ Learn more about the vision and overall architecture [overview](docs%2Foverview.
 ## New Gateway Operator Onboarding Path
 1. [Gateway Server Overview](docs%2Foverview.md)
 2. [POKT Primer](docs%2Fpokt-primer.md)
-2. [Gateway Server API Endpoints](docs%2Fapi-endpoints.md)
+3. [Gateway Server API Endpoints](docs%2Fapi-endpoints.md)
 
 ## Additional Onboarding Resources
 1. [POKT's Relay Specification](docs%2Fpokt-relay-specification.md)
-3. [Gateway Server System Architecture](docs%2Fsystem-architecture.md)
+2. [Gateway Server System Architecture](docs%2Fsystem-architecture.md)
+3. [Gateway Server Node Selection](docs%2Fnode-selection.md)
 
 ## Quick Getting Start:
 1. In order to operate the gateway server, build the project
