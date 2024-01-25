@@ -8,6 +8,15 @@ The POKT Gateway Server is a comprehensive solution designed to simplify the int
 
 Learn more about the vision and overall architecture [overview](docs%2Foverview.md)
 
+## New Gateway Operator Onboarding Path
+1. [Overview](docs%2Foverview.md)
+2. [pokt-primer.md](docs%2Fpokt-primer.md)
+2. [Gateway API Endpoints](docs%2Fapi-endpoints.md)
+
+## Additional Onboarding Resources
+1. [Relay Specification](docs%2Fpokt-relay-specification.md)
+3. [System Architecture](docs%2Fsystem-architecture.md)
+
 ## Quick Getting Start:
 1. In order to operate the gateway server, build the project
     ```sh
@@ -36,9 +45,6 @@ go test
 ## Docker Compose
 There is an all-inclusive docker-compose file available for usage [docker-compose.yml](docker-compose.yml)
 
-## New Gateway Operator Path
-test
-123123
 
 ## Contributing Guidelines
 1. Create a Github Issue on the feature/issue you're working on.
@@ -50,7 +56,7 @@ test
 5. Commit code to your branch and issue a pull request and wait for at least one review.
     - Always ensure changes are rebased on top of main branch.
 
-
+---
 ## Project Structure
 
 - **cmd:** Contains the entry point of the binaries
@@ -62,8 +68,7 @@ test
 ## Core Project Dependencies
 - [FastHTTP](https://github.com/valyala/fasthttp) for both HTTP Client/Server
 - [FastJSON](https://github.com/pquerna/ffjson) for performant JSON Serialization and Deserialization
-
-## Lightweight Pocket Client
+- Lightweight Pocket Client
 
 We have implemented our own lightweight Pocket client to enhance speed and efficiency. Leveraging the power of [FastHTTP](https://github.com/valyala/fasthttp) and [FastJSON](https://github.com/pquerna/ffjson), our custom client achieves remarkable performance gains. Additionally, it has the capability to properly parse node runner's POKT errors properly given that the network runs diverse POKT clients (geomesh, leanpokt, their own custom client).
 
