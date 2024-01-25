@@ -9,13 +9,13 @@ The POKT Gateway Server is a comprehensive solution designed to simplify the int
 Learn more about the vision and overall architecture [overview](docs%2Foverview.md)
 
 ## New Gateway Operator Onboarding Path
-1. [Overview](docs%2Foverview.md)
-2. [pokt-primer.md](docs%2Fpokt-primer.md)
-2. [Gateway API Endpoints](docs%2Fapi-endpoints.md)
+1. [Gateway Server Overview](docs%2Foverview.md)
+2. [POKT Primer](docs%2Fpokt-primer.md)
+2. [Gateway Server API Endpoints](docs%2Fapi-endpoints.md)
 
 ## Additional Onboarding Resources
-1. [Relay Specification](docs%2Fpokt-relay-specification.md)
-3. [System Architecture](docs%2Fsystem-architecture.md)
+1. [POKT's Relay Specification](docs%2Fpokt-relay-specification.md)
+3. [Gateway Server System Architecture](docs%2Fsystem-architecture.md)
 
 ## Quick Getting Start:
 1. In order to operate the gateway server, build the project
