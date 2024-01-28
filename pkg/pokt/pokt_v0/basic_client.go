@@ -1,11 +1,12 @@
 package pokt_v0
 
 import (
+	"errors"
 	"github.com/pquerna/ffjson/ffjson"
 	"github.com/valyala/fasthttp"
 	"math/rand"
-	"os-gateway/pkg/common"
-	"os-gateway/pkg/pokt/pokt_v0/models"
+	"pokt_gateway_server/pkg/common"
+	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
 	"time"
 )
 
@@ -15,6 +16,8 @@ const (
 	endpointDispatch     = endpointClientPrefix + "/dispatch"
 	endpointSendRelay    = endpointClientPrefix + "/relay"
 	endpointGetHeight    = endpointQueryPrefix + "/height"
+	endpointGetApps      = endpointQueryPrefix + "/apps"
+	maxApplications      = 5000
 )
 
 // BasicClient represents a basic client with a logging, full node host, and a global request timeout.
@@ -56,6 +59,27 @@ func (r BasicClient) GetSession(req *models.GetSessionRequest) (*models.GetSessi
 		return nil, err
 	}
 	return &sessionResponse, nil
+}
+
+// GetLatestStakedApplications obtains all the applications from the latest block then filters for staked.
+// Returns:
+//   - ([]*models.PoktApplication): list of staked applications
+//   - (error): Error, if any.
+func (r BasicClient) GetLatestStakedApplications() ([]*models.PoktApplication, error) {
+	reqParams := map[string]any{"opts": map[string]any{"per_page": maxApplications}}
+	var resp models.GetApplicationResponse
+	err := r.makeRequest(endpointGetApps, "POST", reqParams, &resp, nil)
+	if err != nil {
+		return nil, err
+	}
+	stakedApplications := []*models.PoktApplication{}
+	for _, app := range resp.Result {
+		stakedApplications = append(stakedApplications, app)
+	}
+	if len(stakedApplications) == 0 {
+		return nil, errors.New("zero applications found")
+	}
+	return stakedApplications, nil
 }
 
 // SendRelay sends a relay request to the full node.

@@ -1,20 +1,28 @@
 package main
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
-	fasthttpprometheus "github.com/flf2ko/fasthttp-prometheus"
-	"log"
-	"os-gateway/cmd/gateway_server/internal/config"
-	"os-gateway/cmd/gateway_server/internal/controllers"
-	"os-gateway/internal/logging"
-	"os-gateway/internal/pokt_client_decorators"
-	"os-gateway/pkg/pokt/pokt_v0"
-	"os-gateway/pkg/pokt/pokt_v0/models"
-	"time"
-
 	"github.com/fasthttp/router"
+	fasthttpprometheus "github.com/flf2ko/fasthttp-prometheus"
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jellydator/ttlcache/v3"
+	"github.com/pkg/errors"
 	"github.com/valyala/fasthttp"
+	"go.uber.org/zap"
+	root "pokt_gateway_server"
+	"pokt_gateway_server/cmd/gateway_server/internal/config"
+	"pokt_gateway_server/cmd/gateway_server/internal/controllers"
+	"pokt_gateway_server/internal/db_query"
+	"pokt_gateway_server/internal/logging"
+	"pokt_gateway_server/internal/pokt_applications_registry"
+	"pokt_gateway_server/internal/pokt_client_decorators"
+	"pokt_gateway_server/pkg/pokt/pokt_v0"
+	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
 )
 
 func main() {
@@ -28,6 +36,15 @@ func main() {
 		panic(err)
 	}
 
+	querier, pool, err := initDB(logger, gatewayConfigProvider)
+	if err != nil {
+		logger.Sugar().Fatal(err)
+		return
+	}
+
+	// Close connection to pool afterward
+	defer pool.Close()
+
 	// Initialize a POKT client using the configured POKT RPC host and timeout
 	client, err := pokt_v0.NewBasicClient(gatewayConfigProvider.GetPoktRPCFullHost(), gatewayConfigProvider.GetPoktRPCTimeout())
 	if err != nil {
@@ -38,11 +55,13 @@ func main() {
 
 	// Initialize a TTL cache for session caching
 	sessionCache := ttlcache.New[string, *models.GetSessionResponse](
-		ttlcache.WithTTL[string, *models.GetSessionResponse](time.Minute * 75), //@todo: make this configurable via env ?
+		ttlcache.WithTTL[string, *models.GetSessionResponse](gatewayConfigProvider.GetSessionCacheTTL()), //@todo: make this configurable via env ?
 	)
 
-	// Create a relay controller with a cached POKT client and the loggeri
-	relayController := controllers.NewRelayController(pokt_client_decorators.NewCachedClient(client, sessionCache), gatewayConfigProvider.GetAppStakes(), logger)
+	poktApplicationRegistry := pokt_applications_registry.NewCachedRegistry(client, querier, gatewayConfigProvider, logger.Named("pokt_application_registry"))
+
+	// Create a relay controller with the necessary dependencies (logger, registry, cached relayer)
+	relayController := controllers.NewRelayController(pokt_client_decorators.NewCachedClient(client, sessionCache), poktApplicationRegistry, logger)
 
 	// Define routers
 	r := router.New()
@@ -56,6 +75,57 @@ func main() {
 	// Start the fasthttp server and listen on the configured server port
 	if err := fasthttp.ListenAndServe(fmt.Sprintf(":%d", gatewayConfigProvider.GetHTTPServerPort()), fastpHandler); err != nil {
 		// If an error occurs during server startup, log the error and exit
-		log.Fatalf("Error in ListenAndServe: %s", err)
+		logger.Sugar().Fatalw("Error in ListenAndServe", "err", err)
 	}
+}
+
+func initDB(logger *zap.Logger, config config.GatewayServerProvider) (db_query.Querier, *pgxpool.Pool, error) {
+
+	// initialize database
+	sqldb, err := sql.Open("postgres", config.GetDatabaseConnectionUrl())
+	if err != nil {
+		return nil, nil, errors.WithMessage(err, "failed to init db")
+	}
+
+	postgresDriver, err := postgres.WithInstance(sqldb, &postgres.Config{})
+	if err != nil {
+		return nil, nil, errors.WithMessage(err, "failed to init postgres driver")
+	}
+
+	source, err := iofs.New(root.Migrations, "db_migrations")
+
+	if err != nil {
+		return nil, nil, errors.WithMessage(err, "failed to create migration fs")
+	}
+
+	// Automatic Migrations
+	m, err := migrate.NewWithInstance("iofs", source, "postgres", postgresDriver)
+
+	if err != nil {
+		return nil, nil, errors.WithMessage(err, "failed to migrate")
+	}
+
+	err = m.Up()
+	if err != nil && err != migrate.ErrNoChange {
+		logger.Sugar().Warn("Migration warning", "err", err)
+		return nil, nil, err
+	}
+
+	// DB only needs to be open for migration
+	err = postgresDriver.Close()
+	if err != nil {
+		return nil, nil, err
+	}
+	err = sqldb.Close()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// open up connection pool for actual sql queries
+	pool, err := pgxpool.Connect(context.Background(), config.GetDatabaseConnectionUrl())
+	if err != nil {
+		return nil, pool, err
+	}
+	return db_query.NewQuerier(pool), nil, nil
+
 }

@@ -1,0 +1,7 @@
+-- name: GetPoktApplications :many
+SELECT id, pgp_sym_decrypt(encrypted_private_key, pggen.arg('encryption_key')) AS decrypted_private_key
+FROM pokt_applications;
+
+-- name: InsertPoktApplications :exec
+INSERT INTO pokt_applications (encrypted_private_key)
+VALUES (pgp_sym_encrypt(pggen.arg('private_key'), pggen.arg('encryption_key')));

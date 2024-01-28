@@ -3,9 +3,9 @@ package pokt_client_decorators
 import (
 	"errors"
 	"github.com/prometheus/client_golang/prometheus"
-	"os-gateway/pkg/pokt/pokt_v0"
-	"os-gateway/pkg/pokt/pokt_v0/models"
-	"os-gateway/pkg/ttl_cache"
+	"pokt_gateway_server/pkg/pokt/pokt_v0"
+	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
+	"pokt_gateway_server/pkg/ttl_cache"
 	"strconv"
 	"time"
 

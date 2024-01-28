@@ -29,6 +29,23 @@ Learn more about the vision and overall architecture [overview](docs%2Foverview.
     ```
 3. Run the binary `./main`
 
+## Creating a DB Migration
+Migrations are like version control for your database, allowing your team to define and share the application's database schema definition.
+Before running a migration make sure to install the go lang migration cli on your machine.
+https://github.com/golang-migrate/migrate/tree/master/cmd/migrate
+```sh
+./scripts/migration.sh -n {migration_name}
+```
+This command will generate a up and down migration in `db_migrations`
+
+## Applying a DB Migration
+DB Migrations are applied upon server start, but as well, it can be applied manually through:
+```sh
+./scripts/migration.sh {--down or --up} {number_of_times} 
+./scripts/migration.sh -d 1
+./scripts/migration.sh -u 1
+```
+
 ## Running Tests
 Before running any tests make sure to have the mock files in placed at `./mocks` folder.
 You can generate the mock files through:

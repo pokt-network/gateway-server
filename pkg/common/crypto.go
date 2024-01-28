@@ -1,6 +1,7 @@
 package common
 
 import (
+	"crypto/sha256"
 	"encoding/hex"
 	"github.com/pquerna/ffjson/ffjson"
 	"golang.org/x/crypto/sha3"
@@ -22,7 +23,7 @@ func GetAddressFromPublicKey(publicKey string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	hasher := sha3.New256()
+	hasher := sha256.New()
 	hasher.Write(bytes)
 	hashBytes := hasher.Sum(nil)
 	address := hex.EncodeToString(hashBytes)
