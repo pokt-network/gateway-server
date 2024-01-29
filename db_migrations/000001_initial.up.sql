@@ -10,8 +10,9 @@ CREATE TABLE base_model
 
 CREATE TABLE pokt_applications
 (
-    id                         UUID PRIMARY KEY NOT NULL DEFAULT uuid_generate_v4(),
-    encrypted_private_key      BYTEA          NOT NULL
+    id UUID PRIMARY KEY NOT NULL DEFAULT uuid_generate_v4(),
+    encrypted_private_key BYTEA NOT NULL,
+    CONSTRAINT unique_encrypted_private_key UNIQUE (encrypted_private_key)
 ) INHERITS (base_model);
 
 
