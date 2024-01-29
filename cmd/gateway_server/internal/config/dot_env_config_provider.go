@@ -68,10 +68,7 @@ func (c DotEnvConfigProvider) GetDatabaseConnectionUrl() string {
 
 // NewDotEnvConfigProvider creates a new instance of DotEnvConfigProvider.
 func NewDotEnvConfigProvider() *DotEnvConfigProvider {
-	err := godotenv.Load()
-	if err != nil {
-		panic(fmt.Sprintf("Error loading .env file: %s", err))
-	}
+	_ = godotenv.Load()
 
 	poktRPCTimeout, err := time.ParseDuration(getEnvVar(poktRPCTimeoutEnv))
 	if err != nil {
