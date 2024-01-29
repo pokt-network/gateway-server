@@ -10,6 +10,7 @@ const (
 
 type SecretProvider interface {
 	GetPoktApplicationsEncryptionKey() string
+	GetAPIKey() string
 }
 
 type DBCredentialsProvider interface {

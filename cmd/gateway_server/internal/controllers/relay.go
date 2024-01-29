@@ -28,9 +28,6 @@ func NewRelayController(poktClient pokt_v0.PocketService, appRegistry pokt_apps_
 	return &RelayController{poktClient: poktClient, appRegistry: appRegistry, logger: logger}
 }
 
-// RelayHandlerPath is the path for relay requests.
-const RelayHandlerPath = "/relay/{catchAll:*}"
-
 // chainIdLength represents the expected length of chain IDs.
 const chainIdLength = 4
 
@@ -60,7 +57,7 @@ func (c *RelayController) HandleRelay(ctx *fasthttp.RequestCtx) {
 	}
 
 	sessionResp, err := c.poktClient.GetSession(&models.GetSessionRequest{
-		AppPubKey: appStake.Ed25519Account.PublicKey,
+		AppPubKey: appStake.Signer.PublicKey,
 		Chain:     chainID,
 	})
 
@@ -76,7 +73,7 @@ func (c *RelayController) HandleRelay(ctx *fasthttp.RequestCtx) {
 			Method: string(ctx.Method()),
 			Path:   path,
 		},
-		Signer: appStake.Ed25519Account,
+		Signer: appStake.Signer,
 		Chain:  chainID,
 	}
 

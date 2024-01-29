@@ -63,8 +63,8 @@ func (c *CachedRegistry) updateApplicationCache() error {
 		return err
 	}
 
-	// Convert the encrypted private keys to Pocket Ed25519 accounts
-	storedApps := []*pokt.Ed25519Account{}
+	// Convert the encrypted private keys to PoktApplicationSigner
+	poktApplicationSigners := []*models.PoktApplicationSigner{}
 	for _, app := range storedAppsPK {
 		account, err := pokt.NewAccount(app.DecryptedPrivateKey)
 		if err != nil {
@@ -72,7 +72,8 @@ func (c *CachedRegistry) updateApplicationCache() error {
 			c.logger.Sugar().Warnw("failed to update application", "err", err, "app", app.ID)
 			continue
 		}
-		storedApps = append(storedApps, account)
+		id, _ := app.ID.Value()
+		poktApplicationSigners = append(poktApplicationSigners, models.NewPoktApplicationSigner(id.(string), account))
 	}
 
 	// Retrieve the latest staked applications from the Pocket service
@@ -81,13 +82,11 @@ func (c *CachedRegistry) updateApplicationCache() error {
 		return err
 	}
 
-	// Create a list of PoktApplicationSigner by combining Pocket accounts and staked applications
-	poktApplicationSigners := []*models.PoktApplicationSigner{}
 	for _, networkApp := range networkStakedApps {
-		for _, storedAccount := range storedApps {
+		for _, storedAccount := range poktApplicationSigners {
 			// Check if the account address matches, and create a PoktApplicationSigner if there's a match
-			if strings.EqualFold(networkApp.Address, storedAccount.Address) {
-				poktApplicationSigners = append(poktApplicationSigners, models.NewPoktApplicationSigner(storedAccount, networkApp))
+			if strings.EqualFold(networkApp.Address, storedAccount.Signer.Address) {
+				storedAccount.NetworkApp = networkApp
 			}
 		}
 	}
@@ -97,7 +96,7 @@ func (c *CachedRegistry) updateApplicationCache() error {
 
 	// Iterate through each PoktApplicationSigner and associate it with the corresponding chain IDs
 	for _, signer := range poktApplicationSigners {
-		for _, chainID := range signer.PoktApplication.Chains {
+		for _, chainID := range signer.NetworkApp.Chains {
 			// If the chain ID is not in the map, create a new entry
 			if _, ok := applicationChainMap[chainID]; !ok {
 				applicationChainMap[chainID] = make([]*models.PoktApplicationSigner, 0)
@@ -148,19 +147,19 @@ func arePoktApplicationSignersEqual(slice1, slice2 []*models.PoktApplicationSign
 	sortedSlice1 := make([]*models.PoktApplicationSigner, len(slice1))
 	copy(sortedSlice1, slice1)
 	sort.Slice(sortedSlice1, func(i, j int) bool {
-		return sortedSlice1[i].PoktApplication.Address < sortedSlice1[j].PoktApplication.Address
+		return sortedSlice1[i].NetworkApp.Address < sortedSlice1[j].NetworkApp.Address
 	})
 
 	sortedSlice2 := make([]*models.PoktApplicationSigner, len(slice2))
 	copy(sortedSlice2, slice2)
 	sort.Slice(sortedSlice2, func(i, j int) bool {
-		return sortedSlice2[i].PoktApplication.Address < sortedSlice2[j].PoktApplication.Address
+		return sortedSlice2[i].NetworkApp.Address < sortedSlice2[j].NetworkApp.Address
 	})
 
 	// Now that slices are sorted, check if address keys are same.
 	for i := range slice1 {
 		// Check if any field is different
-		if !strings.EqualFold(sortedSlice1[i].PoktApplication.Address, sortedSlice2[i].PoktApplication.Address) {
+		if !strings.EqualFold(sortedSlice1[i].NetworkApp.Address, sortedSlice2[i].NetworkApp.Address) {
 			return false
 		}
 	}

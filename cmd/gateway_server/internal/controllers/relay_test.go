@@ -89,7 +89,7 @@ func (suite *RelayTestSuite) TestHandleRelay() {
 				chainID, _ := getPathSegmented(ctx.Path())
 				suite.mockPoktAppsRegistry.EXPECT().GetApplicationsByChainId(chainID).Return([]*models2.PoktApplicationSigner{
 					{
-						Ed25519Account: mockAppStakePrivateKey(),
+						Signer: mockAppStakePrivateKey(),
 					},
 				}, true)
 				suite.mockRelayController = NewRelayController(suite.mockPocketService, suite.mockPoktAppsRegistry, zap.NewNop())
@@ -113,7 +113,7 @@ func (suite *RelayTestSuite) TestHandleRelay() {
 
 				suite.mockPoktAppsRegistry.EXPECT().GetApplicationsByChainId(chainID).Return([]*models2.PoktApplicationSigner{
 					{
-						Ed25519Account: mockAppStakePrivateKey(),
+						Signer: mockAppStakePrivateKey(),
 					},
 				}, true)
 				suite.mockPocketService.EXPECT().GetSession(&models.GetSessionRequest{
@@ -150,7 +150,7 @@ func (suite *RelayTestSuite) TestHandleRelay() {
 
 				suite.mockPoktAppsRegistry.EXPECT().GetApplicationsByChainId(chainID).Return([]*models2.PoktApplicationSigner{
 					{
-						Ed25519Account: mockAppStakePrivateKey(),
+						Signer: mockAppStakePrivateKey(),
 					},
 				}, true)
 				suite.mockPocketService.EXPECT().GetSession(&models.GetSessionRequest{

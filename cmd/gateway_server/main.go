@@ -8,6 +8,7 @@ import (
 	"github.com/valyala/fasthttp"
 	"pokt_gateway_server/cmd/gateway_server/internal/config"
 	"pokt_gateway_server/cmd/gateway_server/internal/controllers"
+	"pokt_gateway_server/cmd/gateway_server/internal/middleware"
 	"pokt_gateway_server/internal/db_query"
 	"pokt_gateway_server/internal/logging"
 	"pokt_gateway_server/internal/pokt_apps_registry"
@@ -55,12 +56,22 @@ func main() {
 
 	poktApplicationRegistry := pokt_apps_registry.NewCachedRegistry(client, querier, gatewayConfigProvider, logger.Named("pokt_application_registry"))
 
-	// Create a relay controller with the necessary dependencies (logger, registry, cached relayer)
-	relayController := controllers.NewRelayController(pokt_client_decorators.NewCachedClient(client, sessionCache), poktApplicationRegistry, logger)
-
+	cachedPoktClient := pokt_client_decorators.NewCachedClient(client, sessionCache)
 	// Define routers
 	r := router.New()
-	r.POST(controllers.RelayHandlerPath, relayController.HandleRelay)
+
+	// Create a relay controller with the necessary dependencies (logger, registry, cached relayer)
+	relayController := controllers.NewRelayController(cachedPoktClient, poktApplicationRegistry, logger.Named("relay_controller"))
+
+	relayRouter := r.Group("/relay")
+	relayRouter.POST("/{catchAll:*}", relayController.HandleRelay)
+
+	poktAppsController := controllers.NewPoktAppsController(poktApplicationRegistry, querier, gatewayConfigProvider, logger.Named("pokt_apps_controller"))
+	poktAppsRouter := r.Group("/poktapps")
+
+	poktAppsRouter.GET("/", middleware.XAPIKeyAuth(poktAppsController.GetAll, gatewayConfigProvider))
+	poktAppsRouter.POST("/", middleware.XAPIKeyAuth(poktAppsController.AddApplication, gatewayConfigProvider))
+	poktAppsRouter.DELETE("/{app_id}", middleware.XAPIKeyAuth(poktAppsController.DeleteApplication, gatewayConfigProvider))
 
 	// Add Middleware for Generic E2E Prom Tracking
 	p := fasthttpprometheus.NewPrometheus("fasthttp")

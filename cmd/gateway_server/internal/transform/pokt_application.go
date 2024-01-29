@@ -5,11 +5,11 @@ import (
 	internal_model "pokt_gateway_server/internal/pokt_apps_registry/models"
 )
 
-func ToPoktApplication(signer *internal_model.PoktApplicationSigner) *models.PoktApplication {
+func ToPoktApplication(app *internal_model.PoktApplicationSigner) *models.PoktApplication {
 	return &models.PoktApplication{
-		ID:        signer.ID,
-		MaxRelays: int(signer.MaxRelays),
-		Chains:    signer.Chains,
-		Address:   signer.PoktApplication.Address,
+		ID:        app.ID,
+		MaxRelays: int(app.NetworkApp.MaxRelays),
+		Chains:    app.NetworkApp.Chains,
+		Address:   app.NetworkApp.Address,
 	}
 }

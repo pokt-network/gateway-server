@@ -13,7 +13,10 @@ import (
 // Querier is a typesafe Go interface backed by SQL queries.
 type Querier interface {
 	GetPoktApplications(ctx context.Context, encryptionKey string) ([]GetPoktApplicationsRow, error)
+
 	InsertPoktApplications(ctx context.Context, privateKey string, encryptionKey string) (pgconn.CommandTag, error)
+
+	DeletePoktApplication(ctx context.Context, applicationID pgtype.UUID) (pgconn.CommandTag, error)
 }
 
 var _ Querier = &DBQuerier{}
@@ -103,6 +106,19 @@ func (q *DBQuerier) InsertPoktApplications(ctx context.Context, privateKey strin
 	cmdTag, err := q.conn.Exec(ctx, insertPoktApplicationsSQL, privateKey, encryptionKey)
 	if err != nil {
 		return cmdTag, fmt.Errorf("exec query InsertPoktApplications: %w", err)
+	}
+	return cmdTag, err
+}
+
+const deletePoktApplicationSQL = `DELETE FROM pokt_applications
+WHERE id = $1;`
+
+// DeletePoktApplication implements Querier.DeletePoktApplication.
+func (q *DBQuerier) DeletePoktApplication(ctx context.Context, applicationID pgtype.UUID) (pgconn.CommandTag, error) {
+	ctx = context.WithValue(ctx, "pggen_query_name", "DeletePoktApplication")
+	cmdTag, err := q.conn.Exec(ctx, deletePoktApplicationSQL, applicationID)
+	if err != nil {
+		return cmdTag, fmt.Errorf("exec query DeletePoktApplication: %w", err)
 	}
 	return cmdTag, err
 }

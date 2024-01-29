@@ -5,3 +5,7 @@ FROM pokt_applications;
 -- name: InsertPoktApplications :exec
 INSERT INTO pokt_applications (encrypted_private_key)
 VALUES (pgp_sym_encrypt(pggen.arg('private_key'), pggen.arg('encryption_key')));
+
+-- name: DeletePoktApplication :exec
+DELETE FROM pokt_applications
+WHERE id = pggen.arg('application_id');

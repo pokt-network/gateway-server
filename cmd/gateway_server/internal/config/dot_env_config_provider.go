@@ -18,6 +18,7 @@ const (
 	sessionCacheTTLEnv               = "SESSION_CACHE_TTL"
 	environmentStageEnv              = "ENVIRONMENT_STAGE"
 	poktApplicationsEncryptionKeyEnv = "POKT_APPLICATIONS_ENCRYPTION_KEY"
+	apiKey                           = "API_KEY"
 )
 
 // DotEnvConfigProvider implements the GatewayServerProvider interface.
@@ -29,6 +30,11 @@ type DotEnvConfigProvider struct {
 	environmentStage              config.EnvironmentStage
 	poktApplicationsEncryptionKey string
 	databaseConnectionUrl         string
+	apiKey                        string
+}
+
+func (c DotEnvConfigProvider) GetAPIKey() string {
+	return c.apiKey
 }
 
 // GetPoktRPCFullHost returns the PoktRPCFullHost value.
@@ -93,6 +99,7 @@ func NewDotEnvConfigProvider() *DotEnvConfigProvider {
 		databaseConnectionUrl:         getEnvVar(dbConnectionUrlEnv),
 		environmentStage:              config.EnvironmentStage(getEnvVar(environmentStageEnv)),
 		poktApplicationsEncryptionKey: getEnvVar(poktApplicationsEncryptionKeyEnv),
+		apiKey:                        getEnvVar(apiKey),
 	}
 }
 
