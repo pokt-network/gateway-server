@@ -6,7 +6,7 @@ import (
 	"go.uber.org/zap"
 	"pokt_gateway_server/cmd/gateway_server/internal/models"
 	"pokt_gateway_server/cmd/gateway_server/internal/transform"
-	"pokt_gateway_server/internal/pokt_applications_registry"
+	"pokt_gateway_server/internal/pokt_apps_registry"
 	"pokt_gateway_server/pkg/pokt/pokt_v0"
 )
 
@@ -14,11 +14,11 @@ import (
 type PoktAppsController struct {
 	logger      *zap.Logger
 	poktClient  pokt_v0.PocketService
-	appRegistry pokt_applications_registry.Service
+	appRegistry pokt_apps_registry.AppsRegistryService
 }
 
 // NewRelayController creates a new instance of RelayController.
-func NewPoktAppsController(appRegistry pokt_applications_registry.Service, logger *zap.Logger) *PoktAppsController {
+func NewPoktAppsController(appRegistry pokt_apps_registry.AppsRegistryService, logger *zap.Logger) *PoktAppsController {
 	return &PoktAppsController{appRegistry: appRegistry, logger: logger}
 }
 

@@ -6,7 +6,7 @@ import (
 	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
 	"pokt_gateway_server/cmd/gateway_server/internal/common"
-	"pokt_gateway_server/internal/pokt_applications_registry"
+	"pokt_gateway_server/internal/pokt_apps_registry"
 	slice_common "pokt_gateway_server/pkg/common"
 	"pokt_gateway_server/pkg/pokt/pokt_v0"
 	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
@@ -20,11 +20,11 @@ var ErrRelayChannelClosed = errors.New("concurrent relay channel closed")
 type RelayController struct {
 	logger      *zap.Logger
 	poktClient  pokt_v0.PocketService
-	appRegistry pokt_applications_registry.Service
+	appRegistry pokt_apps_registry.AppsRegistryService
 }
 
 // NewRelayController creates a new instance of RelayController.
-func NewRelayController(poktClient pokt_v0.PocketService, appRegistry pokt_applications_registry.Service, logger *zap.Logger) *RelayController {
+func NewRelayController(poktClient pokt_v0.PocketService, appRegistry pokt_apps_registry.AppsRegistryService, logger *zap.Logger) *RelayController {
 	return &RelayController{poktClient: poktClient, appRegistry: appRegistry, logger: logger}
 }
 
@@ -47,7 +47,7 @@ func (c *RelayController) HandleRelay(ctx *fasthttp.RequestCtx) {
 
 	applications, ok := c.appRegistry.GetApplicationsByChainId(chainID)
 
-	if !ok {
+	if !ok || len(applications) == 0 {
 		common.JSONError(ctx, fmt.Sprintf("%s chainId not supported with existing application registry", chainID), fasthttp.StatusBadRequest)
 		return
 	}

@@ -1,8 +1,8 @@
-package pokt_applications_registry
+package pokt_apps_registry
 
-import "pokt_gateway_server/internal/pokt_applications_registry/models"
+import "pokt_gateway_server/internal/pokt_apps_registry/models"
 
-type Service interface {
+type AppsRegistryService interface {
 	GetApplications() []*models.PoktApplicationSigner
 	GetApplicationsByChainId(chainId string) ([]*models.PoktApplicationSigner, bool)
 }

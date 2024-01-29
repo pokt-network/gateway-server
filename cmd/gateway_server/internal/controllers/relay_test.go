@@ -3,6 +3,7 @@ package controllers
 // Basic imports
 import (
 	"errors"
+	models2 "pokt_gateway_server/internal/pokt_apps_registry/models"
 	"pokt_gateway_server/mocks"
 	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
 	"testing"
@@ -14,28 +15,23 @@ import (
 
 type RelayTestSuite struct {
 	suite.Suite
-	mockPocketService       *mocks.PocketService
-	mockRelayController     *RelayController
-	context                 *fasthttp.RequestCtx
-	mockAppStakePrivateKeys []*models.Ed25519Account
+	mockPocketService    *mocks.PocketService
+	mockRelayController  *RelayController
+	mockPoktAppsRegistry *mocks.AppsRegistryService
+	context              *fasthttp.RequestCtx
 }
 
 func (suite *RelayTestSuite) SetupTest() {
 	suite.mockPocketService = new(mocks.PocketService)
+	suite.mockPoktAppsRegistry = new(mocks.AppsRegistryService)
 	suite.context = &fasthttp.RequestCtx{} // mock the fasthttp.RequestCtx
-	suite.mockAppStakePrivateKeys = mockAppStakePrivateKeys()
 }
 
 // mock app stake private keys
-func mockAppStakePrivateKeys() []*models.Ed25519Account {
-
-	var appStakePrivateKeys []*models.Ed25519Account
+func mockAppStakePrivateKey() *models.Ed25519Account {
 
 	appStake, _ := models.NewAccount("3fe64039816c44e8872e4ef981725b968422e3d49e95a1eb800707591df30fe374039dbe881dd2744e2e0c469cc2241e1e45f14af6975dd89079d22938377849")
-
-	appStakePrivateKeys = append(appStakePrivateKeys, appStake)
-
-	return appStakePrivateKeys
+	return appStake
 
 }
 
@@ -50,7 +46,7 @@ func (suite *RelayTestSuite) mockSendRelayRequest() *models.SendRelayRequest {
 			Method: string(suite.context.Method()),
 			Path:   path,
 		},
-		Signer: suite.mockAppStakePrivateKeys[0],
+		Signer: mockAppStakePrivateKey(),
 		Chain:  chainID,
 	}
 }
@@ -64,25 +60,26 @@ func (suite *RelayTestSuite) TestHandleRelay() {
 		name             string
 		setupMocks       func(*fasthttp.RequestCtx)
 		path             string
-		expectedSatus    int
+		expectedStatus   int
 		expectedResponse *string
 	}{
 		{
 			name: "EmptyChainID",
 			setupMocks: func(ctx *fasthttp.RequestCtx) {
-				suite.mockRelayController = NewRelayController(suite.mockPocketService, suite.mockAppStakePrivateKeys, zap.NewNop())
+				suite.mockRelayController = NewRelayController(suite.mockPocketService, suite.mockPoktAppsRegistry, zap.NewNop())
 			},
 			path:             "/relay/",
-			expectedSatus:    fasthttp.StatusBadRequest,
+			expectedStatus:   fasthttp.StatusBadRequest,
 			expectedResponse: nil,
 		},
 		{
 			name: "AppStakeNotProvided",
 			setupMocks: func(ctx *fasthttp.RequestCtx) {
-				suite.mockRelayController = NewRelayController(suite.mockPocketService, []*models.Ed25519Account{}, zap.NewNop())
+				suite.mockPoktAppsRegistry.EXPECT().GetApplicationsByChainId("1234").Return([]*models2.PoktApplicationSigner{}, true)
+				suite.mockRelayController = NewRelayController(suite.mockPocketService, suite.mockPoktAppsRegistry, zap.NewNop())
 			},
 			path:             "/relay/1234",
-			expectedSatus:    fasthttp.StatusInternalServerError,
+			expectedStatus:   fasthttp.StatusBadRequest,
 			expectedResponse: nil,
 		},
 		{
@@ -90,17 +87,20 @@ func (suite *RelayTestSuite) TestHandleRelay() {
 			setupMocks: func(ctx *fasthttp.RequestCtx) {
 
 				chainID, _ := getPathSegmented(ctx.Path())
-
-				suite.mockRelayController = NewRelayController(suite.mockPocketService, suite.mockAppStakePrivateKeys, zap.NewNop())
-
+				suite.mockPoktAppsRegistry.EXPECT().GetApplicationsByChainId(chainID).Return([]*models2.PoktApplicationSigner{
+					{
+						Ed25519Account: mockAppStakePrivateKey(),
+					},
+				}, true)
+				suite.mockRelayController = NewRelayController(suite.mockPocketService, suite.mockPoktAppsRegistry, zap.NewNop())
 				suite.mockPocketService.EXPECT().GetSession(&models.GetSessionRequest{
-					AppPubKey: suite.mockAppStakePrivateKeys[0].PublicKey,
+					AppPubKey: mockAppStakePrivateKey().PublicKey,
 					Chain:     chainID,
 				}).Return(nil, errors.New("error dispatching session"))
 
 			},
 			path:             "/relay/1234",
-			expectedSatus:    fasthttp.StatusInternalServerError,
+			expectedStatus:   fasthttp.StatusInternalServerError,
 			expectedResponse: nil,
 		},
 		{
@@ -109,10 +109,15 @@ func (suite *RelayTestSuite) TestHandleRelay() {
 
 				chainID, _ := getPathSegmented(ctx.Path())
 
-				suite.mockRelayController = NewRelayController(suite.mockPocketService, suite.mockAppStakePrivateKeys, zap.NewNop())
+				suite.mockRelayController = NewRelayController(suite.mockPocketService, suite.mockPoktAppsRegistry, zap.NewNop())
 
+				suite.mockPoktAppsRegistry.EXPECT().GetApplicationsByChainId(chainID).Return([]*models2.PoktApplicationSigner{
+					{
+						Ed25519Account: mockAppStakePrivateKey(),
+					},
+				}, true)
 				suite.mockPocketService.EXPECT().GetSession(&models.GetSessionRequest{
-					AppPubKey: suite.mockAppStakePrivateKeys[0].PublicKey,
+					AppPubKey: mockAppStakePrivateKey().PublicKey,
 					Chain:     chainID,
 				}).Return(&models.GetSessionResponse{
 					Session: &models.Session{
@@ -132,7 +137,7 @@ func (suite *RelayTestSuite) TestHandleRelay() {
 
 			},
 			path:             "/relay/1234",
-			expectedSatus:    fasthttp.StatusInternalServerError,
+			expectedStatus:   fasthttp.StatusInternalServerError,
 			expectedResponse: nil,
 		},
 		{
@@ -141,10 +146,15 @@ func (suite *RelayTestSuite) TestHandleRelay() {
 
 				chainID, _ := getPathSegmented(ctx.Path())
 
-				suite.mockRelayController = NewRelayController(suite.mockPocketService, suite.mockAppStakePrivateKeys, zap.NewNop())
+				suite.mockRelayController = NewRelayController(suite.mockPocketService, suite.mockPoktAppsRegistry, zap.NewNop())
 
+				suite.mockPoktAppsRegistry.EXPECT().GetApplicationsByChainId(chainID).Return([]*models2.PoktApplicationSigner{
+					{
+						Ed25519Account: mockAppStakePrivateKey(),
+					},
+				}, true)
 				suite.mockPocketService.EXPECT().GetSession(&models.GetSessionRequest{
-					AppPubKey: suite.mockAppStakePrivateKeys[0].PublicKey,
+					AppPubKey: mockAppStakePrivateKey().PublicKey,
 					Chain:     chainID,
 				}).Return(&models.GetSessionResponse{
 					Session: &models.Session{
@@ -167,7 +177,7 @@ func (suite *RelayTestSuite) TestHandleRelay() {
 
 			},
 			path:             "/relay/1234",
-			expectedSatus:    fasthttp.StatusOK,
+			expectedStatus:   fasthttp.StatusOK,
 			expectedResponse: &testResponse,
 		},
 	}
@@ -184,7 +194,7 @@ func (suite *RelayTestSuite) TestHandleRelay() {
 
 			suite.mockRelayController.HandleRelay(suite.context)
 
-			suite.Equal(test.expectedSatus, suite.context.Response.StatusCode())
+			suite.Equal(test.expectedStatus, suite.context.Response.StatusCode())
 
 			if test.expectedResponse != nil {
 				suite.Equal(*test.expectedResponse, string(suite.context.Response.Body()))
@@ -238,7 +248,7 @@ func (suite *RelayTestSuite) TestConcurrentRelay() {
 
 			test.setupMocks(suite.context) // setup the mocks for the test
 
-			relayController := NewRelayController(suite.mockPocketService, suite.mockAppStakePrivateKeys, zap.NewNop())
+			relayController := NewRelayController(suite.mockPocketService, suite.mockPoktAppsRegistry, zap.NewNop())
 
 			session := &models.Session{
 				Nodes: []*models.Node{

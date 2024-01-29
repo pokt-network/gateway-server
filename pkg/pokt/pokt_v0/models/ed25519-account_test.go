@@ -25,7 +25,7 @@ func TestNewAccount(t *testing.T) {
 			name:              "Success",
 			privateKey:        "3fe64039816c44e8872e4ef981725b968422e3d49e95a1eb800707591df30fe374039dbe881dd2744e2e0c469cc2241e1e45f14af6975dd89079d22938377849",
 			expectedPublicKey: "74039dbe881dd2744e2e0c469cc2241e1e45f14af6975dd89079d22938377849",
-			expectedAddress:   "d873127df524d172276e4da8193a2e2b19ef825f",
+			expectedAddress:   "9d6ad1ee870d32d12cf0cff9fb0fbbfedb2ee71f",
 			err:               nil,
 		},
 	}

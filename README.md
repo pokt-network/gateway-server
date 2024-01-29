@@ -47,17 +47,20 @@ DB Migrations are applied upon server start, but as well, it can be applied manu
 ```
 
 ## Running Tests
-Before running any tests make sure to have the mock files in placed at `./mocks` folder.
+Install Mockery with
+```
+go install github.com/vektra/mockery/v2@v2.40.1
+```
 You can generate the mock files through:
 ```sh
 ./scripts/mockgen.sh
 ```
 By running this command, it will generate the mock files in `./mocks` folder.
-Reference for creating a mock implementation https://vektra.github.io/mockery/latest/
+Reference for mocks can be found here https://vektra.github.io/mockery/latest/
 
-Run this command to run some tests:
+Run this command to run tests:
 ```sh
-go test
+go test ./...
 ```
 
 ## Docker Compose

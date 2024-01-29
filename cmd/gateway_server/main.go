@@ -19,7 +19,7 @@ import (
 	"pokt_gateway_server/cmd/gateway_server/internal/controllers"
 	"pokt_gateway_server/internal/db_query"
 	"pokt_gateway_server/internal/logging"
-	"pokt_gateway_server/internal/pokt_applications_registry"
+	"pokt_gateway_server/internal/pokt_apps_registry"
 	"pokt_gateway_server/internal/pokt_client_decorators"
 	"pokt_gateway_server/pkg/pokt/pokt_v0"
 	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
@@ -58,7 +58,7 @@ func main() {
 		ttlcache.WithTTL[string, *models.GetSessionResponse](gatewayConfigProvider.GetSessionCacheTTL()), //@todo: make this configurable via env ?
 	)
 
-	poktApplicationRegistry := pokt_applications_registry.NewCachedRegistry(client, querier, gatewayConfigProvider, logger.Named("pokt_application_registry"))
+	poktApplicationRegistry := pokt_apps_registry.NewCachedRegistry(client, querier, gatewayConfigProvider, logger.Named("pokt_application_registry"))
 
 	// Create a relay controller with the necessary dependencies (logger, registry, cached relayer)
 	relayController := controllers.NewRelayController(pokt_client_decorators.NewCachedClient(client, sessionCache), poktApplicationRegistry, logger)

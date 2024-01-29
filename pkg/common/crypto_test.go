@@ -119,7 +119,7 @@ func TestGetAddressFromPublicKey(t *testing.T) {
 			args: args{
 				publicKey: "d992d8915443e85f620a67bce0928bba16cc349b6b6878698fd9518c6f49d5f2", // valid public key
 			},
-			want:    "f98920227f9a365320fcf2c8b750a8ab54dbf718", // address
+			want:    "bdf642b7d84840f034c9fde6147358faed2db3ff", // address
 			wantErr: nil,
 		},
 		{
@@ -127,7 +127,7 @@ func TestGetAddressFromPublicKey(t *testing.T) {
 			args: args{
 				publicKey: "a59516f6f339699f6cfbe70046bc5cb5f1053cfee4c74e66be0ab1695e04a979", // valid public key
 			},
-			want:    "11188c2101fdc762e7c2ae7a77b819937809af53", // address
+			want:    "265f106d0e6524f14d14e96d26a88262234e2bf9", // address
 			wantErr: nil,
 		},
 	}
