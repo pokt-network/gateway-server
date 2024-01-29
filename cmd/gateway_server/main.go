@@ -1,20 +1,11 @@
 package main
 
 import (
-	"context"
-	"database/sql"
 	"fmt"
 	"github.com/fasthttp/router"
 	fasthttpprometheus "github.com/flf2ko/fasthttp-prometheus"
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/postgres"
-	"github.com/golang-migrate/migrate/v4/source/iofs"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jellydator/ttlcache/v3"
-	"github.com/pkg/errors"
 	"github.com/valyala/fasthttp"
-	"go.uber.org/zap"
-	root "pokt_gateway_server"
 	"pokt_gateway_server/cmd/gateway_server/internal/config"
 	"pokt_gateway_server/cmd/gateway_server/internal/controllers"
 	"pokt_gateway_server/internal/db_query"
@@ -23,6 +14,10 @@ import (
 	"pokt_gateway_server/internal/pokt_client_decorators"
 	"pokt_gateway_server/pkg/pokt/pokt_v0"
 	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
+)
+
+const (
+	maxDbConns = 50
 )
 
 func main() {
@@ -36,7 +31,7 @@ func main() {
 		panic(err)
 	}
 
-	querier, pool, err := initDB(logger, gatewayConfigProvider)
+	querier, pool, err := db_query.InitDB(logger, gatewayConfigProvider, maxDbConns)
 	if err != nil {
 		logger.Sugar().Fatal(err)
 		return
@@ -77,55 +72,4 @@ func main() {
 		// If an error occurs during server startup, log the error and exit
 		logger.Sugar().Fatalw("Error in ListenAndServe", "err", err)
 	}
-}
-
-func initDB(logger *zap.Logger, config config.GatewayServerProvider) (db_query.Querier, *pgxpool.Pool, error) {
-
-	// initialize database
-	sqldb, err := sql.Open("postgres", config.GetDatabaseConnectionUrl())
-	if err != nil {
-		return nil, nil, errors.WithMessage(err, "failed to init db")
-	}
-
-	postgresDriver, err := postgres.WithInstance(sqldb, &postgres.Config{})
-	if err != nil {
-		return nil, nil, errors.WithMessage(err, "failed to init postgres driver")
-	}
-
-	source, err := iofs.New(root.Migrations, "db_migrations")
-
-	if err != nil {
-		return nil, nil, errors.WithMessage(err, "failed to create migration fs")
-	}
-
-	// Automatic Migrations
-	m, err := migrate.NewWithInstance("iofs", source, "postgres", postgresDriver)
-
-	if err != nil {
-		return nil, nil, errors.WithMessage(err, "failed to migrate")
-	}
-
-	err = m.Up()
-	if err != nil && err != migrate.ErrNoChange {
-		logger.Sugar().Warn("Migration warning", "err", err)
-		return nil, nil, err
-	}
-
-	// DB only needs to be open for migration
-	err = postgresDriver.Close()
-	if err != nil {
-		return nil, nil, err
-	}
-	err = sqldb.Close()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// open up connection pool for actual sql queries
-	pool, err := pgxpool.Connect(context.Background(), config.GetDatabaseConnectionUrl())
-	if err != nil {
-		return nil, pool, err
-	}
-	return db_query.NewQuerier(pool), nil, nil
-
 }
