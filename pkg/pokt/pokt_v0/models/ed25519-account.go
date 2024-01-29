@@ -5,7 +5,7 @@ import (
 	"crypto/ed25519"
 	"encoding/hex"
 	"errors"
-	"os-gateway/pkg/common"
+	"pokt_gateway_server/pkg/common"
 	"sync"
 )
 

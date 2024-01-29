@@ -1,6 +1,6 @@
 package pokt_v0
 
-import "os-gateway/pkg/pokt/pokt_v0/models"
+import "pokt_gateway_server/pkg/pokt/pokt_v0/models"
 
 // GetSessionFromRequest obtains a session from a relay request.
 // Parameters:

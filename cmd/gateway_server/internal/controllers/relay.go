@@ -2,12 +2,14 @@ package controllers
 
 import (
 	"errors"
+	"fmt"
 	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
-	"os-gateway/cmd/gateway_server/internal/common"
-	slice_common "os-gateway/pkg/common"
-	"os-gateway/pkg/pokt/pokt_v0"
-	"os-gateway/pkg/pokt/pokt_v0/models"
+	"pokt_gateway_server/cmd/gateway_server/internal/common"
+	"pokt_gateway_server/internal/pokt_applications_registry"
+	slice_common "pokt_gateway_server/pkg/common"
+	"pokt_gateway_server/pkg/pokt/pokt_v0"
+	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
 	"strings"
 	"sync"
 )
@@ -16,14 +18,14 @@ var ErrRelayChannelClosed = errors.New("concurrent relay channel closed")
 
 // RelayController handles relay requests for a specific chain.
 type RelayController struct {
-	logger     *zap.Logger
-	poktClient pokt_v0.PocketService
-	appStakes  []*models.Ed25519Account
+	logger      *zap.Logger
+	poktClient  pokt_v0.PocketService
+	appRegistry pokt_applications_registry.Service
 }
 
 // NewRelayController creates a new instance of RelayController.
-func NewRelayController(poktClient pokt_v0.PocketService, appStakes []*models.Ed25519Account, logger *zap.Logger) *RelayController {
-	return &RelayController{poktClient: poktClient, appStakes: appStakes, logger: logger}
+func NewRelayController(poktClient pokt_v0.PocketService, appRegistry pokt_applications_registry.Service, logger *zap.Logger) *RelayController {
+	return &RelayController{poktClient: poktClient, appRegistry: appRegistry, logger: logger}
 }
 
 // RelayHandlerPath is the path for relay requests.
@@ -43,15 +45,22 @@ func (c *RelayController) HandleRelay(ctx *fasthttp.RequestCtx) {
 		return
 	}
 
+	applications, ok := c.appRegistry.GetApplicationsByChainId(chainID)
+
+	if !ok {
+		common.JSONError(ctx, fmt.Sprintf("%s chainId not supported with existing application registry", chainID), fasthttp.StatusBadRequest)
+		return
+	}
+
 	// Get a random app stake from the available list.
-	appStake := slice_common.GetRandomElement(c.appStakes)
+	appStake := slice_common.GetRandomElement(applications)
 	if appStake == nil {
 		common.JSONError(ctx, "App stake not provided", fasthttp.StatusInternalServerError)
 		return
 	}
 
 	sessionResp, err := c.poktClient.GetSession(&models.GetSessionRequest{
-		AppPubKey: appStake.PublicKey,
+		AppPubKey: appStake.Ed25519Account.PublicKey,
 		Chain:     chainID,
 	})
 
@@ -67,7 +76,7 @@ func (c *RelayController) HandleRelay(ctx *fasthttp.RequestCtx) {
 			Method: string(ctx.Method()),
 			Path:   path,
 		},
-		Signer: appStake,
+		Signer: appStake.Ed25519Account,
 		Chain:  chainID,
 	}
 

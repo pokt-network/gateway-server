@@ -2,7 +2,7 @@ package logging
 
 import (
 	"go.uber.org/zap"
-	"os-gateway/internal/config"
+	"pokt_gateway_server/internal/config"
 )
 
 func NewLogger(provider config.EnvironmentProvider) (*zap.Logger, error) {

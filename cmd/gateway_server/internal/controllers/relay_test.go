@@ -3,8 +3,8 @@ package controllers
 // Basic imports
 import (
 	"errors"
-	"os-gateway/mocks"
-	"os-gateway/pkg/pokt/pokt_v0/models"
+	"pokt_gateway_server/mocks"
+	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
