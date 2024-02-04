@@ -9,10 +9,12 @@ import (
 	"pokt_gateway_server/cmd/gateway_server/internal/config"
 	"pokt_gateway_server/cmd/gateway_server/internal/controllers"
 	"pokt_gateway_server/cmd/gateway_server/internal/middleware"
+	"pokt_gateway_server/internal/altruist_registry"
+	"pokt_gateway_server/internal/apps_registry"
 	"pokt_gateway_server/internal/db_query"
 	"pokt_gateway_server/internal/logging"
-	"pokt_gateway_server/internal/pokt_apps_registry"
 	"pokt_gateway_server/internal/pokt_client_decorators"
+	"pokt_gateway_server/internal/session_registry"
 	"pokt_gateway_server/pkg/pokt/pokt_v0"
 	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
 )
@@ -51,17 +53,22 @@ func main() {
 
 	// Initialize a TTL cache for session caching
 	sessionCache := ttlcache.New[string, *models.GetSessionResponse](
-		ttlcache.WithTTL[string, *models.GetSessionResponse](gatewayConfigProvider.GetSessionCacheTTL()), //@todo: make this configurable via env ?
+		ttlcache.WithTTL[string, *models.GetSessionResponse](gatewayConfigProvider.GetSessionCacheTTL()),
 	)
 
-	poktApplicationRegistry := pokt_apps_registry.NewCachedRegistry(client, querier, gatewayConfigProvider, logger.Named("pokt_application_registry"))
+	nodeCache := ttlcache.New[string, []*models.Node](
+		ttlcache.WithTTL[string, []*models.Node](gatewayConfigProvider.GetSessionCacheTTL()),
+	)
 
-	cachedPoktClient := pokt_client_decorators.NewCachedClient(client, sessionCache)
+	poktApplicationRegistry := apps_registry.NewCachedRegistry(client, querier, gatewayConfigProvider, logger.Named("pokt_application_registry"))
+	altruistRegistry := altruist_registry.NewCachedAltruistRegistryService(querier, logger.Named("altruist_registry"))
+	sessionRegistry := session_registry.NewCachedSessionRegistryService(client, poktApplicationRegistry, sessionCache, nodeCache, logger.Named("session_registry"))
+	cachedPoktClient := pokt_client_decorators.NewCachedClient(client, sessionRegistry, altruistRegistry, gatewayConfigProvider.GetPoktRPCTimeout(), logger.Named("relayer"))
 	// Define routers
 	r := router.New()
 
 	// Create a relay controller with the necessary dependencies (logger, registry, cached relayer)
-	relayController := controllers.NewRelayController(cachedPoktClient, poktApplicationRegistry, logger.Named("relay_controller"))
+	relayController := controllers.NewRelayController(cachedPoktClient, poktApplicationRegistry, sessionRegistry, logger.Named("relay_controller"))
 
 	relayRouter := r.Group("/relay")
 	relayRouter.POST("/{catchAll:*}", relayController.HandleRelay)

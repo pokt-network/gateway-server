@@ -17,6 +17,8 @@ type Querier interface {
 	InsertPoktApplications(ctx context.Context, privateKey string, encryptionKey string) (pgconn.CommandTag, error)
 
 	DeletePoktApplication(ctx context.Context, applicationID pgtype.UUID) (pgconn.CommandTag, error)
+
+	GetAltruists(ctx context.Context) ([]GetAltruistsRow, error)
 }
 
 var _ Querier = &DBQuerier{}
@@ -121,6 +123,35 @@ func (q *DBQuerier) DeletePoktApplication(ctx context.Context, applicationID pgt
 		return cmdTag, fmt.Errorf("exec query DeletePoktApplication: %w", err)
 	}
 	return cmdTag, err
+}
+
+const getAltruistsSQL = `SELECT chain_id, url FROM altruists;`
+
+type GetAltruistsRow struct {
+	ChainID pgtype.Varchar `json:"chain_id"`
+	Url     pgtype.Varchar `json:"url"`
+}
+
+// GetAltruists implements Querier.GetAltruists.
+func (q *DBQuerier) GetAltruists(ctx context.Context) ([]GetAltruistsRow, error) {
+	ctx = context.WithValue(ctx, "pggen_query_name", "GetAltruists")
+	rows, err := q.conn.Query(ctx, getAltruistsSQL)
+	if err != nil {
+		return nil, fmt.Errorf("query GetAltruists: %w", err)
+	}
+	defer rows.Close()
+	items := []GetAltruistsRow{}
+	for rows.Next() {
+		var item GetAltruistsRow
+		if err := rows.Scan(&item.ChainID, &item.Url); err != nil {
+			return nil, fmt.Errorf("scan GetAltruists row: %w", err)
+		}
+		items = append(items, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("close GetAltruists rows: %w", err)
+	}
+	return items, err
 }
 
 // textPreferrer wraps a pgtype.ValueTranscoder and sets the preferred encoding

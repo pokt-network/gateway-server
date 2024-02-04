@@ -3,44 +3,26 @@ package pokt_client_decorators
 import (
 	"errors"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/valyala/fasthttp"
+	"go.uber.org/zap"
+	"pokt_gateway_server/internal/altruist_registry"
+	"pokt_gateway_server/internal/session_registry"
 	"pokt_gateway_server/pkg/pokt/pokt_v0"
 	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
-	"pokt_gateway_server/pkg/ttl_cache"
-	"strconv"
 	"time"
-
-	"github.com/jellydator/ttlcache/v3"
 )
 
-const backoffThreshold = time.Second * 5
-const maxConcurrentDispatch = 50
-
-var ErrRecentlyFailed = errors.New("dispatch recently failed, returning early")
-
 var (
-	counterSessionRequest          *prometheus.CounterVec
-	counterRelayRequest            *prometheus.CounterVec
-	histogramSessionRequestLatency *prometheus.HistogramVec
-	histogramRelayRequestLatency   prometheus.Histogram
+	counterRelayRequest          *prometheus.CounterVec
+	histogramRelayRequestLatency prometheus.Histogram
 )
 
 const (
-	reasonSessionSuccessCached            = "session_cached"
-	reasonSessionSuccessColdHit           = "session_cold_hit"
-	reasonSessionFailedBackoff            = "session_failed_backoff"
-	reasonSessionFailedUnderlyingProvider = "session_failed_from_client"
-	reasonRelayFailedSessionErr           = "relay_session_failure"
-	reasonRelayFailedUnderlyingProvider   = "relay_provider_failure"
+	reasonRelayFailedSessionErr         = "relay_session_failure"
+	reasonRelayFailedUnderlyingProvider = "relay_provider_failure"
 )
 
 func init() {
-	counterSessionRequest = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "cached_client_session_request_counter",
-			Help: "Request to get a session and if it succeeded",
-		},
-		[]string{"success", "reason"},
-	)
 	counterRelayRequest = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "cached_client_relay_counter",
@@ -48,81 +30,31 @@ func init() {
 		},
 		[]string{"success", "reason"},
 	)
-	histogramSessionRequestLatency = prometheus.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Name: "cached_client_session_request_latency",
-			Help: "percentile on the request to get a session",
-		},
-		[]string{"cached"},
-	)
 	histogramRelayRequestLatency = prometheus.NewHistogram(
 		prometheus.HistogramOpts{
 			Name: "cached_client_relay_request_latency",
 			Help: "percentile on the request to send a relay",
 		},
 	)
-	prometheus.MustRegister(counterRelayRequest, counterSessionRequest, histogramRelayRequestLatency, histogramSessionRequestLatency)
+	prometheus.MustRegister(counterRelayRequest, histogramRelayRequestLatency)
 }
 
 type CachedClient struct {
 	pokt_v0.PocketService
-	lastFailure            time.Time
-	concurrentDispatchPool chan struct{}
-	sessionCache           ttl_cache.TTLCacheService[string, *models.GetSessionResponse]
+	altruistRegistry altruist_registry.AltruistRegistryService
+	sessionRegistry  session_registry.SessionRegistryService
+	altruistTimeout  time.Duration
+	logger           *zap.Logger
 }
 
-func NewCachedClient(pocketService pokt_v0.PocketService, sessionCache ttl_cache.TTLCacheService[string, *models.GetSessionResponse]) *CachedClient {
-
+func NewCachedClient(pocketService pokt_v0.PocketService, sessionRegistry session_registry.SessionRegistryService, altruistRegistry altruist_registry.AltruistRegistryService, altruistTimeout time.Duration, logger *zap.Logger) *CachedClient {
 	return &CachedClient{
-		PocketService:          pocketService,
-		lastFailure:            time.Time{},
-		sessionCache:           sessionCache,
-		concurrentDispatchPool: make(chan struct{}, maxConcurrentDispatch),
+		PocketService:    pocketService,
+		sessionRegistry:  sessionRegistry,
+		altruistTimeout:  altruistTimeout,
+		logger:           logger,
+		altruistRegistry: altruistRegistry,
 	}
-
-}
-
-func (c *CachedClient) GetSession(req *models.GetSessionRequest) (*models.GetSessionResponse, error) {
-	cacheKey := getCacheKey(req)
-	cachedSession := c.sessionCache.Get(cacheKey)
-
-	isCached := cachedSession != nil && cachedSession.Value() != nil
-	startTime := time.Now()
-	// Measure end to end latency for send relay
-	defer func() {
-		histogramSessionRequestLatency.WithLabelValues(strconv.FormatBool(isCached)).Observe(float64(time.Since(startTime)))
-	}()
-
-	if isCached {
-		counterSessionRequest.WithLabelValues("true", reasonSessionSuccessCached).Inc()
-		return cachedSession.Value(), nil
-	}
-
-	// Backoff check
-	if c.shouldBackoff() {
-		counterSessionRequest.WithLabelValues("false", reasonSessionFailedBackoff).Inc()
-		return nil, ErrRecentlyFailed
-	}
-
-	// Limits the number of concurrent calls going out to a node
-	// to prevent overloading the node during session rollover
-	c.concurrentDispatchPool <- struct{}{}
-	defer func() {
-		<-c.concurrentDispatchPool
-	}()
-
-	// Call underlying provider
-	response, err := c.PocketService.GetSession(req)
-	if err != nil {
-		counterSessionRequest.WithLabelValues("false", reasonSessionFailedUnderlyingProvider).Inc()
-		c.lastFailure = time.Now()
-		return nil, err
-	}
-
-	counterSessionRequest.WithLabelValues("true", reasonSessionSuccessColdHit).Inc()
-	c.sessionCache.Set(cacheKey, response, ttlcache.DefaultTTL)
-	c.lastFailure = time.Time{} // Reset last failure since it succeeded
-	return response, nil
 }
 
 func (r *CachedClient) SendRelay(req *models.SendRelayRequest) (*models.SendRelayResponse, error) {
@@ -137,7 +69,7 @@ func (r *CachedClient) SendRelay(req *models.SendRelayRequest) (*models.SendRela
 		histogramRelayRequestLatency.Observe(float64(time.Since(startTime)))
 	}()
 
-	session, err := pokt_v0.GetSessionFromRequest(r, req)
+	session, err := pokt_v0.GetSessionFromRequest(r.sessionRegistry, req)
 
 	if err != nil {
 		counterRelayRequest.WithLabelValues("false", reasonRelayFailedSessionErr).Inc()
@@ -147,20 +79,52 @@ func (r *CachedClient) SendRelay(req *models.SendRelayRequest) (*models.SendRela
 	req.Session = session
 	rsp, err := r.PocketService.SendRelay(req)
 
-	// Emit on underlying provider's success
+	// If request fails, send to altruist.
 	if err != nil {
+		r.logger.Sugar().Errorw("failed to send to pokt", "poktErr", err)
 		counterRelayRequest.WithLabelValues("false", reasonRelayFailedUnderlyingProvider).Inc()
-	} else {
-		counterRelayRequest.WithLabelValues("true", "").Inc()
+		altruistRsp, altruistErr := r.altruistRelay(req)
+
+		if altruistErr != nil {
+			r.logger.Sugar().Errorw("failed to send to altruist", "altruistError", altruistErr)
+			// Prefer to return the network error vs altruist error if both fails.
+			return nil, err
+		}
+		return altruistRsp, nil
 	}
 
-	return rsp, err
+	counterRelayRequest.WithLabelValues("true", "").Inc()
+	return rsp, nil
 }
 
-func (c *CachedClient) shouldBackoff() bool {
-	return !c.lastFailure.IsZero() && time.Since(c.lastFailure) < backoffThreshold
-}
+func (r *CachedClient) altruistRelay(req *models.SendRelayRequest) (*models.SendRelayResponse, error) {
 
-func getCacheKey(req *models.GetSessionRequest) string {
-	return req.AppPubKey + "-" + req.Chain
+	url, ok := r.altruistRegistry.GetAltruistURL(req.Chain)
+
+	if !ok {
+		return nil, errors.New("altruist url not found")
+	}
+
+	// Send to altruist
+	request := fasthttp.AcquireRequest()
+	response := fasthttp.AcquireResponse()
+
+	defer func() {
+		fasthttp.ReleaseRequest(request)
+		fasthttp.ReleaseResponse(response)
+	}()
+
+	request.SetRequestURI(url)
+
+	if req.Payload.Method == "POST" {
+		request.SetBody([]byte(req.Payload.Data))
+	}
+
+	err := fasthttp.DoTimeout(request, response, r.altruistTimeout)
+	if err != nil {
+		return nil, err
+	}
+
+	str := string(response.Body())
+	return &models.SendRelayResponse{Response: str}, nil
 }

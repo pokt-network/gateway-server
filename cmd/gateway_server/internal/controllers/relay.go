@@ -6,7 +6,8 @@ import (
 	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
 	"pokt_gateway_server/cmd/gateway_server/internal/common"
-	"pokt_gateway_server/internal/pokt_apps_registry"
+	"pokt_gateway_server/internal/apps_registry"
+	"pokt_gateway_server/internal/session_registry"
 	slice_common "pokt_gateway_server/pkg/common"
 	"pokt_gateway_server/pkg/pokt/pokt_v0"
 	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
@@ -18,14 +19,15 @@ var ErrRelayChannelClosed = errors.New("concurrent relay channel closed")
 
 // RelayController handles relay requests for a specific chain.
 type RelayController struct {
-	logger      *zap.Logger
-	poktClient  pokt_v0.PocketService
-	appRegistry pokt_apps_registry.AppsRegistryService
+	logger          *zap.Logger
+	poktClient      pokt_v0.PocketService
+	appRegistry     apps_registry.AppsRegistryService
+	sessionRegistry session_registry.SessionRegistryService
 }
 
 // NewRelayController creates a new instance of RelayController.
-func NewRelayController(poktClient pokt_v0.PocketService, appRegistry pokt_apps_registry.AppsRegistryService, logger *zap.Logger) *RelayController {
-	return &RelayController{poktClient: poktClient, appRegistry: appRegistry, logger: logger}
+func NewRelayController(poktClient pokt_v0.PocketService, appRegistry apps_registry.AppsRegistryService, sessionRegistry session_registry.SessionRegistryService, logger *zap.Logger) *RelayController {
+	return &RelayController{poktClient: poktClient, appRegistry: appRegistry, sessionRegistry: sessionRegistry, logger: logger}
 }
 
 // chainIdLength represents the expected length of chain IDs.
@@ -56,7 +58,7 @@ func (c *RelayController) HandleRelay(ctx *fasthttp.RequestCtx) {
 		return
 	}
 
-	sessionResp, err := c.poktClient.GetSession(&models.GetSessionRequest{
+	sessionResp, err := c.sessionRegistry.GetSession(&models.GetSessionRequest{
 		AppPubKey: appStake.Signer.PublicKey,
 		Chain:     chainID,
 	})
@@ -76,7 +78,6 @@ func (c *RelayController) HandleRelay(ctx *fasthttp.RequestCtx) {
 		Signer: appStake.Signer,
 		Chain:  chainID,
 	}
-
 	relay, err := c.concurrentRelay(req, sessionResp.Session)
 	if err != nil {
 		c.logger.Error("Error relaying", zap.Error(err))

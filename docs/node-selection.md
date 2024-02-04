@@ -28,7 +28,7 @@ cache which will allow for quick node selection.
 ## Default Thresholds and Weights
 
 The gateway kit has default thresholds that are modifiable via the QoS table. In the event that there are no nodes that
-are available for selection, it will default to a random node, then finally altruist.
+are available for selection, it will default to a random node, then finally [altruist](altruist.md).
 
 **Threshholds:**
 

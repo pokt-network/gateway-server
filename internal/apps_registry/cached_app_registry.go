@@ -1,11 +1,11 @@
-package pokt_apps_registry
+package apps_registry
 
 import (
 	"context"
 	"go.uber.org/zap"
+	"pokt_gateway_server/internal/apps_registry/models"
 	"pokt_gateway_server/internal/config"
 	"pokt_gateway_server/internal/db_query"
-	"pokt_gateway_server/internal/pokt_apps_registry/models"
 	"pokt_gateway_server/pkg/pokt/pokt_v0"
 	pokt "pokt_gateway_server/pkg/pokt/pokt_v0/models"
 	"sort"
