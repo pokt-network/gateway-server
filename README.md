@@ -8,6 +8,10 @@ The POKT Gateway Server is a comprehensive solution designed to simplify the int
 
 Learn more about the vision and overall architecture [overview](docs%2Foverview.md)
 
+## Gateway Operator Quick Getting Started
+To onboard the gateway server without having to dig deep, you can follow the [Quick Onboarding Guide](docs%2Fquick-onboarding-guide.md)
+
+
 ## New Gateway Operator Onboarding Path
 1. [Gateway Server Overview](docs%2Foverview.md)
 2. [POKT Primer](docs%2Fpokt-primer.md)
@@ -17,17 +21,6 @@ Learn more about the vision and overall architecture [overview](docs%2Foverview.
 1. [POKT's Relay Specification](docs%2Fpokt-relay-specification.md)
 2. [Gateway Server System Architecture](docs%2Fsystem-architecture.md)
 3. [Gateway Server Node Selection](docs%2Fnode-selection.md)
-
-## Quick Getting Start:
-1. In order to operate the gateway server, build the project
-    ```sh
-    go build cmd/gateway_server/main.go
-    ```
-2. Copy `.env.sample` over to `.env` and fill out the details
-   ```sh
-   cp .env.sample .env
-    ```
-3. Run the binary `./main`
 
 ## Creating a DB Migration
 Migrations are like version control for your database, allowing your team to define and share the application's database schema definition.
