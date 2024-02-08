@@ -12,15 +12,13 @@ Learn more about the vision and overall architecture [overview](docs%2Foverview.
 To onboard the gateway server without having to dig deep, you can follow the [Quick Onboarding Guide](docs%2Fquick-onboarding-guide.md)
 
 
-## New Gateway Operator Onboarding Path
+#### Interested in learning more? We have an abdundance of information in [docs](docs)
 1. [Gateway Server Overview](docs%2Foverview.md)
-2. [POKT Primer](docs%2Fpokt-primer.md)
-3. [Gateway Server API Endpoints](docs%2Fapi-endpoints.md)
-
-## Additional Onboarding Resources
-1. [POKT's Relay Specification](docs%2Fpokt-relay-specification.md)
-2. [Gateway Server System Architecture](docs%2Fsystem-architecture.md)
-3. [Gateway Server Node Selection](docs%2Fnode-selection.md)
+2. [Gateway Server API Endpoints](docs%2Fapi-endpoints.md)
+3. [Gateway Server System Architecture](docs%2Fsystem-architecture.md)
+4. [Gateway Server Node Selection](docs%2Fnode-selection.md)
+5. [POKT Primer](docs%2Fpokt-primer.md)
+6. [POKT's Relay Specification](docs%2Fpokt-relay-specification.md)
 
 ## Creating a DB Migration
 Migrations are like version control for your database, allowing your team to define and share the application's database schema definition.
