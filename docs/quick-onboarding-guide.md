@@ -26,7 +26,6 @@ Testnet Application Private Keys:
 
 </details>
 
-<br> 
 <details>
 <summary>Mainnet Instructions</summary>
 Application stakes in Morse are permissioned, therefore you must receive application stakes through the Pocket Network Foundation. If you are an authorized gateway operator, the Foundation will assist you in receiving the application stakes private keys.
