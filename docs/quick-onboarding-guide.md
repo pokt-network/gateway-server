@@ -8,7 +8,7 @@ Application stakes provides Gateway Operators access to the POKT Network for sen
     <li>Generate 5 accounts (wallets) through the <a href="https://wallet.testnet.pokt.network">testnet wallet URL</a></li>
     <li>Distribute POKT to all the wallets generated through the <a href="https://faucet.pokt.network/">testnet faucet</a></li>
     <li>Stake each account into the network as an application stake with the chain id `0007` (a test chain that represents ETH Network). 
-    <li>You can use our <a href="https://pokt-testnet-rpc.nodies.org">application stake script</a> to simplify the process if you don't have access to the staking CLI or the commands.</li>
+    <li>You can use the <a href="https://pokt-testnet-rpc.nodies.org">application stake script</a> to simplify the process if you don't have access to the Pocket Core Executable or not familiar with the CLI commands.</li>
 </ol>
 <hr>
 Staking application stakes too complicated for you? 
