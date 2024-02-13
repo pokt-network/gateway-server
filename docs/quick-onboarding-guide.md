@@ -11,12 +11,11 @@ Application stakes provides Gateway Operators access to the POKT Network for sen
     <li>You can use the <a href="https://pokt-testnet-rpc.nodies.org">application stake script</a> to simplify the process if you don't have access to the Pocket Core Executable or not familiar with the CLI commands.</li>
 </ol>
 <hr>
-Staking application stakes too complicated for you? 
+Staking application stakes too complicated for you? No worries, we prestaked some shared applications stakes into POKT Testnet to help you get onboarded quicker. 
 
-No worries, we prestaked some shared applications stakes into POKT Testnet to help you get onboarded quicker. Please do not submit stake transactions to avoid disruption for other gateway operator testers as the applications are already staked on your behalf in the correct chain
+**Please do not submit stake transactions to avoid disruption for other gateway operator testers as the applications are already staked on your behalf in the correct chain**. All applications are staked into chain 0007 with 10M POKT.
 
-All application  are staked into chain 0007 with 10M POKT.
-
+Private Keys:
 <ul>
 <li>1d06f04dcf5199a7f93f625d4fa507c2e0aca2f94fa3ebc2022c5e589406a9133d7ec4fef2ef676b340ce1df6ec5d0264ce1f40fae7fe9e07c415fa06fc1ffd6</li>
 <li>2d0f9aab4396662db2a27d3388a1602e8081a49cb159471fdf4ef8aad4f9d120a1183ac69c10bf7f5df942b687b50a206fb1c54c66687c04c7710daed5f1e7a3</li>
