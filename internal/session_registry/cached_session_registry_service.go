@@ -7,6 +7,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 	"pokt_gateway_server/internal/apps_registry"
+	qos_models "pokt_gateway_server/internal/qos_node_registry/models"
 	"pokt_gateway_server/pkg/pokt/pokt_v0"
 	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
 	"pokt_gateway_server/pkg/ttl_cache"
@@ -61,20 +62,32 @@ type CachedSessionRegistryService struct {
 	logger                 *zap.Logger
 	lastPrimedHeight       uint64
 	// Consist of sessions for a given app stake+chain+height. Cache exists to prevent round trip request
-	sessionCache ttl_cache.TTLCacheService[string, *models.GetSessionResponse]
-	// Cache that contains all of the nodes for all sessions for a specific chain+height.  Cache exists to prevent round trip request
-	sessionNodesCache ttl_cache.TTLCacheService[string, []*models.Node] // sessionHeight -> nodes
+	sessionCache ttl_cache.TTLCacheService[string, *Session]
+	// Cache that contains all nodes by chain (chainId -> Nodes)
+	chainNodes ttl_cache.TTLCacheService[string, []*qos_models.QosNode] // sessionHeight -> nodes
 }
 
-func NewCachedSessionRegistryService(poktClient pokt_v0.PocketService, appRegistry apps_registry.AppsRegistryService, sessionCache ttl_cache.TTLCacheService[string, *models.GetSessionResponse], nodeCache ttl_cache.TTLCacheService[string, []*models.Node], logger *zap.Logger) *CachedSessionRegistryService {
-	cachedRegistry := &CachedSessionRegistryService{poktClient: poktClient, appRegistry: appRegistry, sessionCache: sessionCache, lastFailure: time.Time{}, concurrentDispatchPool: make(chan struct{}, maxConcurrentDispatch), sessionNodesCache: nodeCache, logger: logger}
+func NewCachedSessionRegistryService(poktClient pokt_v0.PocketService, appRegistry apps_registry.AppsRegistryService, sessionCache ttl_cache.TTLCacheService[string, *Session], nodeCache ttl_cache.TTLCacheService[string, []*qos_models.QosNode], logger *zap.Logger) *CachedSessionRegistryService {
+	cachedRegistry := &CachedSessionRegistryService{poktClient: poktClient, appRegistry: appRegistry, sessionCache: sessionCache, lastFailure: time.Time{}, concurrentDispatchPool: make(chan struct{}, maxConcurrentDispatch), chainNodes: nodeCache, logger: logger}
 	go sessionCache.Start()
 	go nodeCache.Start()
 	cachedRegistry.startSessionUpdater()
 	return cachedRegistry
 }
 
-func (c CachedSessionRegistryService) GetSession(req *models.GetSessionRequest) (*models.GetSessionResponse, error) {
+func (c CachedSessionRegistryService) GetNodesByChain(chainId string) ([]*qos_models.QosNode, bool) {
+	nodes := c.chainNodes.Get(chainId)
+	if nodes == nil {
+		return nil, false
+	}
+	return nodes.Value(), true
+}
+
+func (c CachedSessionRegistryService) GetNodes() []*qos_models.QosNode {
+	return nil
+}
+
+func (c CachedSessionRegistryService) GetSession(req *models.GetSessionRequest) (*Session, error) {
 	cacheKey := getSessionCacheKey(req)
 	cachedSession := c.sessionCache.Get(cacheKey)
 	isCached := cachedSession != nil && cachedSession.Value() != nil
@@ -110,23 +123,39 @@ func (c CachedSessionRegistryService) GetSession(req *models.GetSessionRequest) 
 		return nil, err
 	}
 
-	counterSessionRequest.WithLabelValues("true", reasonSessionSuccessColdHit).Inc()
-	// Update session cache
-	c.sessionCache.Set(cacheKey, response, ttlcache.DefaultTTL)
+	appSigner, found := c.appRegistry.GetApplicationByPublicKey(req.AppPubKey)
 
-	// Update node cache
-	nodeCacheKey := getChainNodesCacheKey(req)
-	nodes := c.sessionNodesCache.Get(nodeCacheKey)
-	if nodes == nil || nodes.Value() == nil {
-		// No values in session and chain cache
-		c.sessionNodesCache.Set(cacheKey, response.Session.Nodes, ttlcache.DefaultTTL)
-	} else {
-		// Values already exist in session and chain cache, so append value.
-		c.sessionNodesCache.Set(cacheKey, append(nodes.Value(), response.Session.Nodes...), ttlcache.DefaultTTL)
+	if !found {
+		return nil, errors.New("cannot find signer from session")
 	}
 
+	var wrappedNodes []*qos_models.QosNode
+	for _, a := range response.Session.Nodes {
+		wrappedNodes = append(wrappedNodes, &qos_models.QosNode{
+			PocketSession: response.Session,
+			MorseNode:     a,
+			Signer:        appSigner.Signer,
+		})
+	}
+
+	// session with metadata
+	wrappedSession := &Session{IsValid: true, Nodes: wrappedNodes}
+
+	counterSessionRequest.WithLabelValues("true", reasonSessionSuccessColdHit).Inc()
+	// Update session cache
+	c.sessionCache.Set(cacheKey, wrappedSession, ttlcache.DefaultTTL)
+
+	chainNodeCacheKey := req.Chain
+	nodes := c.chainNodes.Get(chainNodeCacheKey)
+	if nodes == nil || nodes.Value() == nil {
+		// No values in session and chain cache
+		c.chainNodes.Set(chainNodeCacheKey, wrappedNodes, ttlcache.DefaultTTL)
+	} else {
+		// Values already exist in session and chain cache, so append value.
+		c.chainNodes.Set(chainNodeCacheKey, append(nodes.Value(), wrappedNodes...), ttlcache.DefaultTTL)
+	}
 	c.lastFailure = time.Time{} // Reset last failure since it succeeded
-	return response, nil
+	return wrappedSession, nil
 }
 
 func (c CachedSessionRegistryService) startSessionUpdater() {
@@ -212,9 +241,4 @@ func (c CachedSessionRegistryService) shouldBackoffDispatchFailure() bool {
 // getSessionCacheKey - used to keep track of a session for a specific app stake, height, and chain.
 func getSessionCacheKey(req *models.GetSessionRequest) string {
 	return fmt.Sprintf("%s-%s-%d", req.AppPubKey, req.Chain, req.Height)
-}
-
-// getSessionNodeCacheKey - used to keep track of all nodes for a specific chain and height.
-func getChainNodesCacheKey(req *models.GetSessionRequest) string {
-	return fmt.Sprintf("%s-%d", req.Chain, req.Height)
 }

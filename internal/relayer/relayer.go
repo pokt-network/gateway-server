@@ -1,4 +1,4 @@
-package pokt_client_decorators
+package relayer
 
 import (
 	"errors"
@@ -22,6 +22,13 @@ const (
 	reasonRelayFailedUnderlyingProvider = "relay_provider_failure"
 )
 
+type RelayRequest struct {
+	PocketRequest   *models.SendRelayRequest
+	PocketRetries   uint64
+	AltruistRetries uint64
+	UseAltruist     bool
+}
+
 func init() {
 	counterRelayRequest = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
@@ -39,17 +46,17 @@ func init() {
 	prometheus.MustRegister(counterRelayRequest, histogramRelayRequestLatency)
 }
 
-type CachedClient struct {
-	pokt_v0.PocketService
+type Relayer struct {
+	pocketClient     pokt_v0.PocketService
 	altruistRegistry altruist_registry.AltruistRegistryService
 	sessionRegistry  session_registry.SessionRegistryService
 	altruistTimeout  time.Duration
 	logger           *zap.Logger
 }
 
-func NewCachedClient(pocketService pokt_v0.PocketService, sessionRegistry session_registry.SessionRegistryService, altruistRegistry altruist_registry.AltruistRegistryService, altruistTimeout time.Duration, logger *zap.Logger) *CachedClient {
-	return &CachedClient{
-		PocketService:    pocketService,
+func NewRelayer(pocketService pokt_v0.PocketService, sessionRegistry session_registry.SessionRegistryService, altruistRegistry altruist_registry.AltruistRegistryService, altruistTimeout time.Duration, logger *zap.Logger) *Relayer {
+	return &Relayer{
+		pocketClient:     pocketService,
 		sessionRegistry:  sessionRegistry,
 		altruistTimeout:  altruistTimeout,
 		logger:           logger,
@@ -57,9 +64,9 @@ func NewCachedClient(pocketService pokt_v0.PocketService, sessionRegistry sessio
 	}
 }
 
-func (r *CachedClient) SendRelay(req *models.SendRelayRequest) (*models.SendRelayResponse, error) {
+func (r *Relayer) SendRelay(req *RelayRequest) (*models.SendRelayResponse, error) {
 
-	if err := req.Validate(); err != nil {
+	if err := req.PocketRequest.Validate(); err != nil {
 		return nil, err
 	}
 
@@ -69,22 +76,22 @@ func (r *CachedClient) SendRelay(req *models.SendRelayRequest) (*models.SendRela
 		histogramRelayRequestLatency.Observe(float64(time.Since(startTime)))
 	}()
 
-	session, err := pokt_v0.GetSessionFromRequest(r.sessionRegistry, req)
+	session, err := pokt_v0.GetSessionFromRequest(r.pocketClient, req.PocketRequest)
 
 	if err != nil {
 		counterRelayRequest.WithLabelValues("false", reasonRelayFailedSessionErr).Inc()
 		return nil, err
 	}
 
-	req.Session = session
-	rsp, err := r.PocketService.SendRelay(req)
+	req.PocketRequest.Session = session
+
+	rsp, err := r.pocketClient.SendRelay(req.PocketRequest)
 
 	// If request fails, send to altruist.
 	if err != nil {
 		r.logger.Sugar().Errorw("failed to send to pokt", "poktErr", err)
 		counterRelayRequest.WithLabelValues("false", reasonRelayFailedUnderlyingProvider).Inc()
 		altruistRsp, altruistErr := r.altruistRelay(req)
-
 		if altruistErr != nil {
 			r.logger.Sugar().Errorw("failed to send to altruist", "altruistError", altruistErr)
 			// Prefer to return the network error vs altruist error if both fails.
@@ -97,9 +104,9 @@ func (r *CachedClient) SendRelay(req *models.SendRelayRequest) (*models.SendRela
 	return rsp, nil
 }
 
-func (r *CachedClient) altruistRelay(req *models.SendRelayRequest) (*models.SendRelayResponse, error) {
+func (r *Relayer) altruistRelay(req *RelayRequest) (*models.SendRelayResponse, error) {
 
-	url, ok := r.altruistRegistry.GetAltruistURL(req.Chain)
+	url, ok := r.altruistRegistry.GetAltruistURL(req.PocketRequest.Chain)
 
 	if !ok {
 		return nil, errors.New("altruist url not found")
@@ -116,8 +123,8 @@ func (r *CachedClient) altruistRelay(req *models.SendRelayRequest) (*models.Send
 
 	request.SetRequestURI(url)
 
-	if req.Payload.Method == "POST" {
-		request.SetBody([]byte(req.Payload.Data))
+	if req.PocketRequest.Payload.Method == "POST" {
+		request.SetBody([]byte(req.PocketRequest.Payload.Data))
 	}
 
 	err := fasthttp.DoTimeout(request, response, r.altruistTimeout)

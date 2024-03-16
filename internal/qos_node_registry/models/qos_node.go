@@ -15,7 +15,8 @@ const (
 // QosNode a FAT model to store the QoS information of a specific node in a session.
 type QosNode struct {
 	MorseNode              *models.Node
-	Signer                 *models.Node
+	PocketSession          *models.Session
+	Signer                 *models.Ed25519Account
 	p90Latency             float64
 	timeoutUntil           time.Time
 	timeoutReason          TimeoutReason
@@ -23,10 +24,6 @@ type QosNode struct {
 	latestKnownHeight      uint64
 	synced                 bool
 	lastHeightCheckTime    time.Time
-}
-
-func NewQosNode(morseNode *models.Node) *QosNode {
-	return &QosNode{MorseNode: morseNode}
 }
 
 func (n QosNode) IsHealthy() bool {

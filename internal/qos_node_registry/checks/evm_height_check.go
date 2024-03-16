@@ -3,7 +3,6 @@ package checks
 import (
 	"encoding/json"
 	"pokt_gateway_server/internal/qos_node_registry/models"
-	"pokt_gateway_server/pkg/pokt/pokt_v0"
 	relayer_models "pokt_gateway_server/pkg/pokt/pokt_v0/models"
 	"sync"
 	"time"
@@ -20,8 +19,7 @@ type evmHeightResponse struct {
 }
 
 type EvmHeightCheck struct {
-	Check
-	relayer pokt_v0.PocketRelayer
+	*Check
 }
 
 type nodeRelayResponse struct {
@@ -30,7 +28,11 @@ type nodeRelayResponse struct {
 	Success bool
 }
 
-func (c *EvmHeightCheck) PerformJob() {
+func (c *EvmHeightCheck) Name() string {
+	return "evm_height_check"
+}
+
+func (c *EvmHeightCheck) Perform() {
 
 	var highestHeight uint64
 	var wg sync.WaitGroup
@@ -42,9 +44,9 @@ func (c *EvmHeightCheck) PerformJob() {
 	// Define a function to handle sending relay requests concurrently
 	sendRelayAsync := func(node *models.QosNode) {
 		defer wg.Done()
-		relay, err := c.relayer.SendRelay(&relayer_models.SendRelayRequest{
+		relay, err := c.pocketRelayer.SendRelay(&relayer_models.SendRelayRequest{
 			Payload:            &relayer_models.Payload{Data: heightJsonPayload, Method: "POST"},
-			Chain:              c.ChainId,
+			Chain:              node.PocketSession.SessionHeader.Chain,
 			SelectedNodePubKey: node.MorseNode.PublicKey,
 		})
 		relayResponses <- &nodeRelayResponse{
@@ -55,7 +57,7 @@ func (c *EvmHeightCheck) PerformJob() {
 	}
 
 	// Start a goroutine for each node to send relay requests concurrently
-	for _, node := range c.NodeList {
+	for _, node := range c.nodeList {
 		wg.Add(1)
 		go sendRelayAsync(node)
 	}
@@ -80,7 +82,7 @@ func (c *EvmHeightCheck) PerformJob() {
 	}
 
 	// Compare each node's reported height against the highest reported height
-	for _, node := range c.NodeList {
+	for _, node := range c.nodeList {
 		heightDifference := int64(highestHeight) - int64(node.GetLastKnownHeight())
 		// Penalize nodes whose reported height is significantly lower than the highest reported height
 		if heightDifference > defaultHeightThreshold {
@@ -90,17 +92,17 @@ func (c *EvmHeightCheck) PerformJob() {
 			node.SetSynced(true)
 		}
 	}
-	c.LastChecked = time.Now()
+	c.lastCheckedTime = time.Now()
 }
 
 func (c *EvmHeightCheck) ShouldRun() bool {
-	return time.Now().Sub(c.LastChecked) > evmHeightCheckInterval
+	return time.Now().Sub(c.lastCheckedTime) > evmHeightCheckInterval
 }
 
 func (c *EvmHeightCheck) getEligibleNodes() []*models.QosNode {
 	// Filter nodes based on last checked time
 	var eligibleNodes []*models.QosNode
-	for _, node := range c.NodeList {
+	for _, node := range c.nodeList {
 		if time.Since(node.GetLastHeightCheckTime()) >= minLastCheckedNodeTime {
 			eligibleNodes = append(eligibleNodes, node)
 		}

@@ -6,28 +6,31 @@ import (
 	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
 	"pokt_gateway_server/cmd/gateway_server/internal/common"
+	"pokt_gateway_server/internal/altruist_registry"
 	"pokt_gateway_server/internal/apps_registry"
+	"pokt_gateway_server/internal/qos_node_registry"
+	"pokt_gateway_server/internal/relayer"
 	"pokt_gateway_server/internal/session_registry"
 	slice_common "pokt_gateway_server/pkg/common"
-	"pokt_gateway_server/pkg/pokt/pokt_v0"
 	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
 	"strings"
-	"sync"
 )
 
 var ErrRelayChannelClosed = errors.New("concurrent relay channel closed")
 
 // RelayController handles relay requests for a specific chain.
 type RelayController struct {
-	logger          *zap.Logger
-	poktClient      pokt_v0.PocketService
-	appRegistry     apps_registry.AppsRegistryService
-	sessionRegistry session_registry.SessionRegistryService
+	logger           *zap.Logger
+	relayer          *relayer.Relayer
+	appRegistry      apps_registry.AppsRegistryService
+	altruistRegistry altruist_registry.AltruistRegistryService
+	sessionRegistry  session_registry.SessionRegistryService
+	nodeSelector     *qos_node_registry.NodeSelectorService
 }
 
 // NewRelayController creates a new instance of RelayController.
-func NewRelayController(poktClient pokt_v0.PocketService, appRegistry apps_registry.AppsRegistryService, sessionRegistry session_registry.SessionRegistryService, logger *zap.Logger) *RelayController {
-	return &RelayController{poktClient: poktClient, appRegistry: appRegistry, sessionRegistry: sessionRegistry, logger: logger}
+func NewRelayController(relayer *relayer.Relayer, appRegistry apps_registry.AppsRegistryService, sessionRegistry session_registry.SessionRegistryService, altruistRegistry altruist_registry.AltruistRegistryService, nodeSelector *qos_node_registry.NodeSelectorService, logger *zap.Logger) *RelayController {
+	return &RelayController{relayer: relayer, appRegistry: appRegistry, sessionRegistry: sessionRegistry, nodeSelector: nodeSelector, altruistRegistry: altruistRegistry, logger: logger}
 }
 
 // chainIdLength represents the expected length of chain IDs.
@@ -44,8 +47,37 @@ func (c *RelayController) HandleRelay(ctx *fasthttp.RequestCtx) {
 		return
 	}
 
-	applications, ok := c.appRegistry.GetApplicationsByChainId(chainID)
+	// Use a healthy node determined by node selector
+	node, ok := c.nodeSelector.FindNode(chainID)
 
+	if ok {
+		req := &models.SendRelayRequest{
+			Payload: &models.Payload{
+				Path: path,
+			},
+			Signer:             node.Signer,
+			Chain:              chainID,
+			SelectedNodePubKey: node.MorseNode.PublicKey,
+		}
+		relay, err := c.relayer.SendRelay(&relayer.RelayRequest{
+			PocketRequest: req,
+			UseAltruist:   false,
+		})
+		if err != nil {
+			c.logger.Error("Error relaying", zap.Error(err))
+			common.JSONError(ctx, "Something went wrong", fasthttp.StatusInternalServerError)
+			return
+		}
+
+		// Send a successful response back to the client.
+		ctx.Response.SetStatusCode(fasthttp.StatusOK)
+		ctx.Response.Header.Set("Content-Type", "application/json")
+		ctx.Response.SetBodyString(relay.Response)
+		return
+	}
+
+	// Healthy node could not be found, attempting to use random node
+	applications, ok := c.appRegistry.GetApplicationsByChainId(chainID)
 	if !ok || len(applications) == 0 {
 		common.JSONError(ctx, fmt.Sprintf("%s chainId not supported with existing application registry", chainID), fasthttp.StatusBadRequest)
 		return
@@ -69,64 +101,37 @@ func (c *RelayController) HandleRelay(ctx *fasthttp.RequestCtx) {
 		return
 	}
 
+	randomNode := slice_common.GetRandomElement(sessionResp.Nodes)
+
+	if randomNode == nil {
+		c.logger.Error("Error finding a node from session", zap.Error(err))
+		common.JSONError(ctx, "Something went wrong", fasthttp.StatusInternalServerError)
+		return
+	}
+
 	req := &models.SendRelayRequest{
 		Payload: &models.Payload{
 			Data:   string(ctx.PostBody()),
 			Method: string(ctx.Method()),
 			Path:   path,
 		},
-		Signer: appStake.Signer,
-		Chain:  chainID,
+		Signer:             appStake.Signer,
+		Chain:              chainID,
+		SelectedNodePubKey: randomNode.MorseNode.PublicKey,
 	}
-	relay, err := c.concurrentRelay(req, sessionResp.Session)
+	relay, err := c.relayer.SendRelay(&relayer.RelayRequest{
+		PocketRequest: req,
+		UseAltruist:   true,
+	})
 	if err != nil {
 		c.logger.Error("Error relaying", zap.Error(err))
 		common.JSONError(ctx, "Something went wrong", fasthttp.StatusInternalServerError)
 		return
 	}
-
 	// Send a successful response back to the client.
 	ctx.Response.SetStatusCode(fasthttp.StatusOK)
 	ctx.Response.Header.Set("Content-Type", "application/json")
 	ctx.Response.SetBodyString(relay.Response)
-}
-
-func (c *RelayController) concurrentRelay(req *models.SendRelayRequest, session *models.Session) (*models.SendRelayResponse, error) {
-	// Create a channel to receive results
-	resultCh := make(chan *models.SendRelayResponse, 1)
-	wg := sync.WaitGroup{}
-	for _, node := range session.Nodes {
-		node := node
-		req := *req
-		req.SelectedNodePubKey = node.PublicKey
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			response, err := c.poktClient.SendRelay(&req)
-			if err == nil {
-				select {
-				case resultCh <- response:
-				default: // prevent blocking, already received a response.
-				}
-			}
-		}()
-	}
-
-	// Close the channel once all goroutines are completed
-	// Needed if all responses are errors
-	go func() {
-		wg.Wait()
-		close(resultCh)
-	}()
-
-	// Wait for the first result or until all Goroutines finish
-	select {
-	case result, ok := <-resultCh:
-		if !ok {
-			return nil, ErrRelayChannelClosed
-		}
-		return result, nil
-	}
 }
 
 func getPathSegmented(path []byte) (chain, otherParts string) {

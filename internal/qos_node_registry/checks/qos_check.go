@@ -2,16 +2,22 @@ package checks
 
 import (
 	"pokt_gateway_server/internal/qos_node_registry/models"
+	"pokt_gateway_server/pkg/pokt/pokt_v0"
 	"time"
 )
 
 type QosJob interface {
-	PerformJob()
+	Perform()
+	Name() string
 	ShouldRun() bool
 }
 
 type Check struct {
-	LastChecked time.Time
-	NodeList    []*models.QosNode
-	ChainId     string
+	lastCheckedTime time.Time
+	nodeList        []*models.QosNode
+	pocketRelayer   pokt_v0.PocketRelayer
+}
+
+func NewCheck(nodeList []*models.QosNode, pocketRelayer pokt_v0.PocketRelayer) *Check {
+	return &Check{nodeList: nodeList, pocketRelayer: pocketRelayer}
 }

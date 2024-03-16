@@ -18,8 +18,8 @@ const (
 	applicationUpdateInterval = time.Second * 15
 )
 
-// CachedRegistry is a caching layer for storing and retrieving from internal DB and POKT's blockchain state
-type CachedRegistry struct {
+// CachedAppsRegistry is a caching layer for storing and retrieving from internal DB and POKT's blockchain state
+type CachedAppsRegistry struct {
 	pocketClient        pokt_v0.PocketService
 	dbQuery             db_query.Querier
 	logger              *zap.Logger
@@ -29,9 +29,9 @@ type CachedRegistry struct {
 	lockCache           sync.RWMutex
 }
 
-// NewCachedRegistry creates a new instance of CachedRegistry.
-func NewCachedRegistry(pocketClient pokt_v0.PocketService, dbQuery db_query.Querier, secretProvider config.SecretProvider, logger *zap.Logger) *CachedRegistry {
-	cachedRegistry := CachedRegistry{pocketClient: pocketClient, dbQuery: dbQuery, logger: logger, secretProvider: secretProvider}
+// NewCachedAppsRegistry creates a new instance of CachedAppsRegistry.
+func NewCachedAppsRegistry(pocketClient pokt_v0.PocketService, dbQuery db_query.Querier, secretProvider config.SecretProvider, logger *zap.Logger) *CachedAppsRegistry {
+	cachedRegistry := CachedAppsRegistry{pocketClient: pocketClient, dbQuery: dbQuery, logger: logger, secretProvider: secretProvider}
 	err := cachedRegistry.updateApplicationCache()
 	if err != nil {
 		cachedRegistry.logger.Sugar().Warnw("failed to retrieve applications on init", "err", err)
@@ -41,22 +41,33 @@ func NewCachedRegistry(pocketClient pokt_v0.PocketService, dbQuery db_query.Quer
 }
 
 // GetApplications returns all the cached Pocket applications.
-func (c *CachedRegistry) GetApplications() []*models.PoktApplicationSigner {
+func (c *CachedAppsRegistry) GetApplications() []*models.PoktApplicationSigner {
 	c.lockCache.RLock()
 	defer c.lockCache.RUnlock()
 	return c.applications
 }
 
 // GetApplicationsByChainId returns Pocket applications filtered by a specific chain ID.
-func (c *CachedRegistry) GetApplicationsByChainId(chainId string) ([]*models.PoktApplicationSigner, bool) {
+func (c *CachedAppsRegistry) GetApplicationsByChainId(chainId string) ([]*models.PoktApplicationSigner, bool) {
 	c.lockCache.RLock()
 	defer c.lockCache.RUnlock()
 	app, ok := c.applicationChainMap[chainId]
 	return app, ok
 }
 
+func (c *CachedAppsRegistry) GetApplicationByPublicKey(pubKey string) (*models.PoktApplicationSigner, bool) {
+	c.lockCache.RLock()
+	defer c.lockCache.RUnlock()
+	for _, i := range c.applications {
+		if i.Signer.PublicKey == pubKey {
+			return i, true
+		}
+	}
+	return nil, false
+}
+
 // updateApplicationCache refreshes the cache with the latest Pocket applications and their associated information.
-func (c *CachedRegistry) updateApplicationCache() error {
+func (c *CachedAppsRegistry) updateApplicationCache() error {
 	// Retrieve Pocket applications from the database
 	storedAppsPK, err := c.dbQuery.GetPoktApplications(context.Background(), c.secretProvider.GetPoktApplicationsEncryptionKey())
 	if err != nil {
@@ -119,7 +130,7 @@ func (c *CachedRegistry) updateApplicationCache() error {
 }
 
 // StartCacheUpdater starts a goroutine to periodically update the application cache.
-func (c *CachedRegistry) startCacheUpdater() {
+func (c *CachedAppsRegistry) startCacheUpdater() {
 	ticker := time.Tick(applicationUpdateInterval)
 	go func() {
 		for {

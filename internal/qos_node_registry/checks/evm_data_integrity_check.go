@@ -3,7 +3,6 @@ package checks
 import (
 	"encoding/json"
 	"pokt_gateway_server/internal/qos_node_registry/models"
-	"pokt_gateway_server/pkg/pokt/pokt_v0"
 	relayer_models "pokt_gateway_server/pkg/pokt/pokt_v0/models"
 	"time"
 )
@@ -24,8 +23,7 @@ type evmResponse struct {
 }
 
 type EvmDataIntegrityCheck struct {
-	Check
-	relayer pokt_v0.PocketRelayer
+	*Check
 }
 
 type nodeResponse struct {
@@ -33,15 +31,19 @@ type nodeResponse struct {
 	result result
 }
 
-func (c *EvmDataIntegrityCheck) PerformJob() {
+func (c *EvmDataIntegrityCheck) Name() string {
+	return "evm_data_integrity_check"
+}
+
+func (c *EvmDataIntegrityCheck) Perform() {
 
 	// Initialize a map to store responses and their counts
 	nodeResponseCounts := make(map[nodeResponse]int)
 
-	for _, node := range c.NodeList {
-		relay, err := c.relayer.SendRelay(&relayer_models.SendRelayRequest{
+	for _, node := range c.nodeList {
+		relay, err := c.pocketRelayer.SendRelay(&relayer_models.SendRelayRequest{
 			Payload:            &relayer_models.Payload{Data: blockPayload, Method: "POST"},
-			Chain:              c.ChainId,
+			Chain:              node.PocketSession.SessionHeader.Chain,
 			SelectedNodePubKey: node.MorseNode.PublicKey,
 		})
 
@@ -68,7 +70,7 @@ func (c *EvmDataIntegrityCheck) PerformJob() {
 			nodeResp.node.SetTimeoutUntil(time.Now().Add(timeoutPenalty), models.InvalidDataTimeout)
 		}
 	}
-	c.LastChecked = time.Now()
+	c.lastCheckedTime = time.Now()
 }
 
 // findMajorityResponse finds the hash with the highest response count
@@ -85,5 +87,5 @@ func findMajorityResponse(responseCounts map[nodeResponse]int) string {
 }
 
 func (c *EvmDataIntegrityCheck) ShouldRun() bool {
-	return time.Now().Sub(c.LastChecked) > checkInterval
+	return time.Now().Sub(c.lastCheckedTime) > checkInterval
 }

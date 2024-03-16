@@ -1,4 +1,4 @@
-package pokt_client_decorators
+package relayer
 
 // Basic imports
 import (
@@ -14,13 +14,13 @@ type CachedClientTestSuite struct {
 	mockAltruistRegistryService *mocks.AltruistRegistryService
 	mockSessionRegistryService  *mocks.SessionRegistryService
 	mockPocketService           *mocks.PocketService
-	cachedClient                *CachedClient
+	cachedClient                *Relayer
 }
 
 func (suite *CachedClientTestSuite) SetupTest() {
 	suite.mockPocketService = new(mocks.PocketService)
 	suite.mockSessionRegistryService = new(mocks.SessionRegistryService)
-	// suite.cachedClient = NewCachedClient(suite.mockPocketService, suite.mockSessionRegistryService, suite.mockAltruistRegistryService, time.Minute, zap.NewNop())
+	// suite.cachedClient = NewRelayer(suite.mockPocketService, suite.mockSessionRegistryService, suite.mockAltruistRegistryService, time.Minute, zap.NewNop())
 }
 
 // test SendRelay using table driven tests
