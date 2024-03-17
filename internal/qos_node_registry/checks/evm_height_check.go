@@ -39,7 +39,6 @@ func (c *EvmHeightCheck) Perform() {
 
 	// Define a channel to receive relay responses
 	relayResponses := make(chan *nodeRelayResponse)
-	defer close(relayResponses)
 
 	// Define a function to handle sending relay requests concurrently
 	sendRelayAsync := func(node *models.QosNode) {
@@ -63,6 +62,8 @@ func (c *EvmHeightCheck) Perform() {
 	}
 
 	wg.Wait()
+	close(relayResponses)
+
 	// Process relay responses
 	for resp := range relayResponses {
 		if resp.Success {
@@ -92,18 +93,18 @@ func (c *EvmHeightCheck) Perform() {
 			node.SetSynced(true)
 		}
 	}
-	c.lastCheckedTime = time.Now()
+	c.nextCheckTime = time.Now().Add(evmHeightCheckInterval)
 }
 
 func (c *EvmHeightCheck) ShouldRun() bool {
-	return time.Now().Sub(c.lastCheckedTime) > evmHeightCheckInterval
+	return time.Now().After(c.nextCheckTime)
 }
 
 func (c *EvmHeightCheck) getEligibleNodes() []*models.QosNode {
 	// Filter nodes based on last checked time
 	var eligibleNodes []*models.QosNode
 	for _, node := range c.nodeList {
-		if time.Since(node.GetLastHeightCheckTime()) >= minLastCheckedNodeTime {
+		if node.GetLastHeightCheckTime().IsZero() || time.Since(node.GetLastHeightCheckTime()) >= minLastCheckedNodeTime {
 			eligibleNodes = append(eligibleNodes, node)
 		}
 	}

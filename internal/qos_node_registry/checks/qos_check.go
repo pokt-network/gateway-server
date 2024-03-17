@@ -13,11 +13,11 @@ type QosJob interface {
 }
 
 type Check struct {
-	lastCheckedTime time.Time
-	nodeList        []*models.QosNode
-	pocketRelayer   pokt_v0.PocketRelayer
+	nextCheckTime time.Time
+	nodeList      []*models.QosNode
+	pocketRelayer pokt_v0.PocketRelayer
 }
 
 func NewCheck(nodeList []*models.QosNode, pocketRelayer pokt_v0.PocketRelayer) *Check {
-	return &Check{nodeList: nodeList, pocketRelayer: pocketRelayer}
+	return &Check{nodeList: nodeList, pocketRelayer: pocketRelayer, nextCheckTime: time.Time{}}
 }

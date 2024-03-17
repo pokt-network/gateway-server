@@ -36,10 +36,8 @@ func (c *EvmDataIntegrityCheck) Name() string {
 }
 
 func (c *EvmDataIntegrityCheck) Perform() {
-
 	// Initialize a map to store responses and their counts
 	nodeResponseCounts := make(map[nodeResponse]int)
-
 	for _, node := range c.nodeList {
 		relay, err := c.pocketRelayer.SendRelay(&relayer_models.SendRelayRequest{
 			Payload:            &relayer_models.Payload{Data: blockPayload, Method: "POST"},
@@ -50,7 +48,6 @@ func (c *EvmDataIntegrityCheck) Perform() {
 		if err != nil {
 			continue
 		}
-
 		var resp evmResponse
 		err = json.Unmarshal([]byte(relay.Response), &resp)
 		if err != nil {
@@ -70,7 +67,7 @@ func (c *EvmDataIntegrityCheck) Perform() {
 			nodeResp.node.SetTimeoutUntil(time.Now().Add(timeoutPenalty), models.InvalidDataTimeout)
 		}
 	}
-	c.lastCheckedTime = time.Now()
+	c.nextCheckTime = time.Now().Add(checkInterval)
 }
 
 // findMajorityResponse finds the hash with the highest response count
@@ -87,5 +84,5 @@ func findMajorityResponse(responseCounts map[nodeResponse]int) string {
 }
 
 func (c *EvmDataIntegrityCheck) ShouldRun() bool {
-	return time.Now().Sub(c.lastCheckedTime) > checkInterval
+	return c.nextCheckTime.IsZero() || time.Now().After(c.nextCheckTime)
 }

@@ -64,7 +64,6 @@ func main() {
 	poktApplicationRegistry := apps_registry.NewCachedAppsRegistry(client, querier, gatewayConfigProvider, logger.Named("pokt_application_registry"))
 	altruistRegistry := altruist_registry.NewCachedAltruistRegistryService(querier, logger.Named("altruist_registry"))
 	sessionRegistry := session_registry.NewCachedSessionRegistryService(client, poktApplicationRegistry, sessionCache, nodeCache, logger.Named("session_registry"))
-
 	nodeSelectorService := qos_node_registry.NewNodeSelectorService(sessionRegistry, client, logger.Named("node_selector"))
 
 	relayer := relayer.NewRelayer(client, sessionRegistry, altruistRegistry, gatewayConfigProvider.GetPoktRPCTimeout(), logger.Named("relayer"))
