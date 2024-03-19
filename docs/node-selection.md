@@ -52,7 +52,7 @@ type Check struct {
 ```
 that developers should inherit. This base check provides a list of nodes to check, a time variable to determine when to run the check again, and a `PocketRelayer` that allows the developer to send requests to the nodes in the network.
 
-Implementing custom QoS checks will be dependent on the chain or data source the developer is looking to support.  For example, the developer may want to send a request to a Solana node with a custom JSON-RPC method to see if the node is synced.
+Implementing custom QoS checks will be dependent on the chain or data source the developer is looking to support.  For example, the developer may want to send a request to a Solana node with a custom JSON-RPC method to see if the node is synced by using the provided `PocketRelayer` to send a request to the node through Pocket network.
 If the node is not synced, the developer can set a custom punishment through the various functions exposed in [qos_node.go](..%2Finternal%2Fqos_node_registry%2Fmodels%2Fqos_node.go), such as `SetTimeoutUntil` to punish the node.
 
 Once the developer is finished implementing the CheckJob, they can enable the QoS check by initializing the newly created check into the `getEnabledJobs` function inside [qos_node_registry_service.go](..%2Finternal%2Fqos_node_registry%2Fqos_node_registry_service.go) and setting up a PR to be added into the official repository.
