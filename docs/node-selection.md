@@ -1,9 +1,12 @@
 # POKT Gateway Node Selection
 
-## Session Management
+## Node Selection System Architecture
 
-The gateway kit server under the hood will asynchronously call a POKT full node for a session and cache the session.
-Caching is an optimization given that a session only changes periodically (4 blocks/60 mins).
+
+## Session "Priming"
+
+The gateway kit server under the hood will asynchronously "prime" sessions by calling a POKT full node for a session and cache the session for each app stake.
+Caching is an optimization given that a session only changes periodically (4 blocks/60 mins) and prevents multiple round trips for each request we serve since session metadata is required per request. 
 
 ![gateway-server-session-cache.png](resources%2Fgateway-server-session-cache.png)
 
@@ -17,36 +20,40 @@ heuristics:
 - Correctness in regard to other node operators.
 - Liveliness (Synchronization)
 
-```text
-Weighted Score = Metrics.P90Latency * Weights["P90latency"] + Metrics.SuccessRate * Weights["successRate"] + Metrics.Correctness * Weights["correctness"]
+## Node Selector
+After the sessions are primed, the nodes are fed to the `NodeSelectorService` which is responsible for:
+1. Running various QoS checks (Height and Data Integrity Checks)
+2. Exposing functions for the main process to select a healthy node `findNode(chainId) string`
+
+### QosJob ("checks") Framework
+The gateway server implements a simple interface called a `checks/job`. This interface consists of three simple functions
+```go
+type QosJob interface {
+  Perform()
+  Name() string
+  ShouldRun() bool
+  }
 ```
+Some existing implementations of QoSJob can be found in:
+1. [evm_data_integrity_check.go](..%2Finternal%2Fqos_node_registry%2Fchecks%2Fevm_data_integrity_check.go)
+2. [evm_height_check.go](..%2Finternal%2Fqos_node_registry%2Fchecks%2Fevm_height_check.go)
 
-The Gateway Server periodically will poll nodes in a session in order to score the nodes (fka as Nodies Cop), but will
-also use real-time traffic to adjust the scores as well. Finally, the results will be stored in a short-term in-memory
-cache which will allow for quick node selection.
+### Adding custom QoS checks
 
-## Default Thresholds and Weights
-
-The gateway kit has default thresholds that are modifiable via the QoS table. In the event that there are no nodes that
-are available for selection, it will default to a random node, then finally [altruist](altruist.md).
-
-**Threshholds:**
-
-```json
-"p90Latency":  300,
-"successRate": 0.95,
-"correctness": 0.95
-"liveliness":  0.95,
+Every custom check must conform to the `QosJob` interface. The gateway server provides a base check:
+```go
+type Check struct {
+	nextCheckTime time.Time
+	nodeList      []*models.QosNode
+	pocketRelayer pokt_v0.PocketRelayer
+}
 ```
+that developers should inherit. This base check provides a list of nodes to check and a `PocketRelayer` that allows the developer to send requests to the nodes in the network.
 
-**Weights:**
+Implementing custom QoS checks will be dependent on the chain or data source the developer is looking to support.  For example, the developer may want to send a request to a Solana node with a custom JSON-RPC method to see if the node is synced.
+If the node is not synced, the developer can set a custom punishment through the various functions exposed in [qos_node.go](..%2Finternal%2Fqos_node_registry%2Fmodels%2Fqos_node.go), such as `SetTimeoutUntil` to punish the node.
 
-```json
-"p90Latency":  0.05,
-"successRate": 0.45,
-"correctness": 0.50,
-"liveliness":  -1
-```
+Once the developer is finished implementing the QosJob, they can enable the QoS check by initializing the newly created check into the `getEnabledJobs` function inside [qos_node_registry_service.go](..%2Finternal%2Fqos_node_registry%2Fqos_node_registry_service.go) and setting up a PR to be added into the official repository.
 
 ## Future Improvements
 
