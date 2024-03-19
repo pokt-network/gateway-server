@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-type QosJob interface {
+type CheckJob interface {
 	Perform()
 	Name() string
 	ShouldRun() bool

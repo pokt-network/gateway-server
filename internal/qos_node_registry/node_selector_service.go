@@ -29,10 +29,10 @@ func NewNodeSelectorService(sessionRegistry session_registry.SessionRegistryServ
 	return selectorService
 }
 
-func (q NodeSelectorService) getEnabledJobs() []checks.QosJob {
+func (q NodeSelectorService) getEnabledJobs() []checks.CheckJob {
 	nodes := q.sessionRegistry.GetNodes()
 	baseCheck := checks.NewCheck(nodes, q.pocketRelayer)
-	return []checks.QosJob{
+	return []checks.CheckJob{
 
 		&checks.EvmHeightCheck{
 			Check: baseCheck,
