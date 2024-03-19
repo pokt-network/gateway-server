@@ -1,9 +1,8 @@
 # POKT Gateway Node Selection
 
 ## Node Selection System Architecture
-
+![gateway-server-node-selection-system.png](resources%2Fgateway-server-node-selection-system.png)
 - `Session Registry` - responsible for "priming" sessions asynchronously, providing session metadata, and feeding the node to the `NodeSelectorService`
-- `App Registry` - responsible for storing app stakes metadata such as signing relays.
 - `Pocket Relayer` - responsible for sending a relay to the network
 - `NodeSelectorService` - responsible for running QoS checks and identifying healthy nodes by chain.
 
