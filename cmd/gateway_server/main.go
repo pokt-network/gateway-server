@@ -13,8 +13,8 @@ import (
 	"pokt_gateway_server/internal/apps_registry"
 	"pokt_gateway_server/internal/db_query"
 	"pokt_gateway_server/internal/logging"
-	"pokt_gateway_server/internal/qos_node_registry"
-	qos_models "pokt_gateway_server/internal/qos_node_registry/models"
+	"pokt_gateway_server/internal/node_selector_service"
+	qos_models "pokt_gateway_server/internal/node_selector_service/models"
 	"pokt_gateway_server/internal/relayer"
 	"pokt_gateway_server/internal/session_registry"
 	"pokt_gateway_server/pkg/pokt/pokt_v0"
@@ -64,7 +64,7 @@ func main() {
 	poktApplicationRegistry := apps_registry.NewCachedAppsRegistry(client, querier, gatewayConfigProvider, logger.Named("pokt_application_registry"))
 	altruistRegistry := altruist_registry.NewCachedAltruistRegistryService(querier, logger.Named("altruist_registry"))
 	sessionRegistry := session_registry.NewCachedSessionRegistryService(client, poktApplicationRegistry, sessionCache, nodeCache, logger.Named("session_registry"))
-	nodeSelectorService := qos_node_registry.NewNodeSelectorService(sessionRegistry, client, logger.Named("node_selector"))
+	nodeSelectorService := node_selector_service.NewNodeSelectorService(sessionRegistry, client, logger.Named("node_selector"))
 
 	relayer := relayer.NewRelayer(client, sessionRegistry, altruistRegistry, gatewayConfigProvider.GetPoktRPCTimeout(), logger.Named("relayer"))
 

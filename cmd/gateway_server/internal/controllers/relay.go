@@ -8,7 +8,7 @@ import (
 	"pokt_gateway_server/cmd/gateway_server/internal/common"
 	"pokt_gateway_server/internal/altruist_registry"
 	"pokt_gateway_server/internal/apps_registry"
-	"pokt_gateway_server/internal/qos_node_registry"
+	"pokt_gateway_server/internal/node_selector_service"
 	"pokt_gateway_server/internal/relayer"
 	"pokt_gateway_server/internal/session_registry"
 	slice_common "pokt_gateway_server/pkg/common"
@@ -25,11 +25,11 @@ type RelayController struct {
 	appRegistry      apps_registry.AppsRegistryService
 	altruistRegistry altruist_registry.AltruistRegistryService
 	sessionRegistry  session_registry.SessionRegistryService
-	nodeSelector     *qos_node_registry.NodeSelectorService
+	nodeSelector     *node_selector_service.NodeSelectorService
 }
 
 // NewRelayController creates a new instance of RelayController.
-func NewRelayController(relayer *relayer.Relayer, appRegistry apps_registry.AppsRegistryService, sessionRegistry session_registry.SessionRegistryService, altruistRegistry altruist_registry.AltruistRegistryService, nodeSelector *qos_node_registry.NodeSelectorService, logger *zap.Logger) *RelayController {
+func NewRelayController(relayer *relayer.Relayer, appRegistry apps_registry.AppsRegistryService, sessionRegistry session_registry.SessionRegistryService, altruistRegistry altruist_registry.AltruistRegistryService, nodeSelector *node_selector_service.NodeSelectorService, logger *zap.Logger) *RelayController {
 	return &RelayController{relayer: relayer, appRegistry: appRegistry, sessionRegistry: sessionRegistry, nodeSelector: nodeSelector, altruistRegistry: altruistRegistry, logger: logger}
 }
 

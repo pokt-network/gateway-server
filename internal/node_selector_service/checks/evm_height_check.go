@@ -2,7 +2,7 @@ package checks
 
 import (
 	"encoding/json"
-	"pokt_gateway_server/internal/qos_node_registry/models"
+	"pokt_gateway_server/internal/node_selector_service/models"
 	relayer_models "pokt_gateway_server/pkg/pokt/pokt_v0/models"
 	"sync"
 	"time"

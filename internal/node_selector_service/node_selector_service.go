@@ -1,9 +1,9 @@
-package qos_node_registry
+package node_selector_service
 
 import (
 	"go.uber.org/zap"
-	"pokt_gateway_server/internal/qos_node_registry/checks"
-	"pokt_gateway_server/internal/qos_node_registry/models"
+	"pokt_gateway_server/internal/node_selector_service/checks"
+	"pokt_gateway_server/internal/node_selector_service/models"
 	"pokt_gateway_server/internal/session_registry"
 	"pokt_gateway_server/pkg/common"
 	"pokt_gateway_server/pkg/pokt/pokt_v0"

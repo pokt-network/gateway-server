@@ -7,7 +7,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 	"pokt_gateway_server/internal/apps_registry"
-	qos_models "pokt_gateway_server/internal/qos_node_registry/models"
+	qos_models "pokt_gateway_server/internal/node_selector_service/models"
 	"pokt_gateway_server/pkg/pokt/pokt_v0"
 	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
 	"pokt_gateway_server/pkg/ttl_cache"
