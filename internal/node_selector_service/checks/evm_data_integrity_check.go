@@ -10,7 +10,7 @@ import (
 const (
 	minLastCheckedNodeTime = time.Minute * 1
 	timeoutPenalty         = time.Minute * 1
-	checkInterval          = time.Second * 5
+	checkInterval          = time.Second * 10
 	blockPayload           = `{"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":["latest", false],"id":1}`
 )
 
@@ -24,6 +24,11 @@ type evmResponse struct {
 
 type EvmDataIntegrityCheck struct {
 	*Check
+	nextCheckTime time.Time
+}
+
+func NewEvmDataIntegrityCheck(check *Check) *EvmDataIntegrityCheck {
+	return &EvmDataIntegrityCheck{Check: check, nextCheckTime: time.Time{}}
 }
 
 type nodeResponse struct {
@@ -33,6 +38,10 @@ type nodeResponse struct {
 
 func (c *EvmDataIntegrityCheck) Name() string {
 	return "evm_data_integrity_check"
+}
+
+func (c *EvmDataIntegrityCheck) SetNodes(nodes []*models.QosNode) {
+	c.nodeList = nodes
 }
 
 func (c *EvmDataIntegrityCheck) Perform() {

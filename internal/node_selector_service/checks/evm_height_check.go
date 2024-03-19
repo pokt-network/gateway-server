@@ -20,6 +20,11 @@ type evmHeightResponse struct {
 
 type EvmHeightCheck struct {
 	*Check
+	nextCheckTime time.Time
+}
+
+func NewEvmHeightCheck(check *Check) *EvmHeightCheck {
+	return &EvmHeightCheck{Check: check, nextCheckTime: time.Time{}}
 }
 
 type nodeRelayResponse struct {
@@ -94,6 +99,10 @@ func (c *EvmHeightCheck) Perform() {
 		}
 	}
 	c.nextCheckTime = time.Now().Add(evmHeightCheckInterval)
+}
+
+func (c *EvmHeightCheck) SetNodes(nodes []*models.QosNode) {
+	c.nodeList = nodes
 }
 
 func (c *EvmHeightCheck) ShouldRun() bool {

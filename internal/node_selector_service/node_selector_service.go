@@ -18,30 +18,27 @@ type NodeSelectorService struct {
 	sessionRegistry session_registry.SessionRegistryService
 	pocketRelayer   pokt_v0.PocketRelayer
 	logger          *zap.Logger
+	checkJobs       []checks.CheckJob
 }
 
 func NewNodeSelectorService(sessionRegistry session_registry.SessionRegistryService, pocketRelayer pokt_v0.PocketRelayer, logger *zap.Logger) *NodeSelectorService {
+
+	// base checks will share same node list and pocket relayer
+	baseCheck := checks.NewCheck(pocketRelayer)
+
+	// enabled checks
+	enabledChecks := []checks.CheckJob{
+		checks.NewEvmHeightCheck(baseCheck),
+		checks.NewEvmDataIntegrityCheck(baseCheck),
+	}
+
 	selectorService := &NodeSelectorService{
 		sessionRegistry: sessionRegistry,
 		logger:          logger,
+		checkJobs:       enabledChecks,
 	}
 	selectorService.startJobChecker()
 	return selectorService
-}
-
-func (q NodeSelectorService) getEnabledJobs() []checks.CheckJob {
-	nodes := q.sessionRegistry.GetNodes()
-	baseCheck := checks.NewCheck(nodes, q.pocketRelayer)
-	return []checks.CheckJob{
-
-		&checks.EvmHeightCheck{
-			Check: baseCheck,
-		},
-
-		&checks.EvmDataIntegrityCheck{
-			Check: baseCheck,
-		},
-	}
 }
 
 func (q NodeSelectorService) FindNode(chainId string) (*models.QosNode, bool) {
@@ -64,9 +61,11 @@ func (q NodeSelectorService) startJobChecker() {
 		for {
 			select {
 			case <-ticker:
-				for _, job := range q.getEnabledJobs() {
+				nodes := q.sessionRegistry.GetNodes()
+				for _, job := range q.checkJobs {
 					if job.ShouldRun() {
 						q.logger.Sugar().Infow("running job", "job", job.Name())
+						job.SetNodes(nodes)
 						job.Perform()
 					}
 				}
