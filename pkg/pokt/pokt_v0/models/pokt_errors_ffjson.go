@@ -34,7 +34,7 @@ func (j *PocketRPCError) MarshalJSONBuf(buf fflib.EncodingBuffer) error {
 	_ = obj
 	_ = err
 	buf.WriteString(`{"code":`)
-	fflib.FormatBits2(buf, uint64(j.HttpCode), 10, false)
+	fflib.FormatBits2(buf, uint64(j.HttpCode), 10, j.HttpCode < 0)
 	buf.WriteString(`,"message":`)
 	fflib.WriteJsonString(buf, string(j.Message))
 	buf.WriteByte('}')
@@ -184,11 +184,11 @@ mainparse:
 
 handle_HttpCode:
 
-	/* handler: j.HttpCode type=uint64 kind=uint64 quoted=false*/
+	/* handler: j.HttpCode type=int kind=int quoted=false*/
 
 	{
 		if tok != fflib.FFTok_integer && tok != fflib.FFTok_null {
-			return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for uint64", tok))
+			return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for int", tok))
 		}
 	}
 
@@ -198,13 +198,13 @@ handle_HttpCode:
 
 		} else {
 
-			tval, err := fflib.ParseUint(fs.Output.Bytes(), 10, 64)
+			tval, err := fflib.ParseInt(fs.Output.Bytes(), 10, 64)
 
 			if err != nil {
 				return fs.WrapErr(err)
 			}
 
-			j.HttpCode = uint64(tval)
+			j.HttpCode = int(tval)
 
 		}
 	}

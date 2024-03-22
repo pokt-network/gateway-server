@@ -28,8 +28,8 @@ func NewNodeSelectorService(sessionRegistry session_registry.SessionRegistryServ
 
 	// enabled checks
 	enabledChecks := []checks.CheckJob{
-		checks.NewEvmHeightCheck(baseCheck),
-		checks.NewEvmDataIntegrityCheck(baseCheck),
+		checks.NewEvmHeightCheck(baseCheck, logger.Named("evm_height_checker")),
+		checks.NewEvmDataIntegrityCheck(baseCheck, logger.Named("evm_data_integrity_checker")),
 	}
 
 	selectorService := &NodeSelectorService{
@@ -61,12 +61,14 @@ func (q NodeSelectorService) startJobChecker() {
 		for {
 			select {
 			case <-ticker:
-				nodes := q.sessionRegistry.GetNodes()
+
 				for _, job := range q.checkJobs {
 					if job.ShouldRun() {
-						q.logger.Sugar().Infow("running job", "job", job.Name())
-						job.SetNodes(nodes)
-						job.Perform()
+						for chain, nodes := range q.sessionRegistry.GetNodesMap() {
+							q.logger.Sugar().Infow("running job", "job", job.Name(), "chain", chain)
+							job.SetNodes(nodes.Value())
+							job.Perform()
+						}
 					}
 				}
 			}

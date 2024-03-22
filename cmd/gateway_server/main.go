@@ -57,6 +57,8 @@ func main() {
 		ttlcache.WithTTL[string, *session_registry.Session](gatewayConfigProvider.GetSessionCacheTTL()),
 	)
 
+	sessionCache.Items()
+
 	nodeCache := ttlcache.New[string, []*qos_models.QosNode](
 		ttlcache.WithTTL[string, []*qos_models.QosNode](gatewayConfigProvider.GetSessionCacheTTL()),
 	)

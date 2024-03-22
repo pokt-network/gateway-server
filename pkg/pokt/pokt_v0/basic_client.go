@@ -179,7 +179,7 @@ func (r BasicClient) makeRequest(endpoint string, method string, requestData any
 		err := ffjson.Unmarshal(response.Body(), pocketError)
 		// failed to unmarshal, not sure what the response code is
 		if err != nil {
-			return models.PocketRPCError{HttpCode: uint64(response.StatusCode()), Message: string(response.Body())}
+			return models.PocketRPCError{HttpCode: response.StatusCode(), Message: string(response.Body())}
 		}
 		return pocketError
 	}

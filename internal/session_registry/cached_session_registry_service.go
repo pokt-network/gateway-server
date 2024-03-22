@@ -83,8 +83,8 @@ func (c CachedSessionRegistryService) GetNodesByChain(chainId string) ([]*qos_mo
 	return nodes.Value(), true
 }
 
-func (c CachedSessionRegistryService) GetNodes() []*qos_models.QosNode {
-	return nil
+func (c CachedSessionRegistryService) GetNodesMap() map[string]*ttlcache.Item[string, []*qos_models.QosNode] {
+	return c.chainNodes.Items()
 }
 
 func (c CachedSessionRegistryService) GetSession(req *models.GetSessionRequest) (*Session, error) {

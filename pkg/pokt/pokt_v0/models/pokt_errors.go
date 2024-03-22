@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 const modulePocketCore = "pocketcore"
@@ -18,13 +19,13 @@ var (
 )
 
 var (
-	sdkErrorRegexCodespace = regexp.MustCompile(`Codespace: (\w+)`)
-	sdkErrorRegexCode      = regexp.MustCompile(`Code: (\d+)`)
-	sdkErrorRegexMessage   = regexp.MustCompile(`Message: \\"(.+?)\\"`)
+	sdkErrorRegexCodespace = regexp.MustCompile(`codespace: (\w+)`)
+	sdkErrorRegexCode      = regexp.MustCompile(`code: (\d+)`)
+	sdkErrorRegexMessage   = regexp.MustCompile(`message: \\"(.+?)\\"`)
 )
 
 type PocketRPCError struct {
-	HttpCode uint64 `json:"code"`
+	HttpCode int    `json:"code"`
 	Message  string `json:"message"`
 }
 
@@ -43,7 +44,8 @@ func (r PocketSdkError) Error() string {
 }
 
 func (r PocketRPCError) ToSdkError() *PocketSdkError {
-	codespaceMatches := sdkErrorRegexCodespace.FindStringSubmatch(r.Message)
+	msgLower := strings.ToLower(r.Message)
+	codespaceMatches := sdkErrorRegexCodespace.FindStringSubmatch(msgLower)
 	if len(codespaceMatches) != 2 {
 		return nil
 	}
@@ -52,7 +54,7 @@ func (r PocketRPCError) ToSdkError() *PocketSdkError {
 		Codespace: codespaceMatches[1],
 	}
 
-	codeMatches := sdkErrorRegexCode.FindStringSubmatch(r.Message)
+	codeMatches := sdkErrorRegexCode.FindStringSubmatch(msgLower)
 	if len(codeMatches) == 2 {
 		code, err := strconv.ParseUint(codeMatches[1], 10, 0)
 		if err == nil {
@@ -63,7 +65,7 @@ func (r PocketRPCError) ToSdkError() *PocketSdkError {
 	// If the code parsed is zero, then pocket core did not return a code
 	// Internal errors do not have a code attached to it, so we should parse message
 	if sdkError.Code == 0 {
-		matchesMessage := sdkErrorRegexMessage.FindStringSubmatch(r.Message)
+		matchesMessage := sdkErrorRegexMessage.FindStringSubmatch(msgLower)
 		if len(matchesMessage) == 2 {
 			sdkError.Message = matchesMessage[1]
 		}
