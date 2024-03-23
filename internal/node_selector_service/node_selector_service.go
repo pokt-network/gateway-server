@@ -31,7 +31,6 @@ func NewNodeSelectorService(sessionRegistry session_registry.SessionRegistryServ
 		checks.NewEvmHeightCheck(baseCheck, logger.Named("evm_height_checker")),
 		checks.NewEvmDataIntegrityCheck(baseCheck, logger.Named("evm_data_integrity_checker")),
 	}
-
 	selectorService := &NodeSelectorService{
 		sessionRegistry: sessionRegistry,
 		logger:          logger,
@@ -52,7 +51,11 @@ func (q NodeSelectorService) FindNode(chainId string) (*models.QosNode, bool) {
 			healthyNodes = append(healthyNodes, r)
 		}
 	}
-	return common.GetRandomElement(healthyNodes), true
+	node, ok := common.GetRandomElement(healthyNodes)
+	if !ok {
+		return nil, false
+	}
+	return node, true
 }
 
 func (q NodeSelectorService) startJobChecker() {
@@ -61,7 +64,6 @@ func (q NodeSelectorService) startJobChecker() {
 		for {
 			select {
 			case <-ticker:
-
 				for _, job := range q.checkJobs {
 					if job.ShouldRun() {
 						for chain, nodes := range q.sessionRegistry.GetNodesMap() {

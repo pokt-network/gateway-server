@@ -18,9 +18,8 @@ const (
 type QosNode struct {
 	MorseNode                  *models.Node
 	PocketSession              *models.Session
-	Signer                     *models.Ed25519Account
+	AppSigner                  *models.Ed25519Account
 	p90Latency                 float64
-	totalTimeouts              float64
 	timeoutUntil               time.Time
 	timeoutReason              TimeoutReason
 	lastDataIntegrityCheckTime time.Time
@@ -52,7 +51,6 @@ func (n *QosNode) GetLastHeightCheckTime() time.Time {
 func (n *QosNode) SetTimeoutUntil(time time.Time, reason TimeoutReason) {
 	n.timeoutReason = reason
 	n.timeoutUntil = time
-	n.totalTimeouts++
 }
 
 func (n *QosNode) SetLastKnownHeight(lastKnownHeight uint64) {
@@ -75,8 +73,8 @@ func (n *QosNode) GetPublicKey() string {
 	return n.MorseNode.PublicKey
 }
 
-func (n *QosNode) GetSigner() *models.Ed25519Account {
-	return n.Signer
+func (n *QosNode) GetAppStakeSigner() *models.Ed25519Account {
+	return n.AppSigner
 }
 
 func (n *QosNode) GetLastDataIntegrityCheckTime() time.Time {

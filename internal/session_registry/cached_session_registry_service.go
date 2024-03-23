@@ -134,7 +134,7 @@ func (c CachedSessionRegistryService) GetSession(req *models.GetSessionRequest) 
 		wrappedNodes = append(wrappedNodes, &qos_models.QosNode{
 			PocketSession: response.Session,
 			MorseNode:     a,
-			Signer:        appSigner.Signer,
+			AppSigner:     appSigner.Signer,
 		})
 	}
 

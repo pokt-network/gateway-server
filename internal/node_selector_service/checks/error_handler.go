@@ -36,6 +36,6 @@ func defaultPunishNode(err error, node *models.QosNode, logger *zap.Logger) bool
 		node.SetTimeoutUntil(time.Now().Add(timeoutErrorPenalty), models.NodeResponseTimeout)
 		return true
 	}
-	logger.Sugar().Errorw("unknown error for punishing node", "err", err)
+	logger.Sugar().Errorw("unknown error for punishing node", "node", node.MorseNode.ServiceUrl)
 	return false
 }

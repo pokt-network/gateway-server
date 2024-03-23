@@ -3,10 +3,10 @@ package checks
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
 	"pokt_gateway_server/internal/node_selector_service/models"
 	"pokt_gateway_server/pkg/common"
-	relayer_models "pokt_gateway_server/pkg/pokt/pokt_v0/models"
 	"strconv"
 	"time"
 )
@@ -28,12 +28,10 @@ const (
 	blockPayloadFmt = `{"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":["%s", false],"id":1}`
 )
 
-type blockByNumberResult struct {
-	Hash string `json:"hash"`
-}
-
-type evmResponse struct {
-	Result blockByNumberResult `json:"result"`
+type blockByNumberResponse struct {
+	Result struct {
+		Hash string `json:"hash"`
+	} `json:"result"`
 }
 
 type EvmDataIntegrityCheck struct {
@@ -48,7 +46,7 @@ func NewEvmDataIntegrityCheck(check *Check, logger *zap.Logger) *EvmDataIntegrit
 
 type nodeResponsePair struct {
 	node   *models.QosNode
-	result blockByNumberResult
+	result blockByNumberResponse
 }
 
 func (c *EvmDataIntegrityCheck) Name() string {
@@ -61,45 +59,40 @@ func (c *EvmDataIntegrityCheck) SetNodes(nodes []*models.QosNode) {
 
 func (c *EvmDataIntegrityCheck) Perform() {
 
-	// Find a node that has been reported as healthy
-	healthyNode := c.findHealthyNode()
+	// Find a node that has been reported as healthy to use as source of truth
+	sourceOfTruth := c.findRandomHealthyNode()
 
 	// Node that is synced cannot be found, so we cannot run data integrity checks since we need a trusted source
-	if healthyNode == nil {
-		c.logger.Sugar().Warnw("cannot find node for data integrity checks for", "chain", c.nodeList[0].GetChain())
+	if sourceOfTruth == nil {
+		c.logger.Sugar().Warnw("cannot find source of truth for data integrity check", "chain", c.nodeList[0].GetChain())
 		return
 	}
 
-	heightSource := healthyNode.GetLastKnownHeight()
-
-	// Init map that stores the amount of nodes that return the same response
+	// Map to count number of nodes that return blockHash -> counter
 	nodeResponseCounts := make(map[string]int)
+
 	var nodeResponsePairs []*nodeResponsePair
-	for _, node := range c.getEligibleNodes() {
 
-		relay, err := c.pocketRelayer.SendRelay(&relayer_models.SendRelayRequest{
-			Signer:             node.GetSigner(),
-			Payload:            &relayer_models.Payload{Data: getBlockByNumberPayload(heightSource - dataIntegrityHeightLookback), Method: "POST"},
-			Chain:              node.GetChain(),
-			SelectedNodePubKey: node.GetPublicKey(),
-			Session:            node.PocketSession,
-		})
+	nodeResponses := sendRelaysAsync(c.pocketRelayer, c.getEligibleNodes(), getBlockByNumberPayload(sourceOfTruth.GetLastKnownHeight()-dataIntegrityHeightLookback), "POST")
+	for rsp := range nodeResponses {
 
-		if err != nil {
-			defaultPunishNode(err, node, c.logger)
+		if rsp.Error != nil {
+			defaultPunishNode(rsp.Error, rsp.Node, c.logger)
 			continue
 		}
 
-		var resp evmResponse
-		err = json.Unmarshal([]byte(relay.Response), &resp)
+		var resp blockByNumberResponse
+		err := json.Unmarshal([]byte(rsp.Relay.Response), &resp)
 		if err != nil {
-			defaultPunishNode(err, node, c.logger)
+			c.logger.Sugar().Warnw("failed to unmarshal response", "err", err)
+			defaultPunishNode(fasthttp.ErrTimeout, rsp.Node, c.logger)
 			continue
 		}
-		node.SetLastDataIntegrityCheckTime(time.Now())
+
+		rsp.Node.SetLastDataIntegrityCheckTime(time.Now())
 		nodeResponsePairs = append(nodeResponsePairs, &nodeResponsePair{
-			node:   node,
-			result: resp.Result,
+			node:   rsp.Node,
+			result: resp,
 		})
 		nodeResponseCounts[resp.Result.Hash]++
 	}
@@ -108,11 +101,9 @@ func (c *EvmDataIntegrityCheck) Perform() {
 
 	// Penalize other node operators with a timeout if they don't have same block hash.
 	for _, nodeResp := range nodeResponsePairs {
-		if nodeResp.result.Hash != majorityBlockHash {
-			c.logger.Sugar().Errorw("punishing node for failed data integrity check", "node", nodeResp.node.MorseNode.ServiceUrl, "nodeBlockHash", nodeResp.result.Hash, "trustedSourceBlockHash", majorityBlockHash)
+		if nodeResp.result.Result.Hash != majorityBlockHash {
+			c.logger.Sugar().Errorw("punishing node for failed data integrity check", "node", nodeResp.node.MorseNode.ServiceUrl, "nodeBlockHash", nodeResp.result.Result, "trustedSourceBlockHash", majorityBlockHash)
 			nodeResp.node.SetTimeoutUntil(time.Now().Add(dataIntegrityTimePenalty), models.DataIntegrityTimeout)
-		} else {
-			fmt.Println("good")
 		}
 	}
 
@@ -136,15 +127,18 @@ func (c *EvmDataIntegrityCheck) ShouldRun() bool {
 	return c.nextCheckTime.IsZero() || time.Now().After(c.nextCheckTime)
 }
 
-// findHealthyNode - returns a healthy node that is synced so we can use it as a source of truth for data integrity checks
-func (c *EvmDataIntegrityCheck) findHealthyNode() *models.QosNode {
+// findRandomHealthyNode - returns a healthy node that is synced so we can use it as a source of truth for data integrity checks
+func (c *EvmDataIntegrityCheck) findRandomHealthyNode() *models.QosNode {
 	var healthyNodes []*models.QosNode
 	for _, node := range c.nodeList {
 		if node.IsHealthy() {
 			healthyNodes = append(healthyNodes, node)
 		}
 	}
-	healthyNode := common.GetRandomElement(healthyNodes)
+	healthyNode, ok := common.GetRandomElement(healthyNodes)
+	if !ok {
+		return nil
+	}
 	return healthyNode
 }
 

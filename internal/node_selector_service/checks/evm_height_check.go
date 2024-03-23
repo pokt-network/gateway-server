@@ -9,10 +9,8 @@ import (
 	"gonum.org/v1/gonum/stat"
 	"math"
 	"pokt_gateway_server/internal/node_selector_service/models"
-	relayer_models "pokt_gateway_server/pkg/pokt/pokt_v0/models"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -34,13 +32,13 @@ const (
 )
 
 type evmHeightResponse struct {
-	Height uint64 `json:"blockByNumberResult"`
+	Height uint64 `json:"blockByNumberResponse"`
 }
 
 func (r *evmHeightResponse) UnmarshalJSON(data []byte) error {
 
 	type evmHeightResponseStr struct {
-		Result string `json:"blockByNumberResult"`
+		Result string `json:"result"`
 	}
 
 	// Unmarshal the JSON into the custom type
@@ -72,51 +70,16 @@ func NewEvmHeightCheck(check *Check, logger *zap.Logger) *EvmHeightCheck {
 	return &EvmHeightCheck{Check: check, nextCheckTime: time.Time{}, logger: logger}
 }
 
-type nodeRelayResponse struct {
-	Node  *models.QosNode
-	Relay *relayer_models.SendRelayResponse
-	Error error
-}
-
 func (c *EvmHeightCheck) Name() string {
 	return "evm_height_check"
 }
 
 func (c *EvmHeightCheck) Perform() {
 
-	var wg sync.WaitGroup
-
-	// Define a channel to receive relay responses
-	relayResponses := make(chan *nodeRelayResponse, len(c.nodeList))
-
-	// Define a function to handle sending relay requests concurrently
-	sendRelayAsync := func(node *models.QosNode) {
-		defer wg.Done()
-		relay, err := c.pocketRelayer.SendRelay(&relayer_models.SendRelayRequest{
-			Signer:             node.GetSigner(),
-			Payload:            &relayer_models.Payload{Data: heightJsonPayload, Method: "POST"},
-			Chain:              node.GetChain(),
-			SelectedNodePubKey: node.GetPublicKey(),
-			Session:            node.PocketSession,
-		})
-		relayResponses <- &nodeRelayResponse{
-			Node:  node,
-			Relay: relay,
-			Error: err,
-		}
-	}
-
-	// Start a goroutine for each node to send relay requests concurrently
-	for _, node := range c.nodeList {
-		wg.Add(1)
-		go sendRelayAsync(node)
-	}
-
-	wg.Wait()
-	close(relayResponses)
+	// Send request to all nodes
+	relayResponses := sendRelaysAsync(c.pocketRelayer, c.nodeList, heightJsonPayload, "POST")
 
 	var nodesResponded []*models.QosNode
-
 	// Process relay responses
 	for resp := range relayResponses {
 
@@ -130,6 +93,7 @@ func (c *EvmHeightCheck) Perform() {
 		err = json.Unmarshal([]byte(resp.Relay.Response), &evmHeightResp)
 
 		if err != nil {
+			c.logger.Sugar().Warnw("failed to unmarshal response", "err", err)
 			// Treat a invalid response as a timeout error
 			defaultPunishNode(fasthttp.ErrTimeout, resp.Node, c.logger)
 			continue
@@ -194,7 +158,7 @@ func getHighestNodeHeight(nodes []*models.QosNode) uint64 {
 
 		zScore := stat.StdScore(nodeHeight, meanValue, stdDevValue)
 
-		// height is an outlier according to zscore threshold
+		// height is an outlier according to zScore threshold
 		if math.Abs(zScore) > zScoreHeightThreshold {
 			continue
 		}

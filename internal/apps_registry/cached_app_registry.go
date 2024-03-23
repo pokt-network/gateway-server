@@ -108,10 +108,6 @@ func (c *CachedAppsRegistry) updateApplicationCache() error {
 	// Iterate through each PoktApplicationSigner and associate it with the corresponding chain IDs
 	for _, signer := range poktApplicationSigners {
 		for _, chainID := range signer.NetworkApp.Chains {
-			// If the chain ID is not in the map, create a new entry
-			if _, ok := applicationChainMap[chainID]; !ok {
-				applicationChainMap[chainID] = make([]*models.PoktApplicationSigner, 0)
-			}
 			// Append the PoktApplicationSigner to the chain ID entry in the map
 			applicationChainMap[chainID] = append(applicationChainMap[chainID], signer)
 		}

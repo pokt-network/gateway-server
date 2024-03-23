@@ -53,11 +53,13 @@ func (c *RelayController) HandleRelay(ctx *fasthttp.RequestCtx) {
 	if ok {
 		req := &models.SendRelayRequest{
 			Payload: &models.Payload{
-				Path: path,
+				Data:   string(ctx.PostBody()),
+				Method: string(ctx.Method()),
+				Path:   path,
 			},
-			Signer:             node.Signer,
+			Signer:             node.GetAppStakeSigner(),
 			Chain:              chainID,
-			SelectedNodePubKey: node.MorseNode.PublicKey,
+			SelectedNodePubKey: node.GetPublicKey(),
 		}
 		relay, err := c.relayer.SendRelay(&relayer.RelayRequest{
 			PocketRequest: req,
@@ -76,6 +78,7 @@ func (c *RelayController) HandleRelay(ctx *fasthttp.RequestCtx) {
 		return
 	}
 
+	c.logger.Sugar().Infow("fallback")
 	// Healthy node could not be found, attempting to use random node
 	applications, ok := c.appRegistry.GetApplicationsByChainId(chainID)
 	if !ok || len(applications) == 0 {
@@ -84,8 +87,8 @@ func (c *RelayController) HandleRelay(ctx *fasthttp.RequestCtx) {
 	}
 
 	// Get a random app stake from the available list.
-	appStake := slice_common.GetRandomElement(applications)
-	if appStake == nil {
+	appStake, ok := slice_common.GetRandomElement(applications)
+	if !ok || appStake == nil {
 		common.JSONError(ctx, "App stake not provided", fasthttp.StatusInternalServerError)
 		return
 	}
@@ -101,9 +104,9 @@ func (c *RelayController) HandleRelay(ctx *fasthttp.RequestCtx) {
 		return
 	}
 
-	randomNode := slice_common.GetRandomElement(sessionResp.Nodes)
+	randomNode, ok := slice_common.GetRandomElement(sessionResp.Nodes)
 
-	if randomNode == nil {
+	if !ok || randomNode == nil {
 		c.logger.Error("Error finding a node from session", zap.Error(err))
 		common.JSONError(ctx, "Something went wrong", fasthttp.StatusInternalServerError)
 		return
@@ -117,7 +120,7 @@ func (c *RelayController) HandleRelay(ctx *fasthttp.RequestCtx) {
 		},
 		Signer:             appStake.Signer,
 		Chain:              chainID,
-		SelectedNodePubKey: randomNode.MorseNode.PublicKey,
+		SelectedNodePubKey: randomNode.GetPublicKey(),
 	}
 	relay, err := c.relayer.SendRelay(&relayer.RelayRequest{
 		PocketRequest: req,
