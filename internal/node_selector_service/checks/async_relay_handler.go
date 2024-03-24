@@ -13,7 +13,7 @@ type nodeRelayResponse struct {
 	Error error
 }
 
-func sendRelaysAsync(relayer pokt_v0.PocketRelayer, nodes []*models.QosNode, payload string, method string) chan *nodeRelayResponse {
+func SendRelaysAsync(relayer pokt_v0.PocketRelayer, nodes []*models.QosNode, payload string, method string) chan *nodeRelayResponse {
 	// Define a channel to receive relay responses
 	relayResponses := make(chan *nodeRelayResponse, len(nodes))
 	var wg sync.WaitGroup

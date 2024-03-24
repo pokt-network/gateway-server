@@ -25,8 +25,8 @@ func isTimeoutError(err error) bool {
 	return err == fasthttp.ErrTimeout || err == fasthttp.ErrDialTimeout || err == fasthttp.ErrTLSHandshakeTimeout
 }
 
-// defaultPunishNode: generic punisher for whenever a node returns an error independent of a specific check
-func defaultPunishNode(err error, node *models.QosNode, logger *zap.Logger) bool {
+// DefaultPunishNode: generic punisher for whenever a node returns an error independent of a specific check
+func DefaultPunishNode(err error, node *models.QosNode, logger *zap.Logger) bool {
 	if isMaximumRelaysServicedErr(err) {
 		// 24 hours is analogous to indefinite
 		node.SetTimeoutUntil(time.Now().Add(time.Hour*24), models.MaximumRelaysTimeout)

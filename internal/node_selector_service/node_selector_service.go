@@ -4,6 +4,8 @@ import (
 	"go.uber.org/zap"
 	"pokt_gateway_server/internal/chain_configurations_registry"
 	"pokt_gateway_server/internal/node_selector_service/checks"
+	"pokt_gateway_server/internal/node_selector_service/checks/evm_data_integrity_check"
+	"pokt_gateway_server/internal/node_selector_service/checks/evm_height_check"
 	"pokt_gateway_server/internal/node_selector_service/models"
 	"pokt_gateway_server/internal/session_registry"
 	"pokt_gateway_server/pkg/common"
@@ -33,8 +35,8 @@ func NewNodeSelectorService(sessionRegistry session_registry.SessionRegistryServ
 
 	// enabled checks
 	enabledChecks := []checks.CheckJob{
-		checks.NewEvmHeightCheck(baseCheck, logger.Named("evm_height_checker")),
-		checks.NewEvmDataIntegrityCheck(baseCheck, logger.Named("evm_data_integrity_checker")),
+		evm_height_check.NewEvmHeightCheck(baseCheck, logger.Named("evm_height_checker")),
+		evm_data_integrity_check.NewEvmDataIntegrityCheck(baseCheck, logger.Named("evm_data_integrity_checker")),
 	}
 	selectorService := &NodeSelectorClient{
 		sessionRegistry: sessionRegistry,

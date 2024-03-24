@@ -1,4 +1,4 @@
-package checks
+package evm_height_check
 
 import (
 	"encoding/json"
@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 	"gonum.org/v1/gonum/stat"
 	"math"
+	"pokt_gateway_server/internal/node_selector_service/checks"
 	"pokt_gateway_server/internal/node_selector_service/models"
 	"strconv"
 	"strings"
@@ -64,12 +65,12 @@ func (r *evmHeightResponse) UnmarshalJSON(data []byte) error {
 }
 
 type EvmHeightCheck struct {
-	*Check
+	*checks.Check
 	nextCheckTime time.Time
 	logger        *zap.Logger
 }
 
-func NewEvmHeightCheck(check *Check, logger *zap.Logger) *EvmHeightCheck {
+func NewEvmHeightCheck(check *checks.Check, logger *zap.Logger) *EvmHeightCheck {
 	return &EvmHeightCheck{Check: check, nextCheckTime: time.Time{}, logger: logger}
 }
 
@@ -80,7 +81,7 @@ func (c *EvmHeightCheck) Name() string {
 func (c *EvmHeightCheck) Perform() {
 
 	// Send request to all nodes
-	relayResponses := sendRelaysAsync(c.pocketRelayer, c.nodeList, heightJsonPayload, "POST")
+	relayResponses := checks.SendRelaysAsync(c.PocketRelayer, c.NodeList, heightJsonPayload, "POST")
 
 	var nodesResponded []*models.QosNode
 	// Process relay responses
@@ -88,7 +89,7 @@ func (c *EvmHeightCheck) Perform() {
 
 		err := resp.Error
 		if err != nil {
-			defaultPunishNode(err, resp.Node, c.logger)
+			checks.DefaultPunishNode(err, resp.Node, c.logger)
 			continue
 		}
 
@@ -98,7 +99,7 @@ func (c *EvmHeightCheck) Perform() {
 		if err != nil {
 			c.logger.Sugar().Warnw("failed to unmarshal response", "err", err)
 			// Treat a invalid response as a timeout error
-			defaultPunishNode(fasthttp.ErrTimeout, resp.Node, c.logger)
+			checks.DefaultPunishNode(fasthttp.ErrTimeout, resp.Node, c.logger)
 			continue
 		}
 
@@ -112,7 +113,7 @@ func (c *EvmHeightCheck) Perform() {
 	for _, node := range nodesResponded {
 		heightDifference := int(highestNodeHeight - node.GetLastKnownHeight())
 		// Penalize nodes whose reported height is significantly lower than the highest reported height
-		if heightDifference > getBlockHeightTolerance(c.chainConfiguration, node.GetChain(), defaultHeightTolerance) {
+		if heightDifference > checks.GetBlockHeightTolerance(c.ChainConfiguration, node.GetChain(), defaultHeightTolerance) {
 			c.logger.Sugar().Infow("node is out of sync", "node", node.MorseNode.ServiceUrl, "heightDifference", heightDifference, "nodeSyncedHeight", node.GetLastKnownHeight(), "highestNodeHeight", highestNodeHeight, "chain", node.GetChain())
 			// Punish Node specifically due to timeout.
 			node.SetSynced(false)
@@ -125,7 +126,7 @@ func (c *EvmHeightCheck) Perform() {
 }
 
 func (c *EvmHeightCheck) SetNodes(nodes []*models.QosNode) {
-	c.nodeList = nodes
+	c.NodeList = nodes
 }
 
 func (c *EvmHeightCheck) ShouldRun() bool {
@@ -135,7 +136,7 @@ func (c *EvmHeightCheck) ShouldRun() bool {
 func (c *EvmHeightCheck) getEligibleNodes() []*models.QosNode {
 	// Filter nodes based on last checked time
 	var eligibleNodes []*models.QosNode
-	for _, node := range c.nodeList {
+	for _, node := range c.NodeList {
 		if node.GetLastHeightCheckTime().IsZero() || time.Since(node.GetLastHeightCheckTime()) >= checkNodeHeightInterval {
 			eligibleNodes = append(eligibleNodes, node)
 		}

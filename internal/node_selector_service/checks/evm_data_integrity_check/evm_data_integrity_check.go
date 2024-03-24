@@ -1,10 +1,11 @@
-package checks
+package evm_data_integrity_check
 
 import (
 	"encoding/json"
 	"fmt"
 	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
+	"pokt_gateway_server/internal/node_selector_service/checks"
 	"pokt_gateway_server/internal/node_selector_service/models"
 	"pokt_gateway_server/pkg/common"
 	"strconv"
@@ -35,12 +36,12 @@ type blockByNumberResponse struct {
 }
 
 type EvmDataIntegrityCheck struct {
-	*Check
+	*checks.Check
 	nextCheckTime time.Time
 	logger        *zap.Logger
 }
 
-func NewEvmDataIntegrityCheck(check *Check, logger *zap.Logger) *EvmDataIntegrityCheck {
+func NewEvmDataIntegrityCheck(check *checks.Check, logger *zap.Logger) *EvmDataIntegrityCheck {
 	return &EvmDataIntegrityCheck{Check: check, nextCheckTime: time.Time{}, logger: logger}
 }
 
@@ -54,7 +55,7 @@ func (c *EvmDataIntegrityCheck) Name() string {
 }
 
 func (c *EvmDataIntegrityCheck) SetNodes(nodes []*models.QosNode) {
-	c.nodeList = nodes
+	c.NodeList = nodes
 }
 
 func (c *EvmDataIntegrityCheck) Perform() {
@@ -64,7 +65,7 @@ func (c *EvmDataIntegrityCheck) Perform() {
 
 	// Node that is synced cannot be found, so we cannot run data integrity checks since we need a trusted source
 	if sourceOfTruth == nil {
-		c.logger.Sugar().Warnw("cannot find source of truth for data integrity check", "chain", c.nodeList[0].GetChain())
+		c.logger.Sugar().Warnw("cannot find source of truth for data integrity check", "chain", c.NodeList[0].GetChain())
 		return
 	}
 
@@ -74,13 +75,13 @@ func (c *EvmDataIntegrityCheck) Perform() {
 	var nodeResponsePairs []*nodeResponsePair
 
 	// find a random block to search that nodes should have access too
-	blockNumberToSearch := sourceOfTruth.GetLastKnownHeight() - uint64(getDataIntegrityHeightLookback(c.chainConfiguration, sourceOfTruth.GetChain(), dataIntegrityHeightLookbackDefault))
+	blockNumberToSearch := sourceOfTruth.GetLastKnownHeight() - uint64(checks.GetDataIntegrityHeightLookback(c.ChainConfiguration, sourceOfTruth.GetChain(), dataIntegrityHeightLookbackDefault))
 
-	nodeResponses := sendRelaysAsync(c.pocketRelayer, c.getEligibleNodes(), getBlockByNumberPayload(blockNumberToSearch), "POST")
+	nodeResponses := checks.SendRelaysAsync(c.PocketRelayer, c.getEligibleNodes(), getBlockByNumberPayload(blockNumberToSearch), "POST")
 	for rsp := range nodeResponses {
 
 		if rsp.Error != nil {
-			defaultPunishNode(rsp.Error, rsp.Node, c.logger)
+			checks.DefaultPunishNode(rsp.Error, rsp.Node, c.logger)
 			continue
 		}
 
@@ -88,7 +89,7 @@ func (c *EvmDataIntegrityCheck) Perform() {
 		err := json.Unmarshal([]byte(rsp.Relay.Response), &resp)
 		if err != nil {
 			c.logger.Sugar().Warnw("failed to unmarshal response", "err", err)
-			defaultPunishNode(fasthttp.ErrTimeout, rsp.Node, c.logger)
+			checks.DefaultPunishNode(fasthttp.ErrTimeout, rsp.Node, c.logger)
 			continue
 		}
 
@@ -133,7 +134,7 @@ func (c *EvmDataIntegrityCheck) ShouldRun() bool {
 // findRandomHealthyNode - returns a healthy node that is synced so we can use it as a source of truth for data integrity checks
 func (c *EvmDataIntegrityCheck) findRandomHealthyNode() *models.QosNode {
 	var healthyNodes []*models.QosNode
-	for _, node := range c.nodeList {
+	for _, node := range c.NodeList {
 		if node.IsHealthy() {
 			healthyNodes = append(healthyNodes, node)
 		}
@@ -148,7 +149,7 @@ func (c *EvmDataIntegrityCheck) findRandomHealthyNode() *models.QosNode {
 func (c *EvmDataIntegrityCheck) getEligibleNodes() []*models.QosNode {
 	// Filter nodes based on last checked time
 	var eligibleNodes []*models.QosNode
-	for _, node := range c.nodeList {
+	for _, node := range c.NodeList {
 		if (node.GetLastDataIntegrityCheckTime().IsZero() || time.Since(node.GetLastDataIntegrityCheckTime()) >= dataIntegrityNodeCheckInterval) && node.IsHealthy() {
 			eligibleNodes = append(eligibleNodes, node)
 		}
