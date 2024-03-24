@@ -21,6 +21,8 @@ import (
 )
 
 const (
+	// Maximum amount of DB connections opened at a time. This should not have to be modified
+	// as most of our database queries are periodic and not ran concurrently.
 	maxDbConns = 50
 )
 
