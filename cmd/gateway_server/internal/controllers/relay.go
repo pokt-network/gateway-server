@@ -2,16 +2,10 @@ package controllers
 
 import (
 	"errors"
-	"fmt"
 	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
 	"pokt_gateway_server/cmd/gateway_server/internal/common"
-	"pokt_gateway_server/internal/altruist_registry"
-	"pokt_gateway_server/internal/apps_registry"
-	"pokt_gateway_server/internal/node_selector_service"
-	"pokt_gateway_server/internal/relayer"
-	"pokt_gateway_server/internal/session_registry"
-	slice_common "pokt_gateway_server/pkg/common"
+	"pokt_gateway_server/pkg/pokt/pokt_v0"
 	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
 	"strings"
 )
@@ -20,17 +14,13 @@ var ErrRelayChannelClosed = errors.New("concurrent relay channel closed")
 
 // RelayController handles relay requests for a specific chain.
 type RelayController struct {
-	logger           *zap.Logger
-	relayer          *relayer.Relayer
-	appRegistry      apps_registry.AppsRegistryService
-	altruistRegistry altruist_registry.AltruistRegistryService
-	sessionRegistry  session_registry.SessionRegistryService
-	nodeSelector     *node_selector_service.NodeSelectorService
+	logger  *zap.Logger
+	relayer pokt_v0.PocketRelayer
 }
 
 // NewRelayController creates a new instance of RelayController.
-func NewRelayController(relayer *relayer.Relayer, appRegistry apps_registry.AppsRegistryService, sessionRegistry session_registry.SessionRegistryService, altruistRegistry altruist_registry.AltruistRegistryService, nodeSelector *node_selector_service.NodeSelectorService, logger *zap.Logger) *RelayController {
-	return &RelayController{relayer: relayer, appRegistry: appRegistry, sessionRegistry: sessionRegistry, nodeSelector: nodeSelector, altruistRegistry: altruistRegistry, logger: logger}
+func NewRelayController(relayer pokt_v0.PocketRelayer, logger *zap.Logger) *RelayController {
+	return &RelayController{relayer: relayer, logger: logger}
 }
 
 // chainIdLength represents the expected length of chain IDs.
@@ -47,94 +37,25 @@ func (c *RelayController) HandleRelay(ctx *fasthttp.RequestCtx) {
 		return
 	}
 
-	// Use a healthy node determined by node selector
-	node, ok := c.nodeSelector.FindNode(chainID)
-
-	if ok {
-		req := &models.SendRelayRequest{
-			Payload: &models.Payload{
-				Data:   string(ctx.PostBody()),
-				Method: string(ctx.Method()),
-				Path:   path,
-			},
-			Signer:             node.GetAppStakeSigner(),
-			Chain:              chainID,
-			SelectedNodePubKey: node.GetPublicKey(),
-		}
-		relay, err := c.relayer.SendRelay(&relayer.RelayRequest{
-			PocketRequest: req,
-			UseAltruist:   false,
-		})
-		if err != nil {
-			c.logger.Error("Error relaying", zap.Error(err))
-			common.JSONError(ctx, "Something went wrong", fasthttp.StatusInternalServerError)
-			return
-		}
-
-		// Send a successful response back to the client.
-		ctx.Response.SetStatusCode(fasthttp.StatusOK)
-		ctx.Response.Header.Set("Content-Type", "application/json")
-		ctx.Response.SetBodyString(relay.Response)
-		return
-	}
-
-	c.logger.Sugar().Infow("fallback")
-	// Healthy node could not be found, attempting to use random node
-	applications, ok := c.appRegistry.GetApplicationsByChainId(chainID)
-	if !ok || len(applications) == 0 {
-		common.JSONError(ctx, fmt.Sprintf("%s chainId not supported with existing application registry", chainID), fasthttp.StatusBadRequest)
-		return
-	}
-
-	// Get a random app stake from the available list.
-	appStake, ok := slice_common.GetRandomElement(applications)
-	if !ok || appStake == nil {
-		common.JSONError(ctx, "App stake not provided", fasthttp.StatusInternalServerError)
-		return
-	}
-
-	sessionResp, err := c.sessionRegistry.GetSession(&models.GetSessionRequest{
-		AppPubKey: appStake.Signer.PublicKey,
-		Chain:     chainID,
-	})
-
-	if err != nil {
-		c.logger.Error("Error dispatching session", zap.Error(err))
-		common.JSONError(ctx, "Something went wrong", fasthttp.StatusInternalServerError)
-		return
-	}
-
-	randomNode, ok := slice_common.GetRandomElement(sessionResp.Nodes)
-
-	if !ok || randomNode == nil {
-		c.logger.Error("Error finding a node from session", zap.Error(err))
-		common.JSONError(ctx, "Something went wrong", fasthttp.StatusInternalServerError)
-		return
-	}
-
-	req := &models.SendRelayRequest{
+	relay, err := c.relayer.SendRelay(&models.SendRelayRequest{
 		Payload: &models.Payload{
 			Data:   string(ctx.PostBody()),
 			Method: string(ctx.Method()),
 			Path:   path,
 		},
-		Signer:             appStake.Signer,
-		Chain:              chainID,
-		SelectedNodePubKey: randomNode.GetPublicKey(),
-	}
-	relay, err := c.relayer.SendRelay(&relayer.RelayRequest{
-		PocketRequest: req,
-		UseAltruist:   true,
 	})
+
 	if err != nil {
 		c.logger.Error("Error relaying", zap.Error(err))
 		common.JSONError(ctx, "Something went wrong", fasthttp.StatusInternalServerError)
 		return
 	}
+
 	// Send a successful response back to the client.
 	ctx.Response.SetStatusCode(fasthttp.StatusOK)
 	ctx.Response.Header.Set("Content-Type", "application/json")
 	ctx.Response.SetBodyString(relay.Response)
+	return
 }
 
 func getPathSegmented(path []byte) (chain, otherParts string) {

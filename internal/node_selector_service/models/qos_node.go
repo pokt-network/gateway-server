@@ -29,10 +29,10 @@ type QosNode struct {
 }
 
 func (n *QosNode) IsHealthy() bool {
-	return !n.isInTimeout() && n.IsSynced()
+	return !n.isInTimeout() && n.isSynced()
 }
 
-func (n *QosNode) IsSynced() bool {
+func (n *QosNode) isSynced() bool {
 	return n.synced
 }
 

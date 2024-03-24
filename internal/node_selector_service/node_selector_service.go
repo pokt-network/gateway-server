@@ -14,14 +14,18 @@ const (
 	jobCheckInterval = time.Second
 )
 
-type NodeSelectorService struct {
+type NodeSelectorService interface {
+	FindNode(chainId string) (*models.QosNode, bool)
+}
+
+type NodeSelectorClient struct {
 	sessionRegistry session_registry.SessionRegistryService
 	pocketRelayer   pokt_v0.PocketRelayer
 	logger          *zap.Logger
 	checkJobs       []checks.CheckJob
 }
 
-func NewNodeSelectorService(sessionRegistry session_registry.SessionRegistryService, pocketRelayer pokt_v0.PocketRelayer, logger *zap.Logger) *NodeSelectorService {
+func NewNodeSelectorService(sessionRegistry session_registry.SessionRegistryService, pocketRelayer pokt_v0.PocketRelayer, logger *zap.Logger) *NodeSelectorClient {
 
 	// base checks will share same node list and pocket relayer
 	baseCheck := checks.NewCheck(pocketRelayer)
@@ -31,7 +35,7 @@ func NewNodeSelectorService(sessionRegistry session_registry.SessionRegistryServ
 		checks.NewEvmHeightCheck(baseCheck, logger.Named("evm_height_checker")),
 		checks.NewEvmDataIntegrityCheck(baseCheck, logger.Named("evm_data_integrity_checker")),
 	}
-	selectorService := &NodeSelectorService{
+	selectorService := &NodeSelectorClient{
 		sessionRegistry: sessionRegistry,
 		logger:          logger,
 		checkJobs:       enabledChecks,
@@ -40,7 +44,7 @@ func NewNodeSelectorService(sessionRegistry session_registry.SessionRegistryServ
 	return selectorService
 }
 
-func (q NodeSelectorService) FindNode(chainId string) (*models.QosNode, bool) {
+func (q NodeSelectorClient) FindNode(chainId string) (*models.QosNode, bool) {
 	var healthyNodes []*models.QosNode
 	nodes, found := q.sessionRegistry.GetNodesByChain(chainId)
 	if !found {
@@ -58,7 +62,7 @@ func (q NodeSelectorService) FindNode(chainId string) (*models.QosNode, bool) {
 	return node, true
 }
 
-func (q NodeSelectorService) startJobChecker() {
+func (q NodeSelectorClient) startJobChecker() {
 	ticker := time.Tick(jobCheckInterval)
 	go func() {
 		for {

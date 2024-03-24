@@ -2,13 +2,18 @@ package relayer
 
 import (
 	"errors"
+	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
 	"pokt_gateway_server/internal/altruist_registry"
+	"pokt_gateway_server/internal/apps_registry"
+	"pokt_gateway_server/internal/node_selector_service"
 	"pokt_gateway_server/internal/session_registry"
+	"pokt_gateway_server/pkg/common"
 	"pokt_gateway_server/pkg/pokt/pokt_v0"
 	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
+	"strconv"
 	"time"
 )
 
@@ -18,28 +23,21 @@ var (
 )
 
 const (
-	reasonRelayFailedSessionErr         = "relay_session_failure"
-	reasonRelayFailedUnderlyingProvider = "relay_provider_failure"
+	reasonRelayFailedSessionErr = "relay_session_failure"
+	reasonRelayFailedPocketErr  = "relay_pocket_error"
 )
-
-type RelayRequest struct {
-	PocketRequest   *models.SendRelayRequest
-	PocketRetries   uint64
-	AltruistRetries uint64
-	UseAltruist     bool
-}
 
 func init() {
 	counterRelayRequest = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "cached_client_relay_counter",
+			Name: "relay_counter",
 			Help: "Request to send an actual relay and if it succeeded",
 		},
-		[]string{"success", "reason"},
+		[]string{"success", "altruist", "reason"},
 	)
 	histogramRelayRequestLatency = prometheus.NewHistogram(
 		prometheus.HistogramOpts{
-			Name: "cached_client_relay_request_latency",
+			Name: "relay_latency",
 			Help: "percentile on the request to send a relay",
 		},
 	)
@@ -47,28 +45,28 @@ func init() {
 }
 
 type Relayer struct {
-	pocketClient     pokt_v0.PocketService
-	altruistRegistry altruist_registry.AltruistRegistryService
-	sessionRegistry  session_registry.SessionRegistryService
-	altruistTimeout  time.Duration
-	logger           *zap.Logger
+	pocketClient        pokt_v0.PocketService
+	altruistRegistry    altruist_registry.AltruistRegistryService
+	altruistTimeout     time.Duration
+	sessionRegistry     session_registry.SessionRegistryService
+	nodeSelector        node_selector_service.NodeSelectorService
+	applicationRegistry apps_registry.AppsRegistryService
+	logger              *zap.Logger
 }
 
-func NewRelayer(pocketService pokt_v0.PocketService, sessionRegistry session_registry.SessionRegistryService, altruistRegistry altruist_registry.AltruistRegistryService, altruistTimeout time.Duration, logger *zap.Logger) *Relayer {
+func NewRelayer(pocketService pokt_v0.PocketService, sessionRegistry session_registry.SessionRegistryService, applicationRegistry apps_registry.AppsRegistryService, nodeSelector node_selector_service.NodeSelectorService, altruistRegistry altruist_registry.AltruistRegistryService, altruistTimeout time.Duration, logger *zap.Logger) *Relayer {
 	return &Relayer{
-		pocketClient:     pocketService,
-		sessionRegistry:  sessionRegistry,
-		altruistTimeout:  altruistTimeout,
-		logger:           logger,
-		altruistRegistry: altruistRegistry,
+		pocketClient:        pocketService,
+		sessionRegistry:     sessionRegistry,
+		altruistTimeout:     altruistTimeout,
+		logger:              logger,
+		altruistRegistry:    altruistRegistry,
+		applicationRegistry: applicationRegistry,
+		nodeSelector:        nodeSelector,
 	}
 }
 
-func (r *Relayer) SendRelay(req *RelayRequest) (*models.SendRelayResponse, error) {
-
-	if err := req.PocketRequest.Validate(); err != nil {
-		return nil, err
-	}
+func (r *Relayer) SendRelay(req *models.SendRelayRequest) (*models.SendRelayResponse, error) {
 
 	startTime := time.Now()
 	// Measure end to end latency for send relay
@@ -76,37 +74,84 @@ func (r *Relayer) SendRelay(req *RelayRequest) (*models.SendRelayResponse, error
 		histogramRelayRequestLatency.Observe(float64(time.Since(startTime)))
 	}()
 
-	session, err := pokt_v0.GetSessionFromRequest(r.pocketClient, req.PocketRequest)
+	rsp, err := r.sendNodeSelectorRelay(req)
+
+	// Node selector relay was successful
+	if err == nil {
+		counterRelayRequest.WithLabelValues("true", "false", "").Inc()
+		return rsp, nil
+	}
+
+	counterRelayRequest.WithLabelValues("false", "true", reasonRelayFailedPocketErr).Inc()
+
+	r.logger.Sugar().Errorw("failed to send to pokt", "poktErr", err)
+	altruistRsp, altruistErr := r.altruistRelay(req)
+	if altruistErr != nil {
+		r.logger.Sugar().Errorw("failed to send to altruist", "altruistError", altruistErr)
+		// Prefer to return the network error vs altruist error if both fails.
+		return nil, err
+	}
+	return altruistRsp, nil
+}
+
+func (r *Relayer) sendNodeSelectorRelay(req *models.SendRelayRequest) (*models.SendRelayResponse, error) {
+	// find a node to send too first.
+	node, ok := r.nodeSelector.FindNode(req.Chain)
+	if !ok {
+		return nil, errors.New("node selector can't find node")
+	}
+	req.Signer = node.AppSigner
+	req.Session = node.PocketSession
+	req.SelectedNodePubKey = node.GetPublicKey()
+	if err := req.Validate(); err != nil {
+		return nil, err
+	}
+	return r.pocketClient.SendRelay(req)
+}
+
+func (r *Relayer) sendRandomNodeRelay(req *models.SendRelayRequest) (*models.SendRelayResponse, error) {
+	// Healthy node could not be found, attempting to use random node
+	applications, ok := r.applicationRegistry.GetApplicationsByChainId(req.Chain)
+	if !ok {
+		return nil, fmt.Errorf("no app found for chain id %s", req.Chain)
+	}
+
+	// Get a random app stake from the available list.
+	appStake, ok := common.GetRandomElement(applications)
+	if !ok {
+		return nil, fmt.Errorf("random app stake cannot be found")
+	}
+
+	sessionResp, err := r.sessionRegistry.GetSession(&models.GetSessionRequest{
+		AppPubKey: appStake.Signer.PublicKey,
+		Chain:     req.Chain,
+	})
 
 	if err != nil {
-		counterRelayRequest.WithLabelValues("false", reasonRelayFailedSessionErr).Inc()
+		counterRelayRequest.WithLabelValues("false", "true", reasonRelayFailedSessionErr).Inc()
 		return nil, err
 	}
 
-	req.PocketRequest.Session = session
-
-	rsp, err := r.pocketClient.SendRelay(req.PocketRequest)
-
-	// If request fails, send to altruist.
-	if err != nil {
-		r.logger.Sugar().Errorw("failed to send to pokt", "poktErr", err)
-		counterRelayRequest.WithLabelValues("false", reasonRelayFailedUnderlyingProvider).Inc()
-		altruistRsp, altruistErr := r.altruistRelay(req)
-		if altruistErr != nil {
-			r.logger.Sugar().Errorw("failed to send to altruist", "altruistError", altruistErr)
-			// Prefer to return the network error vs altruist error if both fails.
-			return nil, err
-		}
-		return altruistRsp, nil
+	randomNode, ok := common.GetRandomElement(sessionResp.Nodes)
+	if !ok {
+		return nil, errors.New("random node in session cannot be found")
 	}
 
-	counterRelayRequest.WithLabelValues("true", "").Inc()
-	return rsp, nil
+	// populate request with session metadata
+	req.Session = randomNode.PocketSession
+	req.Signer = appStake.Signer
+	req.SelectedNodePubKey = randomNode.GetPublicKey()
+	rsp, err := r.pocketClient.SendRelay(req)
+
+	// record if relay was successful
+	counterRelayRequest.WithLabelValues(strconv.FormatBool(err == nil), "false", "").Inc()
+
+	return rsp, err
 }
 
-func (r *Relayer) altruistRelay(req *RelayRequest) (*models.SendRelayResponse, error) {
+func (r *Relayer) altruistRelay(req *models.SendRelayRequest) (*models.SendRelayResponse, error) {
 
-	url, ok := r.altruistRegistry.GetAltruistURL(req.PocketRequest.Chain)
+	url, ok := r.altruistRegistry.GetAltruistURL(req.Chain)
 
 	if !ok {
 		return nil, errors.New("altruist url not found")
@@ -123,12 +168,16 @@ func (r *Relayer) altruistRelay(req *RelayRequest) (*models.SendRelayResponse, e
 
 	request.SetRequestURI(url)
 
-	if req.PocketRequest.Payload.Method == "POST" {
-		request.SetBody([]byte(req.PocketRequest.Payload.Data))
+	if req.Payload.Method == "POST" {
+		request.SetBody([]byte(req.Payload.Data))
 	}
 
 	err := fasthttp.DoTimeout(request, response, r.altruistTimeout)
-	if err != nil {
+
+	success := err == nil
+	counterRelayRequest.WithLabelValues(strconv.FormatBool(success), "true", "").Inc()
+
+	if !success {
 		return nil, err
 	}
 

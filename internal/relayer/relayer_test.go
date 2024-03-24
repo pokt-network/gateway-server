@@ -108,7 +108,6 @@ func (suite *CachedClientTestSuite) TestSendRelay() {
 			setupMocks: func(request *models.SendRelayRequest) {
 
 				suite.mockSessionRegistryService.EXPECT().GetSession(testGetSessionRequest).Return(testResponse, nil).Times(1)
-
 				suite.mockPocketService.EXPECT().SendRelay(request).Return(testSendRelayResponse, nil).Times(1)
 
 			},

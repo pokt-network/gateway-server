@@ -66,13 +66,13 @@ func main() {
 	sessionRegistry := session_registry.NewCachedSessionRegistryService(client, poktApplicationRegistry, sessionCache, nodeCache, logger.Named("session_registry"))
 	nodeSelectorService := node_selector_service.NewNodeSelectorService(sessionRegistry, client, logger.Named("node_selector"))
 
-	relayer := relayer.NewRelayer(client, sessionRegistry, altruistRegistry, gatewayConfigProvider.GetPoktRPCTimeout(), logger.Named("relayer"))
+	relayer := relayer.NewRelayer(client, sessionRegistry, poktApplicationRegistry, nodeSelectorService, altruistRegistry, gatewayConfigProvider.GetPoktRPCTimeout(), logger.Named("relayer"))
 
 	// Define routers
 	r := router.New()
 
 	// Create a relay controller with the necessary dependencies (logger, registry, cached relayer)
-	relayController := controllers.NewRelayController(relayer, poktApplicationRegistry, sessionRegistry, altruistRegistry, nodeSelectorService, logger.Named("relay_controller"))
+	relayController := controllers.NewRelayController(relayer, logger.Named("relay_controller"))
 
 	relayRouter := r.Group("/relay")
 	relayRouter.POST("/{catchAll:*}", relayController.HandleRelay)
