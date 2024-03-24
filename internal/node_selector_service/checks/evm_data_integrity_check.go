@@ -21,8 +21,8 @@ const (
 	// how often the job should run
 	dataIntegrityCheckInterval = time.Second * 1
 
-	// the lookback we will use to determine which block number to do a data integrity against (latestBlockHeight - lookBack)
-	dataIntegrityHeightLookback = 25
+	// the look back we will use to determine which block number to do a data integrity against (latestBlockHeight - lookBack)
+	dataIntegrityHeightLookbackDefault = 25
 
 	//json rpc payload to send a data integrity check
 	blockPayloadFmt = `{"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":["%s", false],"id":1}`
@@ -73,7 +73,10 @@ func (c *EvmDataIntegrityCheck) Perform() {
 
 	var nodeResponsePairs []*nodeResponsePair
 
-	nodeResponses := sendRelaysAsync(c.pocketRelayer, c.getEligibleNodes(), getBlockByNumberPayload(sourceOfTruth.GetLastKnownHeight()-dataIntegrityHeightLookback), "POST")
+	// find a random block to search that nodes should have access too
+	blockNumberToSearch := sourceOfTruth.GetLastKnownHeight() - uint64(getDataIntegrityHeightLookback(c.chainConfiguration, sourceOfTruth.GetChain(), dataIntegrityHeightLookbackDefault))
+
+	nodeResponses := sendRelaysAsync(c.pocketRelayer, c.getEligibleNodes(), getBlockByNumberPayload(blockNumberToSearch), "POST")
 	for rsp := range nodeResponses {
 
 		if rsp.Error != nil {

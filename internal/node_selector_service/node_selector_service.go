@@ -2,6 +2,7 @@ package node_selector_service
 
 import (
 	"go.uber.org/zap"
+	"pokt_gateway_server/internal/chain_configurations_registry"
 	"pokt_gateway_server/internal/node_selector_service/checks"
 	"pokt_gateway_server/internal/node_selector_service/models"
 	"pokt_gateway_server/internal/session_registry"
@@ -25,10 +26,10 @@ type NodeSelectorClient struct {
 	checkJobs       []checks.CheckJob
 }
 
-func NewNodeSelectorService(sessionRegistry session_registry.SessionRegistryService, pocketRelayer pokt_v0.PocketRelayer, logger *zap.Logger) *NodeSelectorClient {
+func NewNodeSelectorService(sessionRegistry session_registry.SessionRegistryService, pocketRelayer pokt_v0.PocketRelayer, chainConfiguration chain_configurations_registry.ChainConfigurationsService, logger *zap.Logger) *NodeSelectorClient {
 
 	// base checks will share same node list and pocket relayer
-	baseCheck := checks.NewCheck(pocketRelayer)
+	baseCheck := checks.NewCheck(pocketRelayer, chainConfiguration)
 
 	// enabled checks
 	enabledChecks := []checks.CheckJob{

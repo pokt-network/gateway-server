@@ -24,11 +24,14 @@ const (
 	// interval to run the evm height check
 	evmHeightCheckInterval = time.Second * 1
 
+	// penalty for being out of sync
+	evmHeightCheckPenalty = time.Minute * 5
+
 	// jsonrpc payload to retrieve evm height
 	heightJsonPayload = `{"jsonrpc":"2.0","method":"eth_blockNumber","params": [],"id":1}`
 
-	// height allowance
-	defaultHeightThreshold = 100
+	// default height allowance
+	defaultHeightTolerance int = 100
 )
 
 type evmHeightResponse struct {
@@ -107,13 +110,13 @@ func (c *EvmHeightCheck) Perform() {
 	highestNodeHeight := getHighestNodeHeight(nodesResponded)
 	// Compare each node's reported height against the highest reported height
 	for _, node := range nodesResponded {
-		heightDifference := int64(highestNodeHeight) - int64(node.GetLastKnownHeight())
+		heightDifference := int(highestNodeHeight - node.GetLastKnownHeight())
 		// Penalize nodes whose reported height is significantly lower than the highest reported height
-		if heightDifference > defaultHeightThreshold {
+		if heightDifference > getBlockHeightTolerance(c.chainConfiguration, node.GetChain(), defaultHeightTolerance) {
 			c.logger.Sugar().Infow("node is out of sync", "node", node.MorseNode.ServiceUrl, "heightDifference", heightDifference, "nodeSyncedHeight", node.GetLastKnownHeight(), "highestNodeHeight", highestNodeHeight, "chain", node.GetChain())
 			// Punish Node specifically due to timeout.
 			node.SetSynced(false)
-			node.SetTimeoutUntil(time.Now().Add(dataIntegrityTimePenalty), models.OutOfSyncTimeout)
+			node.SetTimeoutUntil(time.Now().Add(evmHeightCheckPenalty), models.OutOfSyncTimeout)
 		} else {
 			node.SetSynced(true)
 		}

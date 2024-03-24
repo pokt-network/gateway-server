@@ -1,6 +1,7 @@
 package checks
 
 import (
+	"pokt_gateway_server/internal/chain_configurations_registry"
 	qos_models "pokt_gateway_server/internal/node_selector_service/models"
 	"pokt_gateway_server/pkg/pokt/pokt_v0"
 )
@@ -13,10 +14,11 @@ type CheckJob interface {
 }
 
 type Check struct {
-	nodeList      []*qos_models.QosNode
-	pocketRelayer pokt_v0.PocketRelayer
+	nodeList           []*qos_models.QosNode
+	pocketRelayer      pokt_v0.PocketRelayer
+	chainConfiguration chain_configurations_registry.ChainConfigurationsService
 }
 
-func NewCheck(pocketRelayer pokt_v0.PocketRelayer) *Check {
+func NewCheck(pocketRelayer pokt_v0.PocketRelayer, chainConfiguration chain_configurations_registry.ChainConfigurationsService) *Check {
 	return &Check{pocketRelayer: pocketRelayer}
 }
