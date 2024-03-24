@@ -43,6 +43,7 @@ func (c *RelayController) HandleRelay(ctx *fasthttp.RequestCtx) {
 			Method: string(ctx.Method()),
 			Path:   path,
 		},
+		Chain: chainID,
 	})
 
 	if err != nil {
