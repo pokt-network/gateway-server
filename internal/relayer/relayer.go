@@ -6,8 +6,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
-	"pokt_gateway_server/internal/altruist_registry"
 	"pokt_gateway_server/internal/apps_registry"
+	"pokt_gateway_server/internal/chain_configurations_registry"
+	"pokt_gateway_server/internal/global_config"
 	"pokt_gateway_server/internal/node_selector_service"
 	"pokt_gateway_server/internal/session_registry"
 	"pokt_gateway_server/pkg/common"
@@ -50,26 +51,26 @@ func init() {
 }
 
 type Relayer struct {
-	pocketClient        pokt_v0.PocketService
-	altruistRegistry    altruist_registry.AltruistRegistryService
-	altruistTimeout     time.Duration
-	sessionRegistry     session_registry.SessionRegistryService
-	nodeSelector        node_selector_service.NodeSelectorService
-	applicationRegistry apps_registry.AppsRegistryService
-	httpRequester       httpRequester
-	logger              *zap.Logger
+	globalConfigProvider       global_config.GlobalConfigProvider
+	pocketClient               pokt_v0.PocketService
+	chainConfigurationRegistry chain_configurations_registry.ChainConfigurationsService
+	sessionRegistry            session_registry.SessionRegistryService
+	nodeSelector               node_selector_service.NodeSelectorService
+	applicationRegistry        apps_registry.AppsRegistryService
+	httpRequester              httpRequester
+	logger                     *zap.Logger
 }
 
-func NewRelayer(pocketService pokt_v0.PocketService, sessionRegistry session_registry.SessionRegistryService, applicationRegistry apps_registry.AppsRegistryService, nodeSelector node_selector_service.NodeSelectorService, altruistRegistry altruist_registry.AltruistRegistryService, altruistTimeout time.Duration, logger *zap.Logger) *Relayer {
+func NewRelayer(pocketService pokt_v0.PocketService, sessionRegistry session_registry.SessionRegistryService, applicationRegistry apps_registry.AppsRegistryService, nodeSelector node_selector_service.NodeSelectorService, altruistRegistry chain_configurations_registry.ChainConfigurationsService, globalConfigProvider global_config.GlobalConfigProvider, logger *zap.Logger) *Relayer {
 	return &Relayer{
-		pocketClient:        pocketService,
-		sessionRegistry:     sessionRegistry,
-		altruistTimeout:     altruistTimeout,
-		logger:              logger,
-		altruistRegistry:    altruistRegistry,
-		applicationRegistry: applicationRegistry,
-		nodeSelector:        nodeSelector,
-		httpRequester:       fastHttpRequester{},
+		pocketClient:               pocketService,
+		sessionRegistry:            sessionRegistry,
+		logger:                     logger,
+		chainConfigurationRegistry: altruistRegistry,
+		applicationRegistry:        applicationRegistry,
+		nodeSelector:               nodeSelector,
+		httpRequester:              fastHttpRequester{},
+		globalConfigProvider:       globalConfigProvider,
 	}
 }
 
@@ -144,9 +145,11 @@ func (r *Relayer) sendRandomNodeRelay(req *models.SendRelayRequest) (*models.Sen
 		return nil, errors.New("random node in session cannot be found")
 	}
 
+	requestTimeout := r.getPocketRequestTimeout(req.Chain)
 	// populate request with session metadata
 	req.Session = randomNode.PocketSession
 	req.Signer = appStake.Signer
+	req.Timeout = &requestTimeout
 	req.SelectedNodePubKey = randomNode.GetPublicKey()
 	rsp, err := r.pocketClient.SendRelay(req)
 
@@ -158,7 +161,7 @@ func (r *Relayer) sendRandomNodeRelay(req *models.SendRelayRequest) (*models.Sen
 
 func (r *Relayer) altruistRelay(req *models.SendRelayRequest) (*models.SendRelayResponse, error) {
 
-	url, ok := r.altruistRegistry.GetAltruistURL(req.Chain)
+	chainConfig, ok := r.chainConfigurationRegistry.GetChainConfiguration(req.Chain)
 
 	if !ok {
 		return nil, errAltruistNotFound
@@ -173,13 +176,14 @@ func (r *Relayer) altruistRelay(req *models.SendRelayRequest) (*models.SendRelay
 		fasthttp.ReleaseResponse(response)
 	}()
 
-	request.SetRequestURI(url)
+	requestTimeout := r.getAltruistRequestTimeout(req.Chain)
+	request.SetRequestURI(chainConfig.AltruistUrl.String)
 
 	if req.Payload.Method == "POST" {
 		request.SetBody([]byte(req.Payload.Data))
 	}
 
-	err := r.httpRequester.DoTimeout(request, response, r.altruistTimeout)
+	err := r.httpRequester.DoTimeout(request, response, requestTimeout)
 
 	success := err == nil
 	counterRelayRequest.WithLabelValues(strconv.FormatBool(success), "true", "").Inc()
@@ -190,4 +194,28 @@ func (r *Relayer) altruistRelay(req *models.SendRelayRequest) (*models.SendRelay
 
 	str := string(response.Body())
 	return &models.SendRelayResponse{Response: str}, nil
+}
+
+func (r *Relayer) getAltruistRequestTimeout(chainId string) time.Duration {
+	chainConfig, ok := r.chainConfigurationRegistry.GetChainConfiguration(chainId)
+	if !ok {
+		return r.globalConfigProvider.GetAltruistRequestTimeout()
+	}
+	configTime, err := time.ParseDuration(chainConfig.AltruistRequestTimeoutDuration.String)
+	if err != nil {
+		return r.globalConfigProvider.GetAltruistRequestTimeout()
+	}
+	return configTime
+}
+
+func (r *Relayer) getPocketRequestTimeout(chainId string) time.Duration {
+	chainConfig, ok := r.chainConfigurationRegistry.GetChainConfiguration(chainId)
+	if !ok {
+		return r.globalConfigProvider.GetPoktRPCRequestTimeout()
+	}
+	configTime, err := time.ParseDuration(chainConfig.AltruistRequestTimeoutDuration.String)
+	if err != nil {
+		return r.globalConfigProvider.GetPoktRPCRequestTimeout()
+	}
+	return configTime
 }

@@ -18,7 +18,7 @@ type Querier interface {
 
 	DeletePoktApplication(ctx context.Context, applicationID pgtype.UUID) (pgconn.CommandTag, error)
 
-	GetAltruists(ctx context.Context) ([]GetAltruistsRow, error)
+	GetChainConfigurations(ctx context.Context) ([]GetChainConfigurationsRow, error)
 }
 
 var _ Querier = &DBQuerier{}
@@ -125,31 +125,40 @@ func (q *DBQuerier) DeletePoktApplication(ctx context.Context, applicationID pgt
 	return cmdTag, err
 }
 
-const getAltruistsSQL = `SELECT chain_id, url FROM altruists;`
+const getChainConfigurationsSQL = `SELECT * FROM chain_configurations;`
 
-type GetAltruistsRow struct {
-	ChainID pgtype.Varchar `json:"chain_id"`
-	Url     pgtype.Varchar `json:"url"`
+type GetChainConfigurationsRow struct {
+	CreatedAt                        pgtype.Timestamp `json:"created_at"`
+	UpdatedAt                        pgtype.Timestamp `json:"updated_at"`
+	DeletedAt                        pgtype.Timestamp `json:"deleted_at"`
+	ID                               pgtype.UUID      `json:"id"`
+	ChainID                          pgtype.Varchar   `json:"chain_id"`
+	PocketRequestTimeoutDuration     pgtype.Varchar   `json:"pocket_request_timeout_duration"`
+	AltruistUrl                      pgtype.Varchar   `json:"altruist_url"`
+	AltruistRequestTimeoutDuration   pgtype.Varchar   `json:"altruist_request_timeout_duration"`
+	TopBucketP90latencyDuration      pgtype.Varchar   `json:"top_bucket_p90latency_duration"`
+	HeightCheckBlockTolerance        *int32           `json:"height_check_block_tolerance"`
+	DataIntegrityCheckLookbackHeight *int32           `json:"data_integrity_check_lookback_height"`
 }
 
-// GetAltruists implements Querier.GetAltruists.
-func (q *DBQuerier) GetAltruists(ctx context.Context) ([]GetAltruistsRow, error) {
-	ctx = context.WithValue(ctx, "pggen_query_name", "GetAltruists")
-	rows, err := q.conn.Query(ctx, getAltruistsSQL)
+// GetChainConfigurations implements Querier.GetChainConfigurations.
+func (q *DBQuerier) GetChainConfigurations(ctx context.Context) ([]GetChainConfigurationsRow, error) {
+	ctx = context.WithValue(ctx, "pggen_query_name", "GetChainConfigurations")
+	rows, err := q.conn.Query(ctx, getChainConfigurationsSQL)
 	if err != nil {
-		return nil, fmt.Errorf("query GetAltruists: %w", err)
+		return nil, fmt.Errorf("query GetChainConfigurations: %w", err)
 	}
 	defer rows.Close()
-	items := []GetAltruistsRow{}
+	items := []GetChainConfigurationsRow{}
 	for rows.Next() {
-		var item GetAltruistsRow
-		if err := rows.Scan(&item.ChainID, &item.Url); err != nil {
-			return nil, fmt.Errorf("scan GetAltruists row: %w", err)
+		var item GetChainConfigurationsRow
+		if err := rows.Scan(&item.CreatedAt, &item.UpdatedAt, &item.DeletedAt, &item.ID, &item.ChainID, &item.PocketRequestTimeoutDuration, &item.AltruistUrl, &item.AltruistRequestTimeoutDuration, &item.TopBucketP90latencyDuration, &item.HeightCheckBlockTolerance, &item.DataIntegrityCheckLookbackHeight); err != nil {
+			return nil, fmt.Errorf("scan GetChainConfigurations row: %w", err)
 		}
 		items = append(items, item)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("close GetAltruists rows: %w", err)
+		return nil, fmt.Errorf("close GetChainConfigurations rows: %w", err)
 	}
 	return items, err
 }

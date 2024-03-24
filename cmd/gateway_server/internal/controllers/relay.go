@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"errors"
 	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
 	"pokt_gateway_server/cmd/gateway_server/internal/common"
@@ -9,8 +8,6 @@ import (
 	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
 	"strings"
 )
-
-var ErrRelayChannelClosed = errors.New("concurrent relay channel closed")
 
 // RelayController handles relay requests for a specific chain.
 type RelayController struct {

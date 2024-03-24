@@ -10,8 +10,8 @@ import (
 	"pokt_gateway_server/cmd/gateway_server/internal/models"
 	"pokt_gateway_server/cmd/gateway_server/internal/transform"
 	"pokt_gateway_server/internal/apps_registry"
-	"pokt_gateway_server/internal/config"
 	"pokt_gateway_server/internal/db_query"
+	"pokt_gateway_server/internal/global_config"
 	"pokt_gateway_server/pkg/pokt/pokt_v0"
 	pokt_models "pokt_gateway_server/pkg/pokt/pokt_v0/models"
 )
@@ -26,11 +26,11 @@ type PoktAppsController struct {
 	query          db_query.Querier
 	poktClient     pokt_v0.PocketService
 	appRegistry    apps_registry.AppsRegistryService
-	secretProvider config.SecretProvider
+	secretProvider global_config.SecretProvider
 }
 
 // NewRelayController creates a new instance of RelayController.
-func NewPoktAppsController(appRegistry apps_registry.AppsRegistryService, query db_query.Querier, secretProvider config.SecretProvider, logger *zap.Logger) *PoktAppsController {
+func NewPoktAppsController(appRegistry apps_registry.AppsRegistryService, query db_query.Querier, secretProvider global_config.SecretProvider, logger *zap.Logger) *PoktAppsController {
 	return &PoktAppsController{appRegistry: appRegistry, query: query, secretProvider: secretProvider, logger: logger}
 }
 

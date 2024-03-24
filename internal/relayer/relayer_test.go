@@ -2,37 +2,42 @@ package relayer
 
 // Basic imports
 import (
+	"github.com/jackc/pgtype"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
+	"pokt_gateway_server/internal/db_query"
 	qos_models "pokt_gateway_server/internal/node_selector_service/models"
-	altruist_registry_mock "pokt_gateway_server/mocks/altruist_registry"
 	apps_registry_mock "pokt_gateway_server/mocks/apps_registry"
+	chain_configurations_registry_mock "pokt_gateway_server/mocks/chain_configurations_registry"
+	global_config_mock "pokt_gateway_server/mocks/global_config"
 	node_selector_mock "pokt_gateway_server/mocks/node_selector"
 	pocket_service_mock "pokt_gateway_server/mocks/pocket_service"
 	session_registry_mock "pokt_gateway_server/mocks/session_registry"
+	"time"
 
 	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
 	"testing"
-	"time"
 )
 
 type RelayerTestSuite struct {
 	suite.Suite
-	mockNodeSelectorService     *node_selector_mock.NodeSelectorService
-	mockAltruistRegistryService *altruist_registry_mock.AltruistRegistryService
-	mockSessionRegistryService  *session_registry_mock.SessionRegistryService
-	mockPocketService           *pocket_service_mock.PocketService
-	mockAppRegistry             *apps_registry_mock.AppsRegistryService
-	relayer                     *Relayer
+	mockNodeSelectorService        *node_selector_mock.NodeSelectorService
+	mockChainConfigurationsService *chain_configurations_registry_mock.ChainConfigurationsService
+	mockSessionRegistryService     *session_registry_mock.SessionRegistryService
+	mockPocketService              *pocket_service_mock.PocketService
+	mockAppRegistry                *apps_registry_mock.AppsRegistryService
+	mockConfigProvider             *global_config_mock.GlobalConfigProvider
+	relayer                        *Relayer
 }
 
 func (suite *RelayerTestSuite) SetupTest() {
 	suite.mockPocketService = new(pocket_service_mock.PocketService)
 	suite.mockNodeSelectorService = new(node_selector_mock.NodeSelectorService)
 	suite.mockSessionRegistryService = new(session_registry_mock.SessionRegistryService)
-	suite.mockAltruistRegistryService = new(altruist_registry_mock.AltruistRegistryService)
+	suite.mockChainConfigurationsService = new(chain_configurations_registry_mock.ChainConfigurationsService)
 	suite.mockAppRegistry = new(apps_registry_mock.AppsRegistryService)
-	suite.relayer = NewRelayer(suite.mockPocketService, suite.mockSessionRegistryService, suite.mockAppRegistry, suite.mockNodeSelectorService, suite.mockAltruistRegistryService, time.Minute, zap.NewNop())
+	suite.mockConfigProvider = new(global_config_mock.GlobalConfigProvider)
+	suite.relayer = NewRelayer(suite.mockPocketService, suite.mockSessionRegistryService, suite.mockAppRegistry, suite.mockNodeSelectorService, suite.mockChainConfigurationsService, suite.mockConfigProvider, zap.NewNop())
 }
 
 func (suite *RelayerTestSuite) TestNodeSelectorRelay() {
@@ -125,7 +130,7 @@ func (suite *RelayerTestSuite) TestAltruistRelay() {
 				Chain:   "1234",
 			},
 			setupMocks: func(request *models.SendRelayRequest) {
-				suite.mockAltruistRegistryService.EXPECT().GetAltruistURL(request.Chain).Return("", false)
+				suite.mockChainConfigurationsService.EXPECT().GetChainConfiguration(request.Chain).Return(db_query.GetChainConfigurationsRow{}, false)
 			},
 			expectedResponse: nil,
 			expectedError:    errAltruistNotFound,
@@ -137,8 +142,11 @@ func (suite *RelayerTestSuite) TestAltruistRelay() {
 				Chain:   "1234",
 			},
 			setupMocks: func(request *models.SendRelayRequest) {
-				// We can only check if altruist url
-				suite.mockAltruistRegistryService.EXPECT().GetAltruistURL(request.Chain).Return("https://chain.com", true)
+				pgTypeStr := pgtype.Varchar{}
+				pgTypeStr.Set("https://example.com")
+				// We can only check if altruist url and if proper config is called
+				suite.mockConfigProvider.EXPECT().GetAltruistRequestTimeout().Return(time.Second * 15)
+				suite.mockChainConfigurationsService.EXPECT().GetChainConfiguration(request.Chain).Return(db_query.GetChainConfigurationsRow{AltruistUrl: pgTypeStr}, true)
 			},
 			expectedResponse: nil,
 			expectedError:    nil,

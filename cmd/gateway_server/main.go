@@ -9,8 +9,8 @@ import (
 	"pokt_gateway_server/cmd/gateway_server/internal/config"
 	"pokt_gateway_server/cmd/gateway_server/internal/controllers"
 	"pokt_gateway_server/cmd/gateway_server/internal/middleware"
-	"pokt_gateway_server/internal/altruist_registry"
 	"pokt_gateway_server/internal/apps_registry"
+	"pokt_gateway_server/internal/chain_configurations_registry"
 	"pokt_gateway_server/internal/db_query"
 	"pokt_gateway_server/internal/logging"
 	"pokt_gateway_server/internal/node_selector_service"
@@ -45,7 +45,7 @@ func main() {
 	defer pool.Close()
 
 	// Initialize a POKT client using the configured POKT RPC host and timeout
-	client, err := pokt_v0.NewBasicClient(gatewayConfigProvider.GetPoktRPCFullHost(), gatewayConfigProvider.GetPoktRPCTimeout())
+	client, err := pokt_v0.NewBasicClient(gatewayConfigProvider.GetPoktRPCFullHost(), gatewayConfigProvider.GetPoktRPCRequestTimeout())
 	if err != nil {
 		// If POKT client initialization fails, log the error and exit
 		logger.Sugar().Fatal(err)
@@ -62,11 +62,11 @@ func main() {
 	)
 
 	poktApplicationRegistry := apps_registry.NewCachedAppsRegistry(client, querier, gatewayConfigProvider, logger.Named("pokt_application_registry"))
-	altruistRegistry := altruist_registry.NewCachedAltruistRegistryService(querier, logger.Named("altruist_registry"))
+	chainConfigurationRegistry := chain_configurations_registry.NewCachedChainConfigurationRegistry(querier, logger.Named("chain_configurations_registry"))
 	sessionRegistry := session_registry.NewCachedSessionRegistryService(client, poktApplicationRegistry, sessionCache, nodeCache, logger.Named("session_registry"))
 	nodeSelectorService := node_selector_service.NewNodeSelectorService(sessionRegistry, client, logger.Named("node_selector"))
 
-	relayer := relayer.NewRelayer(client, sessionRegistry, poktApplicationRegistry, nodeSelectorService, altruistRegistry, gatewayConfigProvider.GetPoktRPCTimeout(), logger.Named("relayer"))
+	relayer := relayer.NewRelayer(client, sessionRegistry, poktApplicationRegistry, nodeSelectorService, chainConfigurationRegistry, gatewayConfigProvider, logger.Named("relayer"))
 
 	// Define routers
 	r := router.New()

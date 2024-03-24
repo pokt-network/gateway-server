@@ -4,8 +4,8 @@ import (
 	"context"
 	"go.uber.org/zap"
 	"pokt_gateway_server/internal/apps_registry/models"
-	"pokt_gateway_server/internal/config"
 	"pokt_gateway_server/internal/db_query"
+	"pokt_gateway_server/internal/global_config"
 	"pokt_gateway_server/pkg/pokt/pokt_v0"
 	pokt "pokt_gateway_server/pkg/pokt/pokt_v0/models"
 	"sort"
@@ -23,14 +23,14 @@ type CachedAppsRegistry struct {
 	pocketClient        pokt_v0.PocketService
 	dbQuery             db_query.Querier
 	logger              *zap.Logger
-	secretProvider      config.SecretProvider
+	secretProvider      global_config.SecretProvider
 	applications        []*models.PoktApplicationSigner
 	applicationChainMap map[string][]*models.PoktApplicationSigner
 	lockCache           sync.RWMutex
 }
 
 // NewCachedAppsRegistry creates a new instance of CachedAppsRegistry.
-func NewCachedAppsRegistry(pocketClient pokt_v0.PocketService, dbQuery db_query.Querier, secretProvider config.SecretProvider, logger *zap.Logger) *CachedAppsRegistry {
+func NewCachedAppsRegistry(pocketClient pokt_v0.PocketService, dbQuery db_query.Querier, secretProvider global_config.SecretProvider, logger *zap.Logger) *CachedAppsRegistry {
 	cachedRegistry := CachedAppsRegistry{pocketClient: pocketClient, dbQuery: dbQuery, logger: logger, secretProvider: secretProvider}
 	err := cachedRegistry.updateApplicationCache()
 	if err != nil {

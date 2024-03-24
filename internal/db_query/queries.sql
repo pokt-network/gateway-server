@@ -10,5 +10,5 @@ VALUES (pgp_sym_encrypt(pggen.arg('private_key'), pggen.arg('encryption_key')));
 DELETE FROM pokt_applications
 WHERE id = pggen.arg('application_id');
 
--- name: GetAltruists :many
-SELECT chain_id, url FROM altruists;
+-- name: GetChainConfigurations :many
+SELECT * FROM chain_configurations;

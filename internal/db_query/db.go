@@ -11,11 +11,11 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	root "pokt_gateway_server"
-	"pokt_gateway_server/internal/config"
+	"pokt_gateway_server/internal/global_config"
 )
 
 // InitDB - runs DB migrations and provides a code-generated query interface
-func InitDB(logger *zap.Logger, config config.DBCredentialsProvider, maxConnections uint) (Querier, *pgxpool.Pool, error) {
+func InitDB(logger *zap.Logger, config global_config.DBCredentialsProvider, maxConnections uint) (Querier, *pgxpool.Pool, error) {
 
 	// initialize database
 	sqldb, err := sql.Open("postgres", config.GetDatabaseConnectionUrl())

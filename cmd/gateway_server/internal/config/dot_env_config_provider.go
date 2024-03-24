@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/joho/godotenv"
 	"os"
-	"pokt_gateway_server/internal/config"
+	"pokt_gateway_server/internal/global_config"
 	"strconv"
 	"time"
 )
@@ -14,6 +14,7 @@ const (
 	poktRPCFullHostEnv               = "POKT_RPC_FULL_HOST"
 	httpServerPortEnv                = "HTTP_SERVER_PORT"
 	poktRPCTimeoutEnv                = "POKT_RPC_TIMEOUT"
+	altruistRequestTimeoutEnv        = "ALTRUIST_REQUEST_TIMEOUT"
 	dbConnectionUrlEnv               = "DB_CONNECTION_URL"
 	sessionCacheTTLEnv               = "SESSION_CACHE_TTL"
 	environmentStageEnv              = "ENVIRONMENT_STAGE"
@@ -21,59 +22,65 @@ const (
 	apiKey                           = "API_KEY"
 )
 
-// DotEnvConfigProvider implements the GatewayServerProvider interface.
-type DotEnvConfigProvider struct {
+// DotEnvGlobalConfigProvider implements the GatewayServerProvider interface.
+type DotEnvGlobalConfigProvider struct {
 	poktRPCFullHost               string
 	httpServerPort                uint
-	poktRPCTimeout                time.Duration
+	poktRPCRequestTimeout         time.Duration
 	sessionCacheTTL               time.Duration
-	environmentStage              config.EnvironmentStage
+	environmentStage              global_config.EnvironmentStage
 	poktApplicationsEncryptionKey string
 	databaseConnectionUrl         string
 	apiKey                        string
+	altruistRequestTimeout        time.Duration
 }
 
-func (c DotEnvConfigProvider) GetAPIKey() string {
+func (c DotEnvGlobalConfigProvider) GetAPIKey() string {
 	return c.apiKey
 }
 
 // GetPoktRPCFullHost returns the PoktRPCFullHost value.
-func (c DotEnvConfigProvider) GetPoktRPCFullHost() string {
+func (c DotEnvGlobalConfigProvider) GetPoktRPCFullHost() string {
 	return c.poktRPCFullHost
 }
 
 // GetHTTPServerPort returns the HTTPServerPort value.
-func (c DotEnvConfigProvider) GetHTTPServerPort() uint {
+func (c DotEnvGlobalConfigProvider) GetHTTPServerPort() uint {
 	return c.httpServerPort
 }
 
 // GetPoktRPCTimeout returns the PoktRPCTimeout value.
-func (c DotEnvConfigProvider) GetPoktRPCTimeout() time.Duration {
-	return c.poktRPCTimeout
+func (c DotEnvGlobalConfigProvider) GetPoktRPCRequestTimeout() time.Duration {
+	return c.poktRPCRequestTimeout
 }
 
 // GetSessionCacheTTL returns the time value for session to expire in cache.
-func (c DotEnvConfigProvider) GetSessionCacheTTL() time.Duration {
-	return c.poktRPCTimeout
+func (c DotEnvGlobalConfigProvider) GetSessionCacheTTL() time.Duration {
+	return c.poktRPCRequestTimeout
 }
 
 // GetEnvironmentStage returns the EnvironmentStage value.
-func (c DotEnvConfigProvider) GetEnvironmentStage() config.EnvironmentStage {
+func (c DotEnvGlobalConfigProvider) GetEnvironmentStage() global_config.EnvironmentStage {
 	return c.environmentStage
 }
 
 // GetPoktApplicationsEncryptionKey: Key used to decrypt pokt applications private key.
-func (c DotEnvConfigProvider) GetPoktApplicationsEncryptionKey() string {
+func (c DotEnvGlobalConfigProvider) GetPoktApplicationsEncryptionKey() string {
 	return c.poktApplicationsEncryptionKey
 }
 
 // GetDatabaseConnectionUrl returns the PoktRPCFullHost value.
-func (c DotEnvConfigProvider) GetDatabaseConnectionUrl() string {
+func (c DotEnvGlobalConfigProvider) GetDatabaseConnectionUrl() string {
 	return c.databaseConnectionUrl
 }
 
-// NewDotEnvConfigProvider creates a new instance of DotEnvConfigProvider.
-func NewDotEnvConfigProvider() *DotEnvConfigProvider {
+// GetDatabaseConnectionUrl returns the PoktRPCFullHost value.
+func (c DotEnvGlobalConfigProvider) GetAltruistRequestTimeout() time.Duration {
+	return c.altruistRequestTimeout
+}
+
+// NewDotEnvConfigProvider creates a new instance of DotEnvGlobalConfigProvider.
+func NewDotEnvConfigProvider() *DotEnvGlobalConfigProvider {
 	_ = godotenv.Load()
 
 	poktRPCTimeout, err := time.ParseDuration(getEnvVar(poktRPCTimeoutEnv))
@@ -91,15 +98,20 @@ func NewDotEnvConfigProvider() *DotEnvConfigProvider {
 		panic(fmt.Sprintf("Error parsing %s: %s", sessionCacheTTLDuration, err))
 	}
 
-	return &DotEnvConfigProvider{
+	altruistRequestTimeoutDuration, err := time.ParseDuration(getEnvVar(altruistRequestTimeoutEnv))
+	if err != nil {
+		panic(fmt.Sprintf("Error parsing %s: %s", sessionCacheTTLDuration, err))
+	}
+	return &DotEnvGlobalConfigProvider{
 		poktRPCFullHost:               getEnvVar(poktRPCFullHostEnv),
 		httpServerPort:                uint(httpServerPort),
-		poktRPCTimeout:                poktRPCTimeout,
+		poktRPCRequestTimeout:         poktRPCTimeout,
 		sessionCacheTTL:               sessionCacheTTLDuration,
 		databaseConnectionUrl:         getEnvVar(dbConnectionUrlEnv),
-		environmentStage:              config.EnvironmentStage(getEnvVar(environmentStageEnv)),
+		environmentStage:              global_config.EnvironmentStage(getEnvVar(environmentStageEnv)),
 		poktApplicationsEncryptionKey: getEnvVar(poktApplicationsEncryptionKeyEnv),
 		apiKey:                        getEnvVar(apiKey),
+		altruistRequestTimeout:        altruistRequestTimeoutDuration,
 	}
 }
 

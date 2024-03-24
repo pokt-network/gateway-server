@@ -1,4 +1,4 @@
-package config
+package global_config
 
 import "time"
 
@@ -7,6 +7,14 @@ type EnvironmentStage string
 const (
 	StageProduction EnvironmentStage = "production"
 )
+
+type GlobalConfigProvider interface {
+	SecretProvider
+	DBCredentialsProvider
+	EnvironmentProvider
+	PoktNodeConfigProvider
+	AltruistConfigProvider
+}
 
 type SecretProvider interface {
 	GetPoktApplicationsEncryptionKey() string
@@ -23,5 +31,9 @@ type EnvironmentProvider interface {
 
 type PoktNodeConfigProvider interface {
 	GetPoktRPCFullHost() string
-	GetPoktRPCTimeout() time.Duration
+	GetPoktRPCRequestTimeout() time.Duration
+}
+
+type AltruistConfigProvider interface {
+	GetAltruistRequestTimeout() time.Duration
 }
