@@ -27,6 +27,11 @@ const (
 	reasonRelayFailedPocketErr  = "relay_pocket_error"
 )
 
+var (
+	errAltruistNotFound = errors.New("altruist url not found")
+	errSelectNodeFail   = errors.New("node selector can't find node")
+)
+
 func init() {
 	counterRelayRequest = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
@@ -51,6 +56,7 @@ type Relayer struct {
 	sessionRegistry     session_registry.SessionRegistryService
 	nodeSelector        node_selector_service.NodeSelectorService
 	applicationRegistry apps_registry.AppsRegistryService
+	httpRequester       httpRequester
 	logger              *zap.Logger
 }
 
@@ -63,6 +69,7 @@ func NewRelayer(pocketService pokt_v0.PocketService, sessionRegistry session_reg
 		altruistRegistry:    altruistRegistry,
 		applicationRegistry: applicationRegistry,
 		nodeSelector:        nodeSelector,
+		httpRequester:       fastHttpRequester{},
 	}
 }
 
@@ -98,7 +105,7 @@ func (r *Relayer) sendNodeSelectorRelay(req *models.SendRelayRequest) (*models.S
 	// find a node to send too first.
 	node, ok := r.nodeSelector.FindNode(req.Chain)
 	if !ok {
-		return nil, errors.New("node selector can't find node")
+		return nil, errSelectNodeFail
 	}
 	req.Signer = node.AppSigner
 	req.Session = node.PocketSession
@@ -154,7 +161,7 @@ func (r *Relayer) altruistRelay(req *models.SendRelayRequest) (*models.SendRelay
 	url, ok := r.altruistRegistry.GetAltruistURL(req.Chain)
 
 	if !ok {
-		return nil, errors.New("altruist url not found")
+		return nil, errAltruistNotFound
 	}
 
 	// Send to altruist
@@ -172,7 +179,7 @@ func (r *Relayer) altruistRelay(req *models.SendRelayRequest) (*models.SendRelay
 		request.SetBody([]byte(req.Payload.Data))
 	}
 
-	err := fasthttp.DoTimeout(request, response, r.altruistTimeout)
+	err := r.httpRequester.DoTimeout(request, response, r.altruistTimeout)
 
 	success := err == nil
 	counterRelayRequest.WithLabelValues(strconv.FormatBool(success), "true", "").Inc()

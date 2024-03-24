@@ -3,7 +3,7 @@ package controllers
 // Basic imports
 import (
 	"errors"
-	"pokt_gateway_server/mocks"
+	pocket_service_mock "pokt_gateway_server/mocks/pocket_service"
 	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
 	"testing"
 
@@ -14,13 +14,14 @@ import (
 
 type RelayTestSuite struct {
 	suite.Suite
-	mockPocketService   *mocks.PocketService
+	mockPocketService *pocket_service_mock.PocketService
+
 	mockRelayController *RelayController
 	context             *fasthttp.RequestCtx
 }
 
 func (suite *RelayTestSuite) SetupTest() {
-	suite.mockPocketService = new(mocks.PocketService)
+	suite.mockPocketService = new(pocket_service_mock.PocketService)
 	suite.mockRelayController = NewRelayController(suite.mockPocketService, zap.NewNop())
 	suite.context = &fasthttp.RequestCtx{} // mock the fasthttp.RequestCtx
 }

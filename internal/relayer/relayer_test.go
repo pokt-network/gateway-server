@@ -2,41 +2,42 @@ package relayer
 
 // Basic imports
 import (
-	"errors"
 	"github.com/stretchr/testify/suite"
-	"pokt_gateway_server/mocks"
+	"go.uber.org/zap"
+	qos_models "pokt_gateway_server/internal/node_selector_service/models"
+	altruist_registry_mock "pokt_gateway_server/mocks/altruist_registry"
+	apps_registry_mock "pokt_gateway_server/mocks/apps_registry"
+	node_selector_mock "pokt_gateway_server/mocks/node_selector"
+	pocket_service_mock "pokt_gateway_server/mocks/pocket_service"
+	session_registry_mock "pokt_gateway_server/mocks/session_registry"
+
 	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
 	"testing"
+	"time"
 )
 
-type CachedClientTestSuite struct {
+type RelayerTestSuite struct {
 	suite.Suite
-	mockAltruistRegistryService *mocks.AltruistRegistryService
-	mockSessionRegistryService  *mocks.SessionRegistryService
-	mockPocketService           *mocks.PocketService
-	cachedClient                *Relayer
+	mockNodeSelectorService     *node_selector_mock.NodeSelectorService
+	mockAltruistRegistryService *altruist_registry_mock.AltruistRegistryService
+	mockSessionRegistryService  *session_registry_mock.SessionRegistryService
+	mockPocketService           *pocket_service_mock.PocketService
+	mockAppRegistry             *apps_registry_mock.AppsRegistryService
+	relayer                     *Relayer
 }
 
-func (suite *CachedClientTestSuite) SetupTest() {
-	suite.mockPocketService = new(mocks.PocketService)
-	suite.mockSessionRegistryService = new(mocks.SessionRegistryService)
-	// suite.cachedClient = NewRelayer(suite.mockPocketService, suite.mockSessionRegistryService, suite.mockAltruistRegistryService, time.Minute, zap.NewNop())
+func (suite *RelayerTestSuite) SetupTest() {
+	suite.mockPocketService = new(pocket_service_mock.PocketService)
+	suite.mockNodeSelectorService = new(node_selector_mock.NodeSelectorService)
+	suite.mockSessionRegistryService = new(session_registry_mock.SessionRegistryService)
+	suite.mockAltruistRegistryService = new(altruist_registry_mock.AltruistRegistryService)
+	suite.mockAppRegistry = new(apps_registry_mock.AppsRegistryService)
+	suite.relayer = NewRelayer(suite.mockPocketService, suite.mockSessionRegistryService, suite.mockAppRegistry, suite.mockNodeSelectorService, suite.mockAltruistRegistryService, time.Minute, zap.NewNop())
 }
 
-// test SendRelay using table driven tests
-func (suite *CachedClientTestSuite) TestSendRelay() {
+func (suite *RelayerTestSuite) TestNodeSelectorRelay() {
 
-	testGetSessionRequest := &models.GetSessionRequest{
-		AppPubKey: "test",
-		Chain:     "test",
-	}
-
-	testResponse := &models.GetSessionResponse{}
-
-	testSendRelayResponse := &models.SendRelayResponse{
-		Response: "test",
-	}
-
+	expectedResponse := &models.SendRelayResponse{Response: "response"}
 	// create test cases
 	testCases := []struct {
 		name             string
@@ -46,72 +47,43 @@ func (suite *CachedClientTestSuite) TestSendRelay() {
 		expectedError    error
 	}{
 		{
-			name: "InvalidRequest",
-			request: &models.SendRelayRequest{
-				Payload:            nil, // invalid request
-				Signer:             nil, // invalid request
-				Chain:              "test",
-				SelectedNodePubKey: "test",
-				Session:            &models.Session{},
-			},
-			setupMocks: func(request *models.SendRelayRequest) {
-
-				suite.mockPocketService.EXPECT().SendRelay(request).Return(nil, models.ErrMalformedSendRelayRequest).Times(1)
-
-			},
-			expectedResponse: nil,
-			expectedError:    models.ErrMalformedSendRelayRequest,
-		},
-		{
-			name: "SessionError",
+			name: "NodeSelectorFailed",
 			request: &models.SendRelayRequest{
 				Payload: &models.Payload{},
-				Signer: &models.Ed25519Account{
-					PublicKey: "test",
-				},
-				Chain:              "test",
-				SelectedNodePubKey: "test",
+				Chain:   "1234",
 			},
 			setupMocks: func(request *models.SendRelayRequest) {
-				suite.mockSessionRegistryService.EXPECT().GetSession(testGetSessionRequest).Return(nil, errors.New("error")).Times(1)
+				suite.mockNodeSelectorService.EXPECT().FindNode("1234").Return(nil, false)
 			},
 			expectedResponse: nil,
-			expectedError:    errors.New("error"),
+			expectedError:    errSelectNodeFail,
 		},
 		{
-			name: "WithSessionInRequestSuccess",
-			request: &models.SendRelayRequest{
-				Payload:            &models.Payload{},
-				Signer:             &models.Ed25519Account{},
-				Chain:              "test",
-				SelectedNodePubKey: "test",
-				Session:            &models.Session{},
-			},
-			setupMocks: func(request *models.SendRelayRequest) {
-
-				suite.mockPocketService.EXPECT().SendRelay(request).Return(testSendRelayResponse, nil).Times(1)
-
-			},
-			expectedResponse: testSendRelayResponse,
-			expectedError:    nil,
-		},
-		{
-			name: "WithoutSessionInRequestSuccess",
+			name: "Success",
 			request: &models.SendRelayRequest{
 				Payload: &models.Payload{},
-				Signer: &models.Ed25519Account{
-					PublicKey: "test",
-				},
-				Chain:              "test",
-				SelectedNodePubKey: "test",
+				Chain:   "1234",
 			},
 			setupMocks: func(request *models.SendRelayRequest) {
 
-				suite.mockSessionRegistryService.EXPECT().GetSession(testGetSessionRequest).Return(testResponse, nil).Times(1)
-				suite.mockPocketService.EXPECT().SendRelay(request).Return(testSendRelayResponse, nil).Times(1)
-
+				signer := &models.Ed25519Account{}
+				node := &models.Node{PublicKey: "123"}
+				session := &models.Session{}
+				suite.mockNodeSelectorService.EXPECT().FindNode("1234").Return(&qos_models.QosNode{
+					AppSigner:     signer,
+					MorseNode:     node,
+					PocketSession: session,
+				}, true)
+				// expect sendRelay to have same parameters as find node, otherwise validation will fail
+				suite.mockPocketService.EXPECT().SendRelay(&models.SendRelayRequest{
+					Payload:            request.Payload,
+					Signer:             signer,
+					Chain:              request.Chain,
+					SelectedNodePubKey: node.PublicKey,
+					Session:            session,
+				}).Return(expectedResponse, nil)
 			},
-			expectedResponse: testSendRelayResponse,
+			expectedResponse: expectedResponse,
 			expectedError:    nil,
 		},
 	}
@@ -124,10 +96,10 @@ func (suite *CachedClientTestSuite) TestSendRelay() {
 
 			tc.setupMocks(tc.request) // setup mocks
 
-			session, err := suite.cachedClient.SendRelay(tc.request)
+			rsp, err := suite.relayer.sendNodeSelectorRelay(tc.request)
 
 			// assert results
-			suite.Equal(tc.expectedResponse, session)
+			suite.Equal(tc.expectedResponse, rsp)
 			suite.Equal(tc.expectedError, err)
 
 		})
@@ -135,6 +107,62 @@ func (suite *CachedClientTestSuite) TestSendRelay() {
 
 }
 
-func TestCachedClientTestSuite(t *testing.T) {
-	suite.Run(t, new(CachedClientTestSuite))
+// test TestNodeSelectorRelay using table driven tests
+func (suite *RelayerTestSuite) TestAltruistRelay() {
+
+	// create test cases
+	testCases := []struct {
+		name             string
+		request          *models.SendRelayRequest
+		setupMocks       func(*models.SendRelayRequest)
+		expectedResponse *models.SendRelayResponse
+		expectedError    error
+	}{
+		{
+			name: "Altruist Missing",
+			request: &models.SendRelayRequest{
+				Payload: &models.Payload{},
+				Chain:   "1234",
+			},
+			setupMocks: func(request *models.SendRelayRequest) {
+				suite.mockAltruistRegistryService.EXPECT().GetAltruistURL(request.Chain).Return("", false)
+			},
+			expectedResponse: nil,
+			expectedError:    errAltruistNotFound,
+		},
+		{
+			name: "Altruist Registry successfully called",
+			request: &models.SendRelayRequest{
+				Payload: &models.Payload{},
+				Chain:   "1234",
+			},
+			setupMocks: func(request *models.SendRelayRequest) {
+				// We can only check if altruist url
+				suite.mockAltruistRegistryService.EXPECT().GetAltruistURL(request.Chain).Return("https://chain.com", true)
+			},
+			expectedResponse: nil,
+			expectedError:    nil,
+		},
+	}
+
+	// run test cases
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+
+			suite.SetupTest() // reset mocks
+
+			tc.setupMocks(tc.request) // setup mocks
+
+			_, err := suite.relayer.altruistRelay(tc.request)
+
+			// Check if error matches expected
+			suite.Equal(tc.expectedError, err)
+
+		})
+	}
+
+}
+
+func TestRelayerTestSuite(t *testing.T) {
+	suite.Run(t, new(RelayerTestSuite))
 }

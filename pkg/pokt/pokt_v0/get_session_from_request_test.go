@@ -4,7 +4,7 @@ import (
 	"errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"pokt_gateway_server/mocks"
+	pocket_service_mock "pokt_gateway_server/mocks/pocket_service"
 	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
 	"testing"
 )
@@ -49,7 +49,7 @@ func TestGetSessionFromRequest(t *testing.T) {
 		{
 			name: "SessionFromPocketServiceError",
 			generateArgs: func() args {
-				mockPocketService := new(mocks.PocketService)
+				mockPocketService := new(pocket_service_mock.PocketService)
 				mockPocketService.EXPECT().GetSession(mock.Anything).Return(nil, mockErr).Times(1)
 				return args{
 					pocketService: mockPocketService,
@@ -62,7 +62,7 @@ func TestGetSessionFromRequest(t *testing.T) {
 		{
 			name: "SessionFromPocketServiceSuccess",
 			generateArgs: func() args {
-				mockPocketService := new(mocks.PocketService)
+				mockPocketService := new(pocket_service_mock.PocketService)
 				mockPocketService.EXPECT().GetSession(mock.Anything).Return(&models.GetSessionResponse{Session: mockSession}, nil).Times(1)
 				return args{
 					pocketService: mockPocketService,
