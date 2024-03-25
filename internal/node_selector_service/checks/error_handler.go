@@ -9,7 +9,11 @@ import (
 	"time"
 )
 
+// default timeout penalty whenever a node doesn't respond
 const timeoutErrorPenalty = time.Second * 15
+
+// 24 hours is analogous to indefinite
+const kickOutSessionPenalty = time.Hour * 24
 
 const (
 	errOverServiceMsg           = "the max number of relays serviced for this node is exceeded"
@@ -38,11 +42,10 @@ func isTimeoutError(err error) bool {
 	return err == fasthttp.ErrTimeout || err == fasthttp.ErrDialTimeout || err == fasthttp.ErrTLSHandshakeTimeout
 }
 
-// DefaultPunishNode: generic punisher for whenever a node returns an error independent of a specific check
+// DefaultPunishNode generic punisher for whenever a node returns an error independent of a specific check
 func DefaultPunishNode(err error, node *models.QosNode, logger *zap.Logger) bool {
 	if isMaximumRelaysServicedErr(err) {
-		// 24 hours is analogous to indefinite
-		node.SetTimeoutUntil(time.Now().Add(time.Hour*24), models.MaximumRelaysTimeout)
+		node.SetTimeoutUntil(time.Now().Add(kickOutSessionPenalty), models.MaximumRelaysTimeout)
 		return true
 	}
 	if isTimeoutError(err) {
