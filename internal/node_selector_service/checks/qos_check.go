@@ -20,5 +20,5 @@ type Check struct {
 }
 
 func NewCheck(pocketRelayer pokt_v0.PocketRelayer, chainConfiguration chain_configurations_registry.ChainConfigurationsService) *Check {
-	return &Check{PocketRelayer: pocketRelayer}
+	return &Check{PocketRelayer: pocketRelayer, ChainConfiguration: chainConfiguration}
 }

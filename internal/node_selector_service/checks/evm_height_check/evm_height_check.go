@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	// zScore to remove outliers for determing highest height
+	// zScore to remove outliers for determining highest height
 	zScoreHeightThreshold = 3
 
 	// interval to check a node height again

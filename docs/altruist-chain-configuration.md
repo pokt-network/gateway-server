@@ -17,7 +17,7 @@ _In the event that a config is not provided, the gateway server will assume defa
 # Inserting a custom chain configuration
 ```sql
 -- Insert an example configuration for Ethereum --
-INSERT INTO chain_configurations (chain_id, pocket_request_timeout_duration, altruist_url, altruist_request_timeout_duration, top_bucket_p90latency_duration, height_check_block_tolerance, data_integrity_check_lookback_height) VALUES ('0000', '15s', 'example.com', '30s', '150ms', 100, 25);
+INSERT INTO chain_configurations (chain_id, pocket_request_timeout_duration, altruist_url, altruist_request_timeout_duration, top_bucket_p90latency_duration, height_check_block_tolerance, data_integrity_check_lookback_height) VALUES ('0000', '15s', 'https://example.com', '30s', '150ms', 100, 25);
 ```
 
 - `chain_id` - id of the Pocket Network Chain

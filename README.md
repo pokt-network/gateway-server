@@ -11,7 +11,6 @@ Learn more about the vision and overall architecture [overview](docs%2Foverview.
 ## Gateway Operator Quick Getting Started
 To onboard the gateway server without having to dig deep, you can follow the [Quick Onboarding Guide](docs%2Fquick-onboarding-guide.md)
 
-
 #### Interested in learning more? We have an abdundance of information in [docs](docs)
 1. [Gateway Server Overview](docs%2Foverview.md)
 2. [Gateway Server API Endpoints](docs%2Fapi-endpoints.md)
@@ -56,7 +55,6 @@ go test ./...
 
 ## Docker Compose
 There is an all-inclusive docker-compose file available for usage [docker-compose.yml](docker-compose.yml)
-
 
 ## Contributing Guidelines
 1. Create a Github Issue on the feature/issue you're working on.
