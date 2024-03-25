@@ -21,7 +21,7 @@ INSERT INTO chain_configurations (chain_id, pocket_request_timeout_duration, alt
 - `pocket_request_time` - duration of the maximum amount of time for a network relay to respond
 - `altruist_url` -  source of the relay in the event that a network request fails
 - `altruist_request_timeout_duration` - duration of the maximum amount of time for a backup request to respond
-- `top_bucket_p90latency_duration` -  maximum amount of latency for nodes to be favored 0 <= x <= top_bucket_p90latency_duration
+- `top_bucket_p90latency_duration` -  maximum amount of latency for nodes to be favored 0 <= x <= `top_bucket_p90latency_duration`
 - `height_check_block_tolerance` - number of blocks a node is allowed to be behind (some chains may have node operators moving faster than others)
 - `data_integrity_check_lookback_height` - number of blocks data integrity will look behind for source of truth block for other node operators to attest too
 - `is_evm_chain` - whether the node is an EVM chain or not
