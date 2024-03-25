@@ -60,6 +60,11 @@ func (c *EvmDataIntegrityCheck) SetNodes(nodes []*models.QosNode) {
 
 func (c *EvmDataIntegrityCheck) Perform() {
 
+	// Session is not meant for EVM
+	if len(c.NodeList) == 0 || !c.NodeList[0].IsEvmChain() {
+		return
+	}
+
 	// Find a node that has been reported as healthy to use as source of truth
 	sourceOfTruth := c.findRandomHealthyNode()
 
@@ -77,8 +82,8 @@ func (c *EvmDataIntegrityCheck) Perform() {
 	// find a random block to search that nodes should have access too
 	blockNumberToSearch := sourceOfTruth.GetLastKnownHeight() - uint64(checks.GetDataIntegrityHeightLookback(c.ChainConfiguration, sourceOfTruth.GetChain(), dataIntegrityHeightLookbackDefault))
 
-	nodeResponses := checks.SendRelaysAsync(c.PocketRelayer, c.getEligibleNodes(), getBlockByNumberPayload(blockNumberToSearch), "POST")
-	for rsp := range nodeResponses {
+	attestationResponses := checks.SendRelaysAsync(c.PocketRelayer, c.getEligibleNodes(), getBlockByNumberPayload(blockNumberToSearch), "POST")
+	for rsp := range attestationResponses {
 
 		if rsp.Error != nil {
 			checks.DefaultPunishNode(rsp.Error, rsp.Node, c.logger)
@@ -103,7 +108,7 @@ func (c *EvmDataIntegrityCheck) Perform() {
 
 	majorityBlockHash := findMajorityBlockHash(nodeResponseCounts)
 
-	// Penalize other node operators with a timeout if they don't have same block hash.
+	// Penalize other node operators with a timeout if they don't attest with same block hash.
 	for _, nodeResp := range nodeResponsePairs {
 		if nodeResp.result.Result.Hash != majorityBlockHash {
 			c.logger.Sugar().Errorw("punishing node for failed data integrity check", "node", nodeResp.node.MorseNode.ServiceUrl, "nodeBlockHash", nodeResp.result.Result, "trustedSourceBlockHash", majorityBlockHash)

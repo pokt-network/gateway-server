@@ -8,6 +8,10 @@ import (
 type TimeoutReason string
 
 const (
+	chainSolanaCustom = "C006"
+	chainSolana       = "0006"
+)
+const (
 	OutOfSyncTimeout     TimeoutReason = "out_of_sync_timeout"
 	DataIntegrityTimeout TimeoutReason = "invalid_data_timeout"
 	MaximumRelaysTimeout TimeoutReason = "maximum_relays_timeout"
@@ -82,4 +86,13 @@ func (n *QosNode) GetLastDataIntegrityCheckTime() time.Time {
 }
 func (n *QosNode) SetLastDataIntegrityCheckTime(lastDataIntegrityCheckTime time.Time) {
 	n.lastDataIntegrityCheckTime = lastDataIntegrityCheckTime
+}
+
+func (n *QosNode) IsSolanaChain() bool {
+	chainId := n.GetChain()
+	return chainId == chainSolana || chainId == chainSolanaCustom
+}
+
+func (n *QosNode) IsEvmChain() bool {
+	return !n.IsSolanaChain()
 }

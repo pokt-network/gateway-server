@@ -80,6 +80,11 @@ func (c *EvmHeightCheck) Name() string {
 
 func (c *EvmHeightCheck) Perform() {
 
+	// Session is not meant for EVM
+	if len(c.NodeList) == 0 || !c.NodeList[0].IsEvmChain() {
+		return
+	}
+
 	// Send request to all nodes
 	relayResponses := checks.SendRelaysAsync(c.PocketRelayer, c.NodeList, heightJsonPayload, "POST")
 
