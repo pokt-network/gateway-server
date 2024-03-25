@@ -51,21 +51,14 @@ Fill out the `.env` variables for the gateway server. This can be done by inject
 
 See [.env.sample](..%2F.env.sample) for a sample.
 
-## 4. Run Migration Script
-Run the migration script to seed your PostgreSQL database.
-```sh
-./scripts/migration.sh -u
-```
-
-## 5. Insert App Stake Private Keys
+## 4. Insert App Stake Private Keys
 Copy and paste the following SQL query to insert app stake private keys into the database:
-
 ```sql
 INSERT INTO pokt_applications (encrypted_private_key) VALUES (pgp_sym_encrypt('{private_key}', '{encryption_key}'));
 ```
 _Note: Replace {private_key} and {encryption_key} in the SQL query with your actual private key and encryption key._
 
-## 6. Compile and Run Gateway Server
+## 5. Compile and Run Gateway Server
 Copy and paste the following code to compile and run the gateway server. Hit the endpoint http://localhost/relay/{chain_id} with a JSON-RPC payload.
 
 If using testnet, send a request to chain `0007`, http://localhost/relay/0007. This testnet chain id represents Ethereum Node Operators and Nodies is currently supporting the chain id for reliable testing.
@@ -74,7 +67,7 @@ If using testnet, send a request to chain `0007`, http://localhost/relay/0007. T
 go build cmd/gateway_server/main.go
 ```
 
-## 7. Setup Chain Configuration and Altruist
+## 6. Setup Chain Configuration and Altruist
 Upon startup of the gateway server, nodes within a session take time to be marked as healthy (~10 seconds), therefore the requests will be routed to the altruist (failover) node. It is suggested each chain that you support has a configured altruist. You can learn more about supplying altruist configurations through [altruist-chain-configuration.md](altruist-chain-configuration.md).
 
 _Remember to keep sensitive information secure and follow best practices for handling private keys and passwords._
