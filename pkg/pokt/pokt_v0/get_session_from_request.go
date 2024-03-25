@@ -9,7 +9,7 @@ import "pokt_gateway_server/pkg/pokt/pokt_v0/models"
 // Returns:
 //   - (*GetSessionResponse): Session response.
 //   - (error): Error, if any.
-func GetSessionFromRequest(pocketService PocketService, req *models.SendRelayRequest) (*models.Session, error) {
+func GetSessionFromRequest(pocketService PocketDispatcher, req *models.SendRelayRequest) (*models.Session, error) {
 	if req.Session != nil {
 		return req.Session, nil
 	}

@@ -3,6 +3,7 @@ package models
 
 import (
 	"pokt_gateway_server/pkg/common"
+	"time"
 )
 
 type SendRelayRequest struct {
@@ -11,6 +12,7 @@ type SendRelayRequest struct {
 	Chain              string
 	SelectedNodePubKey string
 	Session            *Session
+	Timeout            *time.Duration
 }
 
 func (req SendRelayRequest) Validate() error {

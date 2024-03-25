@@ -29,8 +29,8 @@ func getNodeFromRequest(session *models.Session, selectedNodePubKey string) (*mo
 //   - (*models.Node): Random node.
 //   - (error): Error, if any.
 func getRandomNodeOrError(nodes []*models.Node, err error) (*models.Node, error) {
-	node := common.GetRandomElement(nodes)
-	if node == nil {
+	node, ok := common.GetRandomElement(nodes)
+	if !ok || node == nil {
 		return nil, err
 	}
 	return node, nil

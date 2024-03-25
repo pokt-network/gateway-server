@@ -7,7 +7,8 @@ type Node struct {
 }
 
 type SessionHeader struct {
-	SessionHeight uint `json:"session_height"`
+	SessionHeight uint   `json:"session_height"`
+	Chain         string `json:"chain"`
 }
 
 type GetSessionResponse struct {
