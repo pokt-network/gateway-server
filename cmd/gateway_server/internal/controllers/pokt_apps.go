@@ -20,7 +20,7 @@ type addApplicationBody struct {
 	PrivateKey string `json:"private_key"`
 }
 
-// RelayController handles relay requests for a specific chain.
+// PoktAppsController handles requests for staked applications
 type PoktAppsController struct {
 	logger         *zap.Logger
 	query          db_query.Querier
@@ -29,7 +29,7 @@ type PoktAppsController struct {
 	secretProvider global_config.SecretProvider
 }
 
-// NewRelayController creates a new instance of RelayController.
+// NewPoktAppsController creates a new instance of PoktAppsController.
 func NewPoktAppsController(appRegistry apps_registry.AppsRegistryService, query db_query.Querier, secretProvider global_config.SecretProvider, logger *zap.Logger) *PoktAppsController {
 	return &PoktAppsController{appRegistry: appRegistry, query: query, secretProvider: secretProvider, logger: logger}
 }
