@@ -5,7 +5,7 @@
 - `Session Registry` - responsible for "priming" sessions asynchronously, providing session metadata, and feeding the node to the `NodeSelectorService`
 - `Pocket Relayer` - responsible for sending a relay to the network
 - `NodeSelectorService` - responsible for running QoS checks and identifying healthy nodes by chain.
-- `ChainConfigurationService` - responsible for providing custom chain configurations such as altruists and timeouts.
+- `ChainConfigurationRegistryService` - responsible for providing custom chain configurations such as altruists and timeouts.
 
 ## QoS Controls
 

@@ -61,9 +61,7 @@ Run the migration script to seed your PostgreSQL database.
 Copy and paste the following SQL query to insert app stake private keys into the database:
 
 ```sql
-
-INSERT INTO pokt_applications (encrypted_private_key)
-VALUES (pgp_sym_encrypt('{private_key}', '{encryption_key}'));
+INSERT INTO pokt_applications (encrypted_private_key) VALUES (pgp_sym_encrypt('{private_key}', '{encryption_key}'));
 ```
 _Note: Replace {private_key} and {encryption_key} in the SQL query with your actual private key and encryption key._
 
