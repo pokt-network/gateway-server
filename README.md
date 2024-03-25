@@ -11,12 +11,6 @@ Learn more about the vision and overall architecture [overview](docs%2Foverview.
 ## Gateway Operator Quick Getting Started
 To onboard the gateway server without having to dig deep, you can follow the [Quick Onboarding Guide](docs%2Fquick-onboarding-guide.md)
 
-## Docker Image Releases
-Every release candidate is published to https://github.com/pokt-network/gateway-server/pkgs/container/pocket-gateway-server
-
-## Docker Compose
-There is an all-inclusive docker-compose file available for development [docker-compose.yml](docker-compose.yml)
-
 #### Interested in learning more? We have an abdundance of information in [docs](docs)
 1. [Gateway Server Overview](docs%2Foverview.md)
 2. [Gateway Server API Endpoints](docs%2Fapi-endpoints.md)
@@ -24,6 +18,12 @@ There is an all-inclusive docker-compose file available for development [docker-
 4. [Gateway Server Node Selection](docs%2Fnode-selection.md)
 5. [POKT Primer](docs%2Fpokt-primer.md)
 6. [POKT's Relay Specification](docs%2Fpokt-relay-specification.md)
+
+## Docker Image Releases
+Every release candidate is published to https://github.com/pokt-network/gateway-server/pkgs/container/pocket-gateway-server
+
+## Docker Compose
+There is an all-inclusive docker-compose file available for development [docker-compose.yml](docker-compose.yml)
 
 ## Creating a DB Migration
 Migrations are like version control for your database, allowing your team to define and share the application's database schema definition.
