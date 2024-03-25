@@ -14,7 +14,7 @@ The data is stored inside the `chain_configuration` table and is accessed via th
 # Inserting a custom chain configuration
 ```sql
 -- Insert an example configuration for Ethereum --
-INSERT INTO chain_configurations (chain_id, pocket_request_timeout_duration, altruist_url, altruist_request_timeout_duration, top_bucket_p90latency_duration, height_check_block_tolerance, data_integrity_check_lookback_height, is_evm_chain) VALUES ('0000', '15s', 'example.com', '30s', '150ms', 100, 25, true);
+INSERT INTO chain_configurations (chain_id, pocket_request_timeout_duration, altruist_url, altruist_request_timeout_duration, top_bucket_p90latency_duration, height_check_block_tolerance, data_integrity_check_lookback_height) VALUES ('0000', '15s', 'example.com', '30s', '150ms', 100, 25);
 ```
 
 - `chain_id` - id of the Pocket Network Chain
@@ -24,4 +24,3 @@ INSERT INTO chain_configurations (chain_id, pocket_request_timeout_duration, alt
 - `top_bucket_p90latency_duration` -  maximum amount of latency for nodes to be favored 0 <= x <= `top_bucket_p90latency_duration`
 - `height_check_block_tolerance` - number of blocks a node is allowed to be behind (some chains may have node operators moving faster than others)
 - `data_integrity_check_lookback_height` - number of blocks data integrity will look behind for source of truth block for other node operators to attest too
-- `is_evm_chain` - whether the node is an EVM chain or not
