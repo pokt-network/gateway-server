@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+const (
+	defaultAltruistRequestTimeout = time.Second * 30
+)
+
 // Environment variable names
 const (
 	poktRPCFullHostEnv               = "POKT_RPC_FULL_HOST"
@@ -100,8 +104,10 @@ func NewDotEnvConfigProvider() *DotEnvGlobalConfigProvider {
 
 	altruistRequestTimeoutDuration, err := time.ParseDuration(getEnvVar(altruistRequestTimeoutEnv))
 	if err != nil {
-		panic(fmt.Sprintf("Error parsing %s: %s", sessionCacheTTLDuration, err))
+		// Provide a default to prevent any breaking changes with new env variable.
+		altruistRequestTimeoutDuration = defaultAltruistRequestTimeout
 	}
+
 	return &DotEnvGlobalConfigProvider{
 		poktRPCFullHost:               getEnvVar(poktRPCFullHostEnv),
 		httpServerPort:                uint(httpServerPort),
