@@ -78,7 +78,7 @@ go build cmd/gateway_server/main.go
 Given that nodes within a session take time to be marked as healthy upon startup of the gateway server (~10 seconds), the requests will be routed to the altruist chain configuration.
 
 - Read [node-selection.md](node-selection.md) to learn more about how nodes are selected
-- Read [altruist-chain-configuration.md](altruist-chain-configuration.md) t0 learn more about setting up your altruist urls.
+- Read [altruist-chain-configuration.md](altruist-chain-configuration.md) to learn more about setting up your altruist urls.
 
 
 _Remember to keep sensitive information secure and follow best practices for handling private keys and passwords._
