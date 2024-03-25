@@ -11,10 +11,23 @@ import (
 
 const timeoutErrorPenalty = time.Second * 15
 
+const (
+	errOverServiceMsg           = "the max number of relays serviced for this node is exceeded"
+	errMaximumEvidenceSealedMsg = "the evidence is sealed, either max relays reached or claim already submitted"
+)
+
 // isMaximumRelaysServicedErr - determines if a node should be kicked from a session to send relays
 func isMaximumRelaysServicedErr(err error) bool {
 	// If evidence is sealed or the node has already overserviced, the node should no longer receive relays.
-	return err == relayer_models.ErrPocketEvidenceSealed || err == relayer_models.ErrPocketCoreOverService
+	if err == relayer_models.ErrPocketEvidenceSealed || err == relayer_models.ErrPocketCoreOverService {
+		return true
+	}
+	// Fallback in the event the error is not parsed correctly due to node operator configurations / custom clients, resort to a simple string check
+	pocketError, ok := err.(relayer_models.PocketRPCError)
+	if ok {
+		return strings.Contains(pocketError.Message, errOverServiceMsg) || strings.Contains(pocketError.Message, errMaximumEvidenceSealedMsg)
+	}
+	return false
 }
 
 func isTimeoutError(err error) bool {
