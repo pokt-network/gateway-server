@@ -9,8 +9,11 @@ So the Gateway Server will attempt to route the traffic to a backup chain node. 
 2. Centralized Nodes
 
 # Chain Configuration
-Given that every chain has differences and have different sources for fail over, the gateway server allows for customization for request timeouts, failover relay, and QoS checks.
-The data is stored inside the `chain_configuration` table and is accessed via the [chain_configurations_registry_service.go](..%2Finternal%2Fchain_configurations_registry%2Fchain_configurations_registry_service.go)
+Given that every chain has differences and have different sources for fail over, the gateway server allows for optional customization for request timeouts, failover relay, and QoS checks.
+The data is stored inside the `chain_configuration` table and is accessed via the [chain_configurations_registry_service.go](..%2Finternal%2Fchain_configurations_registry%2Fchain_configurations_registry_service.go).
+
+_In the event that a config is not provided, the gateway server will assume defaults provided from the specified [config_provider.go](..%2Finternal%2Fglobal_config%2Fconfig_provider.go) and the provided QoS [checks](..%2Finternal%2Fnode_selector_service%2Fchecks)_
+
 # Inserting a custom chain configuration
 ```sql
 -- Insert an example configuration for Ethereum --
