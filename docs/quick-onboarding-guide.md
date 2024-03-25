@@ -43,7 +43,7 @@ Fill out the `.env` variables for the gateway server. This can be done by inject
 |------------------------------------|----------------------------------------|---------------------------------------------------------------------------------------------------|
 | `POKT_RPC_FULL_HOST`               | Used for dispatching sessions          | `https://pokt-testnet-rpc.nodies.org` (a complimentary testnet dispatcher URL provided by Nodies) |
 | `HTTP_SERVER_PORT`                 | Gateway server port                    | `8080`                                                                                            |
-| `POKT_RPC_TIMEOUT`                 | Max response time for a Pokt node      | `5s`                                                                                              |
+| `POKT_RPC_TIMEOUT`                 | Max response time for a Pokt node      | `10s`                                                                                             |
 | `ENVIRONMENT_STAGE`                | Log verbosity                          | `development`, `production`                                                                       |
 | `SESSION_CACHE_TTL`                | Duration for sessions to stay in cache | `75m`                                                                                             |
 | `POKT_APPLICATIONS_ENCRYPTION_KEY` | User-generated encryption key          | `a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6`                                                                |
@@ -73,4 +73,12 @@ If using testnet, send a request to chain `0007`, http://localhost/relay/0007. T
 ```sh
 go build cmd/gateway_server/main.go
 ```
+
+## 7. Setup Chain Configuration and Altruist
+Given that nodes within a session take time to be marked as healthy upon startup of the gateway server (~10 seconds), the requests will be routed to the altruist chain configuration.
+
+- Read [node-selection.md](node-selection.md) to learn more about how nodes are selected
+- Read [altruist-chain-configuration.md](altruist-chain-configuration.md) t0 learn more about setting up your altruist urls.
+
+
 _Remember to keep sensitive information secure and follow best practices for handling private keys and passwords._
