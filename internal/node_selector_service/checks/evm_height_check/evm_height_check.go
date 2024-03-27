@@ -122,7 +122,7 @@ func (c *EvmHeightCheck) Perform() {
 			c.logger.Sugar().Infow("node is out of sync", "node", node.MorseNode.ServiceUrl, "heightDifference", heightDifference, "nodeSyncedHeight", node.GetLastKnownHeight(), "highestNodeHeight", highestNodeHeight, "chain", node.GetChain())
 			// Punish Node specifically due to timeout.
 			node.SetSynced(false)
-			node.SetTimeoutUntil(time.Now().Add(evmHeightCheckPenalty), models.OutOfSyncTimeout)
+			node.SetTimeoutUntil(time.Now().Add(evmHeightCheckPenalty), models.OutOfSyncTimeout, fmt.Errorf("evmHeightCheck: heightDifference: %d, nodeSyncedHeight: %d, highestNodeHeight: %d", heightDifference, node.GetLastKnownHeight(), highestNodeHeight))
 		} else {
 			node.SetSynced(true)
 		}

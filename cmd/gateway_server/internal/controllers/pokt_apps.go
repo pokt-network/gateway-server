@@ -37,7 +37,7 @@ func NewPoktAppsController(appRegistry apps_registry.AppsRegistryService, query 
 // GetAll returns all the apps in the registry
 func (c *PoktAppsController) GetAll(ctx *fasthttp.RequestCtx) {
 	applications := c.appRegistry.GetApplications()
-	appsPublic := []*models.PoktApplication{}
+	appsPublic := []*models.PublicPoktApplication{}
 	for _, app := range applications {
 		appsPublic = append(appsPublic, transform.ToPoktApplication(app))
 	}

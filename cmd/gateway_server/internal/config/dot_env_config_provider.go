@@ -60,7 +60,7 @@ func (c DotEnvGlobalConfigProvider) GetPoktRPCRequestTimeout() time.Duration {
 
 // GetSessionCacheTTL returns the time value for session to expire in cache.
 func (c DotEnvGlobalConfigProvider) GetSessionCacheTTL() time.Duration {
-	return c.poktRPCRequestTimeout
+	return c.sessionCacheTTL
 }
 
 // GetEnvironmentStage returns the EnvironmentStage value.
