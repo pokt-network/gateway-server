@@ -25,6 +25,11 @@ Every release candidate is published to https://github.com/pokt-network/gateway-
 ## Docker Compose
 There is an all-inclusive docker-compose file available for development [docker-compose.yml](docker-compose.yml)
 
+## Minimum Hardware Requirements to run
+- 1GB of RAM
+- 1GB of storage
+- 4 vCPUs
+
 ## Creating a DB Migration
 Migrations are like version control for your database, allowing your team to define and share the application's database schema definition.
 Before running a migration make sure to install the go lang migration cli on your machine.
