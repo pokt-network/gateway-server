@@ -34,8 +34,8 @@ type CheckJob interface {
 Under the hood, the NodeSelectorService is responsible for asynchronously executing all the initialized `CheckJobs`.
 
 Some existing implementations of Checks can be found in:
-1. [evm_data_integrity_check.go](..%2Finternal%2Fqos_node_registry%2Fchecks%2Fevm_data_integrity_check.go)
-2. [evm_height_check.go](..%2Finternal%2Fqos_node_registry%2Fchecks%2Fevm_height_check.go)
+1. [evm_data_integrity_check.go](..%2Finternal%2Fnode_selector_service%2Fchecks%2Fevm_data_integrity_check%2Fevm_data_integrity_check.go)
+2. [evm_height_check.go](..%2Finternal%2Fnode_selector_service%2Fchecks%2Fevm_height_check%2Fevm_height_check.go)
 
 ### Adding custom QoS checks
 
@@ -50,9 +50,9 @@ ChainConfiguration chain_configurations_registry.ChainConfigurationsService
 that developers should inherit. This base check provides a list of nodes to check and a `PocketRelayer` that allows the developer to send requests to the nodes in the network, and `ChainConfiguration` service that allows for per-chain specific check configurations.
 
 Checks are designed to be opinionated and there are numerous ways to implement whether a node is healthy or not by definition. Therefore, implementing custom QoS checks will be dependent on the chain or data source the developer is looking to support.  For example, the developer may want to send a request to a Solana node with a custom JSON-RPC method to see if the node is synced by using the provided `PocketRelayer` to send a request to the node through Pocket network.
-If the node is not synced, the developer can set a custom punishment through the various functions exposed in [qos_node.go](..%2Finternal%2Fqos_node_registry%2Fmodels%2Fqos_node.go), such as `SetTimeoutUntil` to punish the node.
+If the node is not synced, the developer can set a custom punishment through the various functions exposed in [qos_node.go](..%2Finternal%2Fnode_selector_service%2Fmodels%2Fqos_node.go), such as `SetTimeoutUntil` to punish the node.
 
-Once the developer is finished implementing the CheckJob, they can enable the QoS check by initializing the newly created check into the `getEnabledJobs` function inside [qos_node_registry_service.go](..%2Finternal%2Fqos_node_registry%2Fqos_node_registry_service.go) and are encouraged to open up a PR for inclusion in the official repository.
+Once the developer is finished implementing the CheckJob, they can enable the QoS check by initializing the newly created check into the `enabledChecks` variable inside [node_selector_service.go](..%2Finternal%2Fnode_selector_service%2Fnode_selector_service.go) and are encouraged to open up a PR for inclusion in the official repository.
 
 ## Future Improvements
 
