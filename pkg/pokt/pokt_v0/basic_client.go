@@ -58,6 +58,13 @@ func (r BasicClient) GetSession(req *models.GetSessionRequest) (*models.GetSessi
 	if err != nil {
 		return nil, err
 	}
+
+	// The current POKT Node implementation returns the latest session height instead of what was requested.
+	// This can result in undesired functionality without explicit error handling (such as caching sesions, as the wrong session could become cahed)
+	if req.SessionHeight != 0 && sessionResponse.Session.SessionHeader.SessionHeight != req.SessionHeight {
+		return nil, errors.New("GetSession: failed, dispatcher returned a different session than what was requested")
+	}
+
 	return &sessionResponse, nil
 }
 
