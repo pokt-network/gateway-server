@@ -7,8 +7,9 @@ import (
 )
 
 type Session struct {
-	IsValid bool
-	Nodes   []*qos_models.QosNode
+	IsValid       bool
+	PocketSession *models.Session
+	Nodes         []*qos_models.QosNode
 }
 
 type SessionRegistryService interface {

@@ -10,6 +10,7 @@ import (
 	"pokt_gateway_server/internal/chain_configurations_registry"
 	"pokt_gateway_server/internal/global_config"
 	"pokt_gateway_server/internal/node_selector_service"
+	"pokt_gateway_server/internal/node_selector_service/checks"
 	"pokt_gateway_server/internal/session_registry"
 	"pokt_gateway_server/pkg/common"
 	"pokt_gateway_server/pkg/pokt/pokt_v0"
@@ -114,7 +115,14 @@ func (r *Relayer) sendNodeSelectorRelay(req *models.SendRelayRequest) (*models.S
 	if err := req.Validate(); err != nil {
 		return nil, err
 	}
-	return r.pocketClient.SendRelay(req)
+	rsp, err := r.pocketClient.SendRelay(req)
+
+	// Node returned an error, potentially penalize the node operator dependent on error
+	if err != nil {
+		checks.DefaultPunishNode(err, node, r.logger)
+	}
+
+	return rsp, err
 }
 
 func (r *Relayer) sendRandomNodeRelay(req *models.SendRelayRequest) (*models.SendRelayResponse, error) {

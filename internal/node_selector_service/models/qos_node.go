@@ -8,6 +8,10 @@ import (
 type TimeoutReason string
 
 const (
+	maxErrorStr int = 100
+)
+
+const (
 	chainSolanaCustom = "C006"
 	chainSolana       = "0006"
 )
@@ -29,14 +33,15 @@ type QosNode struct {
 	lastDataIntegrityCheckTime time.Time
 	latestKnownHeight          uint64
 	synced                     bool
+	lastKnownError             error
 	lastHeightCheckTime        time.Time
 }
 
 func (n *QosNode) IsHealthy() bool {
-	return !n.isInTimeout() && n.isSynced()
+	return !n.isInTimeout() && n.IsSynced()
 }
 
-func (n *QosNode) isSynced() bool {
+func (n *QosNode) IsSynced() bool {
 	return n.synced
 }
 
@@ -52,9 +57,10 @@ func (n *QosNode) GetLastHeightCheckTime() time.Time {
 	return n.lastHeightCheckTime
 }
 
-func (n *QosNode) SetTimeoutUntil(time time.Time, reason TimeoutReason) {
+func (n *QosNode) SetTimeoutUntil(time time.Time, reason TimeoutReason, attachedErr error) {
 	n.timeoutReason = reason
 	n.timeoutUntil = time
+	n.lastKnownError = attachedErr
 }
 
 func (n *QosNode) SetLastKnownHeight(lastKnownHeight uint64) {
@@ -95,4 +101,23 @@ func (n *QosNode) IsSolanaChain() bool {
 
 func (n *QosNode) IsEvmChain() bool {
 	return !n.IsSolanaChain()
+}
+
+func (n *QosNode) GetTimeoutReason() TimeoutReason {
+	return n.timeoutReason
+}
+
+func (n *QosNode) GetLastKnownErrorStr() string {
+	if n.lastKnownError == nil {
+		return ""
+	}
+	errStr := n.lastKnownError.Error()
+	if len(errStr) > maxErrorStr {
+		return errStr[:maxErrorStr]
+	}
+	return errStr
+}
+
+func (n *QosNode) GetTimeoutUntil() time.Time {
+	return n.timeoutUntil
 }

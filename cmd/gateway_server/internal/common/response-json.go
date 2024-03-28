@@ -13,15 +13,17 @@ import (
 type ErrorResponse struct {
 	Message string `json:"message"`
 	Status  int    `json:"status"`
+	Error   error  `json:"error"`
 }
 
 // JSONError creates a JSON-formatted error response and sends it to the client.
 // It takes the fasthttp.RequestCtx, error message, and HTTP status code as parameters.
-func JSONError(ctx *fasthttp.RequestCtx, message string, statusCode int) {
+func JSONError(ctx *fasthttp.RequestCtx, message string, statusCode int, err error) {
 	// Create an ErrorResponse instance with the provided message and status code.
 	errorResponse := ErrorResponse{
 		Message: message,
 		Status:  statusCode,
+		Error:   err,
 	}
 
 	// Marshal the ErrorResponse instance into JSON format.

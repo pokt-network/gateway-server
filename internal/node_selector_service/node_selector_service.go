@@ -10,6 +10,7 @@ import (
 	"pokt_gateway_server/internal/session_registry"
 	"pokt_gateway_server/pkg/common"
 	"pokt_gateway_server/pkg/pokt/pokt_v0"
+	"sort"
 	"time"
 )
 
@@ -48,21 +49,57 @@ func NewNodeSelectorService(sessionRegistry session_registry.SessionRegistryServ
 }
 
 func (q NodeSelectorClient) FindNode(chainId string) (*models.QosNode, bool) {
-	var healthyNodes []*models.QosNode
-	nodes, found := q.sessionRegistry.GetNodesByChain(chainId)
-	if !found {
+
+	nodes, ok := q.sessionRegistry.GetNodesByChain(chainId)
+	if !ok {
 		return nil, false
 	}
+
+	// Filter nodes by health
+	healthyNodes := filterByHealthyNodes(nodes)
+
+	// Find a node that's closer to session height
+	sortedSessionHeights, nodeMap := filterBySessionHeightNodes(healthyNodes)
+	for _, sessionHeight := range sortedSessionHeights {
+		node, ok := common.GetRandomElement(nodeMap[sessionHeight])
+		if ok {
+			return node, true
+		}
+	}
+	return nil, false
+}
+
+func filterBySessionHeightNodes(nodes []*models.QosNode) ([]uint, map[uint][]*models.QosNode) {
+	nodesBySessionHeight := map[uint][]*models.QosNode{}
+
+	// Create map to retrieve nodes by session height
+	for _, r := range nodes {
+		sessionHeight := r.PocketSession.SessionHeader.SessionHeight
+		nodesBySessionHeight[sessionHeight] = append(nodesBySessionHeight[sessionHeight], r)
+	}
+
+	// Create slice to hold sorted session heights
+	var sortedSessionHeights []uint
+	for sessionHeight := range nodesBySessionHeight {
+		sortedSessionHeights = append(sortedSessionHeights, sessionHeight)
+	}
+
+	// Sort the slice of session heights by descending order
+	sort.Slice(sortedSessionHeights, func(i, j int) bool {
+		return sortedSessionHeights[i] > sortedSessionHeights[j]
+	})
+
+	return sortedSessionHeights, nodesBySessionHeight
+}
+func filterByHealthyNodes(nodes []*models.QosNode) []*models.QosNode {
+	var healthyNodes []*models.QosNode
+
 	for _, r := range nodes {
 		if r.IsHealthy() {
 			healthyNodes = append(healthyNodes, r)
 		}
 	}
-	node, ok := common.GetRandomElement(healthyNodes)
-	if !ok {
-		return nil, false
-	}
-	return node, true
+	return healthyNodes
 }
 
 func (q NodeSelectorClient) startJobChecker() {

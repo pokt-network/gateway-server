@@ -86,6 +86,11 @@ func main() {
 	poktAppsRouter.POST("/", middleware.XAPIKeyAuth(poktAppsController.AddApplication, gatewayConfigProvider))
 	poktAppsRouter.DELETE("/{app_id}", middleware.XAPIKeyAuth(poktAppsController.DeleteApplication, gatewayConfigProvider))
 
+	// Create qos controller for debugging purposes
+	qosNodeController := controllers.NewQosNodeController(sessionRegistry, logger.Named("qos_node_controller"))
+	qosNodeRouter := r.Group("/qosnodes")
+	qosNodeRouter.GET("/", middleware.XAPIKeyAuth(qosNodeController.GetAll, gatewayConfigProvider))
+
 	// Add Middleware for Generic E2E Prom Tracking
 	p := fasthttpprometheus.NewPrometheus("fasthttp")
 	fastpHandler := p.WrapHandler(r)

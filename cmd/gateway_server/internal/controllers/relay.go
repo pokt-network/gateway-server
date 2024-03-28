@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
 	"pokt_gateway_server/cmd/gateway_server/internal/common"
@@ -30,7 +31,7 @@ func (c *RelayController) HandleRelay(ctx *fasthttp.RequestCtx) {
 
 	// Check if the chain ID is empty or has an incorrect length.
 	if chainID == "" || len(chainID) != chainIdLength {
-		common.JSONError(ctx, "Incorrect chain id", fasthttp.StatusBadRequest)
+		common.JSONError(ctx, "Incorrect chain id", fasthttp.StatusBadRequest, nil)
 		return
 	}
 
@@ -45,7 +46,7 @@ func (c *RelayController) HandleRelay(ctx *fasthttp.RequestCtx) {
 
 	if err != nil {
 		c.logger.Error("Error relaying", zap.Error(err))
-		common.JSONError(ctx, "Something went wrong", fasthttp.StatusInternalServerError)
+		common.JSONError(ctx, fmt.Sprintf("Something went wrong %v", err), fasthttp.StatusInternalServerError, err)
 		return
 	}
 

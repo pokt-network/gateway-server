@@ -112,7 +112,7 @@ func (c *EvmDataIntegrityCheck) Perform() {
 	for _, nodeResp := range nodeResponsePairs {
 		if nodeResp.result.Result.Hash != majorityBlockHash {
 			c.logger.Sugar().Errorw("punishing node for failed data integrity check", "node", nodeResp.node.MorseNode.ServiceUrl, "nodeBlockHash", nodeResp.result.Result, "trustedSourceBlockHash", majorityBlockHash)
-			nodeResp.node.SetTimeoutUntil(time.Now().Add(dataIntegrityTimePenalty), models.DataIntegrityTimeout)
+			nodeResp.node.SetTimeoutUntil(time.Now().Add(dataIntegrityTimePenalty), models.DataIntegrityTimeout, fmt.Errorf("evmDataIntegrityCheck: nodeBlockHash %s, trustedSourceBlockHash %s", nodeResp.result.Result, majorityBlockHash))
 		}
 	}
 
