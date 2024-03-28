@@ -5,6 +5,7 @@ package common
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	fflib "github.com/pquerna/ffjson/fflib/v1"
 )
@@ -37,6 +38,12 @@ func (j *ErrorResponse) MarshalJSONBuf(buf fflib.EncodingBuffer) error {
 	fflib.WriteJsonString(buf, string(j.Message))
 	buf.WriteString(`,"status":`)
 	fflib.FormatBits2(buf, uint64(j.Status), 10, j.Status < 0)
+	buf.WriteString(`,"error":`)
+	/* Interface types must use runtime reflection. type=error kind=interface */
+	err = buf.Encode(j.Error)
+	if err != nil {
+		return err
+	}
 	buf.WriteByte('}')
 	return nil
 }
@@ -48,11 +55,15 @@ const (
 	ffjtErrorResponseMessage
 
 	ffjtErrorResponseStatus
+
+	ffjtErrorResponseError
 )
 
 var ffjKeyErrorResponseMessage = []byte("message")
 
 var ffjKeyErrorResponseStatus = []byte("status")
+
+var ffjKeyErrorResponseError = []byte("error")
 
 // UnmarshalJSON umarshall json - template of ffjson
 func (j *ErrorResponse) UnmarshalJSON(input []byte) error {
@@ -115,6 +126,14 @@ mainparse:
 			} else {
 				switch kn[0] {
 
+				case 'e':
+
+					if bytes.Equal(ffjKeyErrorResponseError, kn) {
+						currentKey = ffjtErrorResponseError
+						state = fflib.FFParse_want_colon
+						goto mainparse
+					}
+
 				case 'm':
 
 					if bytes.Equal(ffjKeyErrorResponseMessage, kn) {
@@ -131,6 +150,12 @@ mainparse:
 						goto mainparse
 					}
 
+				}
+
+				if fflib.SimpleLetterEqualFold(ffjKeyErrorResponseError, kn) {
+					currentKey = ffjtErrorResponseError
+					state = fflib.FFParse_want_colon
+					goto mainparse
 				}
 
 				if fflib.EqualFoldRight(ffjKeyErrorResponseStatus, kn) {
@@ -167,6 +192,9 @@ mainparse:
 
 				case ffjtErrorResponseStatus:
 					goto handle_Status
+
+				case ffjtErrorResponseError:
+					goto handle_Error
 
 				case ffjtErrorResponsenosuchkey:
 					err = fs.SkipField(tok)
@@ -232,6 +260,26 @@ handle_Status:
 
 			j.Status = int(tval)
 
+		}
+	}
+
+	state = fflib.FFParse_after_value
+	goto mainparse
+
+handle_Error:
+
+	/* handler: j.Error type=error kind=interface quoted=false*/
+
+	{
+		/* Falling back. type=error kind=interface */
+		tbuf, err := fs.CaptureField(tok)
+		if err != nil {
+			return fs.WrapErr(err)
+		}
+
+		err = json.Unmarshal(tbuf, &j.Error)
+		if err != nil {
+			return fs.WrapErr(err)
 		}
 	}
 

@@ -161,11 +161,11 @@ mainparse:
 
 handle_Height:
 
-	/* handler: j.Height type=uint64 kind=uint64 quoted=false*/
+	/* handler: j.Height type=uint kind=uint quoted=false*/
 
 	{
 		if tok != fflib.FFTok_integer && tok != fflib.FFTok_null {
-			return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for uint64", tok))
+			return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for uint", tok))
 		}
 	}
 
@@ -181,7 +181,7 @@ handle_Height:
 				return fs.WrapErr(err)
 			}
 
-			j.Height = uint64(tval)
+			j.Height = uint(tval)
 
 		}
 	}

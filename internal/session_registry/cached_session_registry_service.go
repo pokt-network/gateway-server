@@ -55,12 +55,12 @@ func init() {
 }
 
 type CachedSessionRegistryService struct {
-	poktClient             pokt_v0.PocketService
-	appRegistry            apps_registry.AppsRegistryService
-	lastFailure            time.Time
-	concurrentDispatchPool chan struct{}
-	logger                 *zap.Logger
-	lastPrimedHeight       uint64
+	poktClient              pokt_v0.PocketService
+	appRegistry             apps_registry.AppsRegistryService
+	lastFailure             time.Time
+	concurrentDispatchPool  chan struct{}
+	logger                  *zap.Logger
+	lastPrimedSessionHeight uint
 
 	// Lock used to synchronize inserting sessions and append sessions nodes.
 	sessionCacheLock sync.RWMutex
@@ -189,10 +189,9 @@ func (c *CachedSessionRegistryService) startSessionUpdater() {
 }
 
 // shouldPrimeSession: Track the latest time we primed a session and only prime if there's a new session
-func (c *CachedSessionRegistryService) shouldPrimeSessions(latestHeight uint64) bool {
-	isSessionBlock := latestHeight%blocksPerSession == 1
-	isNewSessionBlock := latestHeight > c.lastPrimedHeight
-	return c.lastPrimedHeight == 0 || isSessionBlock && isNewSessionBlock
+func (c *CachedSessionRegistryService) shouldPrimeSessions(latestSessionHeight uint) bool {
+	isNewSessionBlock := latestSessionHeight > c.lastPrimedSessionHeight
+	return c.lastPrimedSessionHeight == 0 || isNewSessionBlock
 }
 
 // primeSession: used as a background service to optimistically grab sessions
@@ -205,15 +204,14 @@ func (c *CachedSessionRegistryService) primeSessions() error {
 		return err
 	}
 
-	shouldPrimeSessions := c.shouldPrimeSessions(resp.Height)
-	c.logger.Sugar().Infow("priming sessions async", "currentHeight", resp.Height, "lastPrimedHeight", c.lastPrimedHeight, "shouldPrimeSessions", shouldPrimeSessions)
+	latestBlockHeight := resp.Height
+	latestSessionHeight := getLatestSessionHeight(latestBlockHeight)
+	shouldPrimeSessions := c.shouldPrimeSessions(latestSessionHeight)
+	c.logger.Sugar().Infow("priming sessions async", "currentBlockHeight", resp.Height, "latestSessionHeight", latestSessionHeight, "lastPrimedSessionHeight", c.lastPrimedSessionHeight, "shouldPrimeSessions", shouldPrimeSessions)
 
 	if !shouldPrimeSessions {
 		return nil
 	}
-
-	latestBlockHeight := resp.Height
-	latestSessionHeight := getLatestSessionHeight(uint(latestBlockHeight))
 
 	errCount := atomic.Int32{}
 	successCount := atomic.Int32{}
@@ -232,7 +230,7 @@ func (c *CachedSessionRegistryService) primeSessions() error {
 					Height:    latestSessionHeight,
 				}
 				rsp, err := c.GetSession(req)
-				// Session returned nil, or the node returned another session instead of the one requested (dispatcher is not in sync)
+				// Session returned nil, or the node returned another session instead of the one requested (dispatcher is not in sync or syncing up to latest height)
 				if err != nil || rsp.PocketSession.SessionHeader.SessionHeight != latestSessionHeight {
 					errCount.Add(1)
 					c.logger.Sugar().Warnw("primeSessions: failed to prime session", "req", req, "err", err, "dispatcherSessionHeight", rsp.PocketSession.SessionHeader.SessionHeight, "latestSessionHeight", latestSessionHeight)
@@ -247,7 +245,7 @@ func (c *CachedSessionRegistryService) primeSessions() error {
 	errs := errCount.Load()
 	if errs == 0 && successes > 0 {
 		c.logger.Sugar().Infow("primeSessions: successfully primed sessions", "successCount", successes, "errorCount", errs)
-		c.lastPrimedHeight = resp.Height
+		c.lastPrimedSessionHeight = latestSessionHeight
 	}
 	return nil
 }
