@@ -21,7 +21,7 @@ type Session struct {
 }
 
 type GetSessionRequest struct {
-	AppPubKey string `json:"app_public_key"`
-	Chain     string `json:"chain"`
-	Height    uint   `json:"session_height"`
+	AppPubKey     string `json:"app_public_key"`
+	Chain         string `json:"chain"`
+	SessionHeight uint   `json:"session_height"`
 }

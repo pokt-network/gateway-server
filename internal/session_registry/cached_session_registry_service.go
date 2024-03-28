@@ -95,8 +95,8 @@ func (c *CachedSessionRegistryService) GetNodesMap() map[string]*ttlcache.Item[s
 }
 
 func (c *CachedSessionRegistryService) GetSession(req *models.GetSessionRequest) (*Session, error) {
-	cacheKey := getSessionCacheKey(req)
-	cachedSession := c.sessionCache.Get(cacheKey)
+	sessionCacheKey := getSessionCacheKey(req)
+	cachedSession := c.sessionCache.Get(sessionCacheKey)
 	isCached := cachedSession != nil && cachedSession.Value() != nil
 	startTime := time.Now()
 	// Measure end to end latency for send relay
@@ -153,7 +153,7 @@ func (c *CachedSessionRegistryService) GetSession(req *models.GetSessionRequest)
 	c.sessionCacheLock.Lock()
 	defer c.sessionCacheLock.Unlock()
 	// Update session cache
-	c.sessionCache.Set(cacheKey, wrappedSession, ttlcache.DefaultTTL)
+	c.sessionCache.Set(sessionCacheKey, wrappedSession, ttlcache.DefaultTTL)
 
 	// Update node cache
 	chainNodeCacheKey := req.Chain
@@ -225,13 +225,12 @@ func (c *CachedSessionRegistryService) primeSessions() error {
 				defer wg.Done()
 				// Goroutine unbounded
 				req := &models.GetSessionRequest{
-					AppPubKey: app.NetworkApp.PublicKey,
-					Chain:     chain,
-					Height:    latestSessionHeight,
+					AppPubKey:     app.NetworkApp.PublicKey,
+					Chain:         chain,
+					SessionHeight: latestSessionHeight,
 				}
 				rsp, err := c.GetSession(req)
-				// Session returned nil, or the node returned another session instead of the one requested (dispatcher is not in sync or syncing up to latest height)
-				if err != nil || rsp.PocketSession.SessionHeader.SessionHeight != latestSessionHeight {
+				if err != nil {
 					errCount.Add(1)
 					c.logger.Sugar().Warnw("primeSessions: failed to prime session", "req", req, "err", err, "dispatcherSessionHeight", rsp.PocketSession.SessionHeader.SessionHeight, "latestSessionHeight", latestSessionHeight)
 				} else {
@@ -269,5 +268,5 @@ func (c *CachedSessionRegistryService) shouldBackoffDispatchFailure() bool {
 
 // getSessionCacheKey - used to keep track of a session for a specific app stake, height, and chain.
 func getSessionCacheKey(req *models.GetSessionRequest) string {
-	return fmt.Sprintf("%s-%s-%d", req.AppPubKey, req.Chain, req.Height)
+	return fmt.Sprintf("%s-%s-%d", req.AppPubKey, req.Chain, req.SessionHeight)
 }

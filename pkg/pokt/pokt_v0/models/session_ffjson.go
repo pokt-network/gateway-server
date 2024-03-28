@@ -38,7 +38,7 @@ func (j *GetSessionRequest) MarshalJSONBuf(buf fflib.EncodingBuffer) error {
 	buf.WriteString(`,"chain":`)
 	fflib.WriteJsonString(buf, string(j.Chain))
 	buf.WriteString(`,"session_height":`)
-	fflib.FormatBits2(buf, uint64(j.Height), 10, false)
+	fflib.FormatBits2(buf, uint64(j.SessionHeight), 10, false)
 	buf.WriteByte('}')
 	return nil
 }
@@ -51,14 +51,14 @@ const (
 
 	ffjtGetSessionRequestChain
 
-	ffjtGetSessionRequestHeight
+	ffjtGetSessionRequestSessionHeight
 )
 
 var ffjKeyGetSessionRequestAppPubKey = []byte("app_public_key")
 
 var ffjKeyGetSessionRequestChain = []byte("chain")
 
-var ffjKeyGetSessionRequestHeight = []byte("session_height")
+var ffjKeyGetSessionRequestSessionHeight = []byte("session_height")
 
 // UnmarshalJSON umarshall json - template of ffjson
 func (j *GetSessionRequest) UnmarshalJSON(input []byte) error {
@@ -139,16 +139,16 @@ mainparse:
 
 				case 's':
 
-					if bytes.Equal(ffjKeyGetSessionRequestHeight, kn) {
-						currentKey = ffjtGetSessionRequestHeight
+					if bytes.Equal(ffjKeyGetSessionRequestSessionHeight, kn) {
+						currentKey = ffjtGetSessionRequestSessionHeight
 						state = fflib.FFParse_want_colon
 						goto mainparse
 					}
 
 				}
 
-				if fflib.EqualFoldRight(ffjKeyGetSessionRequestHeight, kn) {
-					currentKey = ffjtGetSessionRequestHeight
+				if fflib.EqualFoldRight(ffjKeyGetSessionRequestSessionHeight, kn) {
+					currentKey = ffjtGetSessionRequestSessionHeight
 					state = fflib.FFParse_want_colon
 					goto mainparse
 				}
@@ -188,8 +188,8 @@ mainparse:
 				case ffjtGetSessionRequestChain:
 					goto handle_Chain
 
-				case ffjtGetSessionRequestHeight:
-					goto handle_Height
+				case ffjtGetSessionRequestSessionHeight:
+					goto handle_SessionHeight
 
 				case ffjtGetSessionRequestnosuchkey:
 					err = fs.SkipField(tok)
@@ -257,9 +257,9 @@ handle_Chain:
 	state = fflib.FFParse_after_value
 	goto mainparse
 
-handle_Height:
+handle_SessionHeight:
 
-	/* handler: j.Height type=uint kind=uint quoted=false*/
+	/* handler: j.SessionHeight type=uint kind=uint quoted=false*/
 
 	{
 		if tok != fflib.FFTok_integer && tok != fflib.FFTok_null {
@@ -279,7 +279,7 @@ handle_Height:
 				return fs.WrapErr(err)
 			}
 
-			j.Height = uint(tval)
+			j.SessionHeight = uint(tval)
 
 		}
 	}

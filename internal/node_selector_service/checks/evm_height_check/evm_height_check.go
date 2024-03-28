@@ -171,7 +171,7 @@ func getHighestNodeHeight(nodes []*models.QosNode) uint64 {
 		if math.Abs(zScore) > zScoreHeightThreshold {
 			continue
 		}
-		// Height is higher than last recorded height
+		// SessionHeight is higher than last recorded height
 		if nodeHeight > highestNodeHeight {
 			highestNodeHeight = nodeHeight
 		}
