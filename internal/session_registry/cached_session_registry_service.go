@@ -25,7 +25,7 @@ var (
 
 const (
 	blocksPerSession                      = 4
-	sessionPrimerInterval                 = time.Second * 15
+	sessionPrimerInterval                 = time.Second * 5
 	reasonSessionSuccessCached            = "session_cached"
 	reasonSessionSuccessColdHit           = "session_cold_hit"
 	reasonSessionFailedBackoff            = "session_failed_backoff"
@@ -203,11 +203,13 @@ func (c *CachedSessionRegistryService) primeSessions() error {
 		return err
 	}
 
+	c.logger.Sugar().Infow("priming sessions async", "currentHeight", resp.Height, "lastPrimedHeight", c.lastPrimedHeight)
+
 	if !c.shouldPrimeSessions(resp.Height) {
 		return nil
 	}
 
-	sessionCount := atomic.Int32{}
+	errCount := atomic.Int32{}
 
 	wg := sync.WaitGroup{}
 	for _, app := range c.appRegistry.GetApplications() {
@@ -225,20 +227,16 @@ func (c *CachedSessionRegistryService) primeSessions() error {
 				}
 				_, err = c.GetSession(req)
 				if err != nil {
+					errCount.Add(1)
 					c.logger.Sugar().Warnw("primeSessions: failed to prime session", "req", req, "err", err)
-				} else {
-					sessionCount.Add(1)
 				}
 			}()
 		}
 	}
 	wg.Wait()
-	totalSessionsPrimed := sessionCount.Load()
-	// As long as we prime at least one session,
-	// we consider it as a success and will wait until
-	// next session block height to continue priming
-	if totalSessionsPrimed > 0 {
-		c.logger.Sugar().Infow("primeSessions: successfully primed sessions", "sessionsPrimed", totalSessionsPrimed)
+	errs := errCount.Load()
+	if errs == 0 {
+		c.logger.Sugar().Info("primeSessions: successfully primed sessions")
 		c.lastPrimedHeight = resp.Height
 	}
 	return nil

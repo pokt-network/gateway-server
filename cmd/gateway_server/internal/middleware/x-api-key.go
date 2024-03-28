@@ -25,6 +25,6 @@ func XAPIKeyAuth(h fasthttp.RequestHandler, provider config2.SecretProvider) fas
 			return
 		}
 		// Request Basic Authentication otherwise
-		common.JSONError(ctx, "Unauthorized, invalid x-api-key header", fasthttp.StatusUnauthorized)
+		common.JSONError(ctx, "Unauthorized, invalid x-api-key header", fasthttp.StatusUnauthorized, nil)
 	}
 }
