@@ -2,5 +2,5 @@
 package models
 
 type GetLatestBlockHeightResponse struct {
-	Height uint64 `json:"height"`
+	Height uint `json:"height"`
 }

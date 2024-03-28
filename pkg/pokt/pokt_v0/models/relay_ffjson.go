@@ -2262,7 +2262,7 @@ func (j *SendRelayRequest) MarshalJSONBuf(buf fflib.EncodingBuffer) error {
 		buf.WriteString(`{"Payload":null`)
 	}
 	if j.Signer != nil {
-		buf.WriteString(`,"Signer":`)
+		buf.WriteString(`,"signer":`)
 
 		{
 
@@ -2273,7 +2273,7 @@ func (j *SendRelayRequest) MarshalJSONBuf(buf fflib.EncodingBuffer) error {
 
 		}
 	} else {
-		buf.WriteString(`,"Signer":null`)
+		buf.WriteString(`,"signer":null`)
 	}
 	buf.WriteString(`,"Chain":`)
 	fflib.WriteJsonString(buf, string(j.Chain))
@@ -2310,7 +2310,7 @@ const (
 
 var ffjKeySendRelayRequestPayload = []byte("Payload")
 
-var ffjKeySendRelayRequestSigner = []byte("Signer")
+var ffjKeySendRelayRequestSigner = []byte("signer")
 
 var ffjKeySendRelayRequestChain = []byte("Chain")
 
@@ -2519,7 +2519,7 @@ handle_Payload:
 
 handle_Signer:
 
-	/* handler: j.Signer type=models.Ed25519Account kind=struct quoted=false*/
+	/* handler: j.signer type=models.Ed25519Account kind=struct quoted=false*/
 
 	{
 		if tok == fflib.FFTok_null {

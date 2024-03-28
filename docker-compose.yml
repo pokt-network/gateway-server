@@ -9,6 +9,8 @@ services:
       - "${HTTP_SERVER_PORT}:${HTTP_SERVER_PORT}"
     env_file:
       - ./.env
+    networks:
+      - bridged_network
 
   postgres:
     image: postgres:latest
@@ -17,9 +19,15 @@ services:
       POSTGRES_USER: myuser
       POSTGRES_PASSWORD: mypassword
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - bridged_network
 
 volumes:
   postgres_data:
+
+networks:
+  bridged_network:
+    driver: bridge

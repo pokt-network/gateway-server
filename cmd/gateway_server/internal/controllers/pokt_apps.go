@@ -9,9 +9,9 @@ import (
 	"pokt_gateway_server/cmd/gateway_server/internal/common"
 	"pokt_gateway_server/cmd/gateway_server/internal/models"
 	"pokt_gateway_server/cmd/gateway_server/internal/transform"
-	"pokt_gateway_server/internal/config"
+	"pokt_gateway_server/internal/apps_registry"
 	"pokt_gateway_server/internal/db_query"
-	"pokt_gateway_server/internal/pokt_apps_registry"
+	"pokt_gateway_server/internal/global_config"
 	"pokt_gateway_server/pkg/pokt/pokt_v0"
 	pokt_models "pokt_gateway_server/pkg/pokt/pokt_v0/models"
 )
@@ -20,24 +20,24 @@ type addApplicationBody struct {
 	PrivateKey string `json:"private_key"`
 }
 
-// RelayController handles relay requests for a specific chain.
+// PoktAppsController handles requests for staked applications
 type PoktAppsController struct {
 	logger         *zap.Logger
 	query          db_query.Querier
 	poktClient     pokt_v0.PocketService
-	appRegistry    pokt_apps_registry.AppsRegistryService
-	secretProvider config.SecretProvider
+	appRegistry    apps_registry.AppsRegistryService
+	secretProvider global_config.SecretProvider
 }
 
-// NewRelayController creates a new instance of RelayController.
-func NewPoktAppsController(appRegistry pokt_apps_registry.AppsRegistryService, query db_query.Querier, secretProvider config.SecretProvider, logger *zap.Logger) *PoktAppsController {
+// NewPoktAppsController creates a new instance of PoktAppsController.
+func NewPoktAppsController(appRegistry apps_registry.AppsRegistryService, query db_query.Querier, secretProvider global_config.SecretProvider, logger *zap.Logger) *PoktAppsController {
 	return &PoktAppsController{appRegistry: appRegistry, query: query, secretProvider: secretProvider, logger: logger}
 }
 
 // GetAll returns all the apps in the registry
 func (c *PoktAppsController) GetAll(ctx *fasthttp.RequestCtx) {
 	applications := c.appRegistry.GetApplications()
-	appsPublic := []*models.PoktApplication{}
+	appsPublic := []*models.PublicPoktApplication{}
 	for _, app := range applications {
 		appsPublic = append(appsPublic, transform.ToPoktApplication(app))
 	}
@@ -50,18 +50,18 @@ func (c *PoktAppsController) AddApplication(ctx *fasthttp.RequestCtx) {
 	var body addApplicationBody
 	err := ffjson.Unmarshal(ctx.PostBody(), &body)
 	if err != nil {
-		common.JSONError(ctx, "Faiiled to unmarshal req", fasthttp.StatusInternalServerError)
+		common.JSONError(ctx, "Faiiled to unmarshal req", fasthttp.StatusInternalServerError, err)
 		return
 	}
 
 	account, err := pokt_models.NewAccount(body.PrivateKey)
 	if err != nil {
-		common.JSONError(ctx, "Faiiled to convert to ed25519 account", fasthttp.StatusBadRequest)
+		common.JSONError(ctx, "Faiiled to convert to ed25519 account", fasthttp.StatusBadRequest, err)
 		return
 	}
 	_, err = c.query.InsertPoktApplications(context.Background(), account.PrivateKey, c.secretProvider.GetPoktApplicationsEncryptionKey())
 	if err != nil {
-		common.JSONError(ctx, "Something went wrong", fasthttp.StatusInternalServerError)
+		common.JSONError(ctx, "Something went wrong", fasthttp.StatusInternalServerError, err)
 		return
 	}
 	ctx.SetStatusCode(fasthttp.StatusCreated)
@@ -75,7 +75,7 @@ func (c *PoktAppsController) DeleteApplication(ctx *fasthttp.RequestCtx) {
 	uuid.Set(applicationId)
 	_, err := c.query.DeletePoktApplication(context.Background(), uuid)
 	if err != nil {
-		common.JSONError(ctx, "Something went wrong", fasthttp.StatusInternalServerError)
+		common.JSONError(ctx, "Something went wrong", fasthttp.StatusInternalServerError, err)
 		return
 	}
 	ctx.SetStatusCode(fasthttp.StatusOK)

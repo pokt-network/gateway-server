@@ -18,6 +18,7 @@ require (
 	github.com/valyala/fasthttp v1.51.0
 	go.uber.org/zap v1.26.0
 	golang.org/x/crypto v0.17.0
+	gonum.org/v1/gonum v0.15.0
 )
 
 require (

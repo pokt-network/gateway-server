@@ -1108,6 +1108,8 @@ func (j *SessionHeader) MarshalJSONBuf(buf fflib.EncodingBuffer) error {
 	_ = err
 	buf.WriteString(`{"session_height":`)
 	fflib.FormatBits2(buf, uint64(j.SessionHeight), 10, false)
+	buf.WriteString(`,"chain":`)
+	fflib.WriteJsonString(buf, string(j.Chain))
 	buf.WriteByte('}')
 	return nil
 }
@@ -1117,9 +1119,13 @@ const (
 	ffjtSessionHeadernosuchkey
 
 	ffjtSessionHeaderSessionHeight
+
+	ffjtSessionHeaderChain
 )
 
 var ffjKeySessionHeaderSessionHeight = []byte("session_height")
+
+var ffjKeySessionHeaderChain = []byte("chain")
 
 // UnmarshalJSON umarshall json - template of ffjson
 func (j *SessionHeader) UnmarshalJSON(input []byte) error {
@@ -1182,6 +1188,14 @@ mainparse:
 			} else {
 				switch kn[0] {
 
+				case 'c':
+
+					if bytes.Equal(ffjKeySessionHeaderChain, kn) {
+						currentKey = ffjtSessionHeaderChain
+						state = fflib.FFParse_want_colon
+						goto mainparse
+					}
+
 				case 's':
 
 					if bytes.Equal(ffjKeySessionHeaderSessionHeight, kn) {
@@ -1190,6 +1204,12 @@ mainparse:
 						goto mainparse
 					}
 
+				}
+
+				if fflib.SimpleLetterEqualFold(ffjKeySessionHeaderChain, kn) {
+					currentKey = ffjtSessionHeaderChain
+					state = fflib.FFParse_want_colon
+					goto mainparse
 				}
 
 				if fflib.EqualFoldRight(ffjKeySessionHeaderSessionHeight, kn) {
@@ -1217,6 +1237,9 @@ mainparse:
 
 				case ffjtSessionHeaderSessionHeight:
 					goto handle_SessionHeight
+
+				case ffjtSessionHeaderChain:
+					goto handle_Chain
 
 				case ffjtSessionHeadernosuchkey:
 					err = fs.SkipField(tok)
@@ -1255,6 +1278,32 @@ handle_SessionHeight:
 			}
 
 			j.SessionHeight = uint(tval)
+
+		}
+	}
+
+	state = fflib.FFParse_after_value
+	goto mainparse
+
+handle_Chain:
+
+	/* handler: j.Chain type=string kind=string quoted=false*/
+
+	{
+
+		{
+			if tok != fflib.FFTok_string && tok != fflib.FFTok_null {
+				return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for string", tok))
+			}
+		}
+
+		if tok == fflib.FFTok_null {
+
+		} else {
+
+			outBuf := fs.Output.Bytes()
+
+			j.Chain = string(string(outBuf))
 
 		}
 	}

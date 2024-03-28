@@ -9,15 +9,20 @@ import (
 	"pokt_gateway_server/cmd/gateway_server/internal/config"
 	"pokt_gateway_server/cmd/gateway_server/internal/controllers"
 	"pokt_gateway_server/cmd/gateway_server/internal/middleware"
+	"pokt_gateway_server/internal/apps_registry"
+	"pokt_gateway_server/internal/chain_configurations_registry"
 	"pokt_gateway_server/internal/db_query"
 	"pokt_gateway_server/internal/logging"
-	"pokt_gateway_server/internal/pokt_apps_registry"
-	"pokt_gateway_server/internal/pokt_client_decorators"
+	"pokt_gateway_server/internal/node_selector_service"
+	qos_models "pokt_gateway_server/internal/node_selector_service/models"
+	"pokt_gateway_server/internal/relayer"
+	"pokt_gateway_server/internal/session_registry"
 	"pokt_gateway_server/pkg/pokt/pokt_v0"
-	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
 )
 
 const (
+	// Maximum amount of DB connections opened at a time. This should not have to be modified
+	// as most of our database queries are periodic and not ran concurrently.
 	maxDbConns = 50
 )
 
@@ -42,7 +47,7 @@ func main() {
 	defer pool.Close()
 
 	// Initialize a POKT client using the configured POKT RPC host and timeout
-	client, err := pokt_v0.NewBasicClient(gatewayConfigProvider.GetPoktRPCFullHost(), gatewayConfigProvider.GetPoktRPCTimeout())
+	client, err := pokt_v0.NewBasicClient(gatewayConfigProvider.GetPoktRPCFullHost(), gatewayConfigProvider.GetPoktRPCRequestTimeout())
 	if err != nil {
 		// If POKT client initialization fails, log the error and exit
 		logger.Sugar().Fatal(err)
@@ -50,18 +55,26 @@ func main() {
 	}
 
 	// Initialize a TTL cache for session caching
-	sessionCache := ttlcache.New[string, *models.GetSessionResponse](
-		ttlcache.WithTTL[string, *models.GetSessionResponse](gatewayConfigProvider.GetSessionCacheTTL()), //@todo: make this configurable via env ?
+	sessionCache := ttlcache.New[string, *session_registry.Session](
+		ttlcache.WithTTL[string, *session_registry.Session](gatewayConfigProvider.GetSessionCacheTTL()),
 	)
 
-	poktApplicationRegistry := pokt_apps_registry.NewCachedRegistry(client, querier, gatewayConfigProvider, logger.Named("pokt_application_registry"))
+	nodeCache := ttlcache.New[string, []*qos_models.QosNode](
+		ttlcache.WithTTL[string, []*qos_models.QosNode](gatewayConfigProvider.GetSessionCacheTTL()),
+	)
 
-	cachedPoktClient := pokt_client_decorators.NewCachedClient(client, sessionCache)
+	poktApplicationRegistry := apps_registry.NewCachedAppsRegistry(client, querier, gatewayConfigProvider, logger.Named("pokt_application_registry"))
+	chainConfigurationRegistry := chain_configurations_registry.NewCachedChainConfigurationRegistry(querier, logger.Named("chain_configurations_registry"))
+	sessionRegistry := session_registry.NewCachedSessionRegistryService(client, poktApplicationRegistry, sessionCache, nodeCache, logger.Named("session_registry"))
+	nodeSelectorService := node_selector_service.NewNodeSelectorService(sessionRegistry, client, chainConfigurationRegistry, logger.Named("node_selector"))
+
+	relayer := relayer.NewRelayer(client, sessionRegistry, poktApplicationRegistry, nodeSelectorService, chainConfigurationRegistry, gatewayConfigProvider, logger.Named("relayer"))
+
 	// Define routers
 	r := router.New()
 
 	// Create a relay controller with the necessary dependencies (logger, registry, cached relayer)
-	relayController := controllers.NewRelayController(cachedPoktClient, poktApplicationRegistry, logger.Named("relay_controller"))
+	relayController := controllers.NewRelayController(relayer, logger.Named("relay_controller"))
 
 	relayRouter := r.Group("/relay")
 	relayRouter.POST("/{catchAll:*}", relayController.HandleRelay)
@@ -72,6 +85,11 @@ func main() {
 	poktAppsRouter.GET("/", middleware.XAPIKeyAuth(poktAppsController.GetAll, gatewayConfigProvider))
 	poktAppsRouter.POST("/", middleware.XAPIKeyAuth(poktAppsController.AddApplication, gatewayConfigProvider))
 	poktAppsRouter.DELETE("/{app_id}", middleware.XAPIKeyAuth(poktAppsController.DeleteApplication, gatewayConfigProvider))
+
+	// Create qos controller for debugging purposes
+	qosNodeController := controllers.NewQosNodeController(sessionRegistry, logger.Named("qos_node_controller"))
+	qosNodeRouter := r.Group("/qosnodes")
+	qosNodeRouter.GET("/", middleware.XAPIKeyAuth(qosNodeController.GetAll, gatewayConfigProvider))
 
 	// Add Middleware for Generic E2E Prom Tracking
 	p := fasthttpprometheus.NewPrometheus("fasthttp")

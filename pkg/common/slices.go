@@ -4,10 +4,10 @@ import (
 	"math/rand"
 )
 
-func GetRandomElement[T any](elements []T) T {
+func GetRandomElement[T any](elements []T) (T, bool) {
 	if len(elements) == 0 {
-		return *new(T)
+		return *new(T), false
 	}
 	randomIndex := rand.Intn(len(elements))
-	return elements[randomIndex]
+	return elements[randomIndex], true
 }

@@ -54,7 +54,7 @@ func NewBasicClient(fullNodeHost string, timeout time.Duration) (*BasicClient, e
 //   - (error): Error, if any.
 func (r BasicClient) GetSession(req *models.GetSessionRequest) (*models.GetSessionResponse, error) {
 	var sessionResponse models.GetSessionResponse
-	err := r.makeRequest(endpointDispatch, "POST", req, &sessionResponse, nil)
+	err := r.makeRequest(endpointDispatch, "POST", req, &sessionResponse, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (r BasicClient) GetSession(req *models.GetSessionRequest) (*models.GetSessi
 func (r BasicClient) GetLatestStakedApplications() ([]*models.PoktApplication, error) {
 	reqParams := map[string]any{"opts": map[string]any{"per_page": maxApplications}}
 	var resp models.GetApplicationResponse
-	err := r.makeRequest(endpointGetApps, "POST", reqParams, &resp, nil)
+	err := r.makeRequest(endpointGetApps, "POST", reqParams, &resp, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +118,7 @@ func (r BasicClient) SendRelay(req *models.SendRelayRequest) (*models.SendRelayR
 		Payload:    req.Payload,
 		Metadata:   relayMetadata,
 		RelayProof: relayProof,
-	}, &sessionResponse, &node.ServiceUrl)
+	}, &sessionResponse, &node.ServiceUrl, req.Timeout)
 
 	if err != nil {
 		return nil, err
@@ -134,7 +134,7 @@ func (r BasicClient) SendRelay(req *models.SendRelayRequest) (*models.SendRelayR
 func (r BasicClient) GetLatestBlockHeight() (*models.GetLatestBlockHeightResponse, error) {
 
 	var height models.GetLatestBlockHeightResponse
-	err := r.makeRequest(endpointGetHeight, "POST", nil, &height, nil)
+	err := r.makeRequest(endpointGetHeight, "POST", nil, &height, nil, nil)
 
 	if err != nil {
 		return nil, err
@@ -143,7 +143,7 @@ func (r BasicClient) GetLatestBlockHeight() (*models.GetLatestBlockHeightRespons
 	return &height, nil
 }
 
-func (r BasicClient) makeRequest(endpoint string, method string, requestData any, responseModel any, hostOverride *string) error {
+func (r BasicClient) makeRequest(endpoint string, method string, requestData any, responseModel any, hostOverride *string, providedReqTimeout *time.Duration) error {
 	reqPayload, err := ffjson.Marshal(requestData)
 	if err != nil {
 		return err
@@ -168,7 +168,13 @@ func (r BasicClient) makeRequest(endpoint string, method string, requestData any
 		request.SetBody(reqPayload)
 	}
 
-	err = fasthttp.DoTimeout(request, response, r.globalRequestTimeout)
+	var requestTimeout *time.Duration
+	if providedReqTimeout != nil {
+		requestTimeout = providedReqTimeout
+	} else {
+		requestTimeout = &r.globalRequestTimeout
+	}
+	err = fasthttp.DoTimeout(request, response, *requestTimeout)
 	if err != nil {
 		return err
 	}
@@ -179,7 +185,7 @@ func (r BasicClient) makeRequest(endpoint string, method string, requestData any
 		err := ffjson.Unmarshal(response.Body(), pocketError)
 		// failed to unmarshal, not sure what the response code is
 		if err != nil {
-			return models.PocketRPCError{HttpCode: uint64(response.StatusCode()), Message: string(response.Body())}
+			return models.PocketRPCError{HttpCode: response.StatusCode(), Message: string(response.Body())}
 		}
 		return pocketError
 	}
