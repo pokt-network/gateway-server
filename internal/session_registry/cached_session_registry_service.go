@@ -146,7 +146,7 @@ func (c *CachedSessionRegistryService) GetSession(req *models.GetSessionRequest)
 	}
 
 	// session with metadata
-	wrappedSession := &Session{IsValid: true, Nodes: wrappedNodes}
+	wrappedSession := &Session{IsValid: true, Nodes: wrappedNodes, PocketSession: response.Session}
 
 	counterSessionRequest.WithLabelValues("true", reasonSessionSuccessColdHit).Inc()
 
@@ -212,6 +212,9 @@ func (c *CachedSessionRegistryService) primeSessions() error {
 		return nil
 	}
 
+	latestBlockHeight := resp.Height
+	latestSessionHeight := getLatestSessionHeight(uint(latestBlockHeight))
+
 	errCount := atomic.Int32{}
 	successCount := atomic.Int32{}
 	wg := sync.WaitGroup{}
@@ -226,12 +229,13 @@ func (c *CachedSessionRegistryService) primeSessions() error {
 				req := &models.GetSessionRequest{
 					AppPubKey: app.NetworkApp.PublicKey,
 					Chain:     chain,
-					Height:    uint(resp.Height),
+					Height:    latestSessionHeight,
 				}
-				_, err = c.GetSession(req)
-				if err != nil {
+				rsp, err := c.GetSession(req)
+				// Session returned nil, or the node returned another session instead of the one requested (dispatcher is not in sync)
+				if err != nil || rsp.PocketSession.SessionHeader.SessionHeight != latestSessionHeight {
 					errCount.Add(1)
-					c.logger.Sugar().Warnw("primeSessions: failed to prime session", "req", req, "err", err)
+					c.logger.Sugar().Warnw("primeSessions: failed to prime session", "req", req, "err", err, "dispatcherSessionHeight", rsp.PocketSession.SessionHeader.SessionHeight, "latestSessionHeight", latestSessionHeight)
 				} else {
 					successCount.Add(1)
 				}
@@ -246,6 +250,16 @@ func (c *CachedSessionRegistryService) primeSessions() error {
 		c.lastPrimedHeight = resp.Height
 	}
 	return nil
+}
+
+func getLatestSessionHeight(nodeHeight uint) uint {
+	// if block height / blocks per session remainder is zero, just subtract blocks per session and add 1
+	if nodeHeight%blocksPerSession == 0 {
+		return nodeHeight - blocksPerSession + 1
+	} else {
+		// calculate the latest session block height by diving the current block height by the blocksPerSession
+		return (nodeHeight/blocksPerSession)*blocksPerSession + 1
+	}
 }
 
 // shouldBackOffDispatchFailure: whenever pokt nodes receive too many dispatches at once, it results in overloaded pokt nodes
