@@ -149,11 +149,13 @@ func (c *CachedSessionRegistryService) GetSession(req *models.GetSessionRequest)
 	wrappedSession := &Session{IsValid: true, Nodes: wrappedNodes}
 
 	counterSessionRequest.WithLabelValues("true", reasonSessionSuccessColdHit).Inc()
-	// Update session cache
-	c.sessionCache.Set(cacheKey, wrappedSession, ttlcache.DefaultTTL)
 
 	c.sessionCacheLock.Lock()
 	defer c.sessionCacheLock.Unlock()
+	// Update session cache
+	c.sessionCache.Set(cacheKey, wrappedSession, ttlcache.DefaultTTL)
+
+	// Update node cache
 	chainNodeCacheKey := req.Chain
 	if !c.chainNodes.Has(chainNodeCacheKey) {
 		// No values in session and chain cache
@@ -203,14 +205,15 @@ func (c *CachedSessionRegistryService) primeSessions() error {
 		return err
 	}
 
-	c.logger.Sugar().Infow("priming sessions async", "currentHeight", resp.Height, "lastPrimedHeight", c.lastPrimedHeight)
+	shouldPrimeSessions := c.shouldPrimeSessions(resp.Height)
+	c.logger.Sugar().Infow("priming sessions async", "currentHeight", resp.Height, "lastPrimedHeight", c.lastPrimedHeight, "shouldPrimeSessions", shouldPrimeSessions)
 
-	if !c.shouldPrimeSessions(resp.Height) {
+	if !shouldPrimeSessions {
 		return nil
 	}
 
 	errCount := atomic.Int32{}
-
+	successCount := atomic.Int32{}
 	wg := sync.WaitGroup{}
 	for _, app := range c.appRegistry.GetApplications() {
 		for _, chain := range app.NetworkApp.Chains {
@@ -229,14 +232,17 @@ func (c *CachedSessionRegistryService) primeSessions() error {
 				if err != nil {
 					errCount.Add(1)
 					c.logger.Sugar().Warnw("primeSessions: failed to prime session", "req", req, "err", err)
+				} else {
+					successCount.Add(1)
 				}
 			}()
 		}
 	}
 	wg.Wait()
+	successes := successCount.Load()
 	errs := errCount.Load()
-	if errs == 0 {
-		c.logger.Sugar().Info("primeSessions: successfully primed sessions")
+	if errs == 0 && successes > 0 {
+		c.logger.Sugar().Infow("primeSessions: successfully primed sessions", "successCount", successes, "errorCount", errs)
 		c.lastPrimedHeight = resp.Height
 	}
 	return nil

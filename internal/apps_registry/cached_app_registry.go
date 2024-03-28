@@ -2,6 +2,7 @@ package apps_registry
 
 import (
 	"context"
+	"errors"
 	"go.uber.org/zap"
 	"pokt_gateway_server/internal/apps_registry/models"
 	"pokt_gateway_server/internal/db_query"
@@ -93,13 +94,20 @@ func (c *CachedAppsRegistry) updateApplicationCache() error {
 		return err
 	}
 
+	storedNetworkAppFound := 0
 	for _, networkApp := range networkStakedApps {
 		for _, storedAccount := range poktApplicationSigners {
 			// Check if the account address matches, and create a PoktApplicationSigner if there's a match
 			if strings.EqualFold(networkApp.Address, storedAccount.Signer.Address) {
 				storedAccount.NetworkApp = networkApp
+				storedNetworkAppFound++
 			}
 		}
+	}
+
+	// Check if all provided keys have an associated network app
+	if storedNetworkAppFound != len(poktApplicationSigners) {
+		return errors.New("failed to identify all applications private key from network state. POKT RPC potentially failed")
 	}
 
 	// Create a map to organize PoktApplicationSigners by chain ID

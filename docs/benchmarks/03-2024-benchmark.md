@@ -1,4 +1,4 @@
-# March 2024 Benchmark (RC 0.1.0)
+# March 2024 Benchmark (RC 0.1.0) (WIP)
 
 ## Benchmark Purpose
 The purpose of this benchmark is to comprehensively assess the performance metrics, particularly CPU and Memory behaviors, incurred while serving requests through the gateway server. Specifically, this evaluation aims to gauge the efficiency of various operations involved with sending a relay such as JSON serialization, IO handling, cryptographic signing, and asynchronous background processes (QoS checks).

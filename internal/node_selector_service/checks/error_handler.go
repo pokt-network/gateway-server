@@ -17,7 +17,7 @@ const kickOutSessionPenalty = time.Hour * 24
 
 const (
 	errPocketInvalidServicerMsg       = "failed to find correct servicer PK"
-	errPocketInvalidBlockHeightMsg    = "invalid block height"
+	errPocketInvalidBlockHeightMsg    = "the block height passed is invalid"
 	errPocketRequestTimeoutMsg        = "request timeout"
 	errPocketOverServiceMsg           = "the max number of relays serviced for this node is exceeded"
 	errPocketMaximumEvidenceSealedMsg = "the evidence is sealed, either max relays reached or claim already submitted"
