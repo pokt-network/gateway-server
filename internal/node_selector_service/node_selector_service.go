@@ -84,10 +84,11 @@ func filterBySessionHeightNodes(nodes []*models.QosNode) ([]uint, map[uint][]*mo
 		sortedSessionHeights = append(sortedSessionHeights, sessionHeight)
 	}
 
-	// Sort the slice of session heights
+	// Sort the slice of session heights by descending order
 	sort.Slice(sortedSessionHeights, func(i, j int) bool {
-		return sortedSessionHeights[i] < sortedSessionHeights[j]
+		return sortedSessionHeights[i] > sortedSessionHeights[j]
 	})
+
 	return sortedSessionHeights, nodesBySessionHeight
 }
 func filterByHealthyNodes(nodes []*models.QosNode) []*models.QosNode {

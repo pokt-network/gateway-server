@@ -35,12 +35,8 @@ func isKickableSessionErr(err error) bool {
 		return true
 	}
 	// Fallback in the event the error is not parsed correctly due to node operator configurations / custom clients, resort to a simple string check
-	pocketError, ok := err.(relayer_models.PocketRPCError)
-	if ok {
-		return strings.Contains(pocketError.Message, errPocketOverServiceMsg) || strings.Contains(pocketError.Message, errPocketMaximumEvidenceSealedMsg) || strings.Contains(pocketError.Message, errPocketInvalidServicerMsg)
-	}
 	// node runner cannot serve with expired ssl
-	if err != nil && strings.Contains(err.Error(), errHttpSSLExpired) {
+	if err != nil && (strings.Contains(err.Error(), errHttpSSLExpired) || strings.Contains(err.Error(), errPocketOverServiceMsg) || strings.Contains(err.Error(), errPocketMaximumEvidenceSealedMsg) || strings.Contains(err.Error(), errPocketInvalidServicerMsg)) {
 		return true
 	}
 	return false
@@ -53,10 +49,10 @@ func isTimeoutError(err error) bool {
 	}
 	pocketError, ok := err.(relayer_models.PocketRPCError)
 	if ok {
-		// Fallback in the event the error is not parsed correctly due to node operator configurations / custom clients, resort to a simple string check
-		return pocketError.HttpCode >= 500 || strings.Contains(pocketError.Message, errPocketRequestTimeoutMsg) || strings.Contains(pocketError.Message, errPocketInvalidBlockHeightMsg)
+		return pocketError.HttpCode >= 500
 	}
-	return err == fasthttp.ErrTimeout || err == fasthttp.ErrDialTimeout || err == fasthttp.ErrTLSHandshakeTimeout || err != nil && strings.Contains(err.Error(), errHttpNoSuchHostMsg)
+	// Fallback in the event the error is not parsed correctly due to node operator configurations / custom clients, resort to a simple string check
+	return err == fasthttp.ErrTimeout || err == fasthttp.ErrDialTimeout || err == fasthttp.ErrTLSHandshakeTimeout || err != nil && (strings.Contains(err.Error(), errHttpNoSuchHostMsg) || strings.Contains(err.Error(), errPocketRequestTimeoutMsg) || strings.Contains(err.Error(), errPocketInvalidBlockHeightMsg))
 }
 
 // DefaultPunishNode generic punisher for whenever a node returns an error independent of a specific check
