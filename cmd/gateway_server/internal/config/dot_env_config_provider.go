@@ -87,45 +87,47 @@ func (c DotEnvGlobalConfigProvider) GetAltruistRequestTimeout() time.Duration {
 func NewDotEnvConfigProvider() *DotEnvGlobalConfigProvider {
 	_ = godotenv.Load()
 
-	poktRPCTimeout, err := time.ParseDuration(getEnvVar(poktRPCTimeoutEnv))
+	poktRPCTimeout, err := time.ParseDuration(getEnvVar(poktRPCTimeoutEnv, ""))
 	if err != nil {
 		panic(fmt.Sprintf("Error parsing %s: %s", poktRPCTimeoutEnv, err))
 	}
 
-	httpServerPort, err := strconv.ParseUint(getEnvVar(httpServerPortEnv), 10, 64)
+	httpServerPort, err := strconv.ParseUint(getEnvVar(httpServerPortEnv, ""), 10, 64)
 	if err != nil {
 		panic(fmt.Sprintf("Error parsing %s: %s", httpServerPortEnv, err))
 	}
 
-	sessionCacheTTLDuration, err := time.ParseDuration(getEnvVar(sessionCacheTTLEnv))
+	sessionCacheTTLDuration, err := time.ParseDuration(getEnvVar(sessionCacheTTLEnv, ""))
 	if err != nil {
 		panic(fmt.Sprintf("Error parsing %s: %s", sessionCacheTTLDuration, err))
 	}
 
-	altruistRequestTimeoutDuration, err := time.ParseDuration(getEnvVar(altruistRequestTimeoutEnv))
+	altruistRequestTimeoutDuration, err := time.ParseDuration(getEnvVar(altruistRequestTimeoutEnv, defaultAltruistRequestTimeout.String()))
 	if err != nil {
 		// Provide a default to prevent any breaking changes with new env variable.
 		altruistRequestTimeoutDuration = defaultAltruistRequestTimeout
 	}
 
 	return &DotEnvGlobalConfigProvider{
-		poktRPCFullHost:               getEnvVar(poktRPCFullHostEnv),
+		poktRPCFullHost:               getEnvVar(poktRPCFullHostEnv, ""),
 		httpServerPort:                uint(httpServerPort),
 		poktRPCRequestTimeout:         poktRPCTimeout,
 		sessionCacheTTL:               sessionCacheTTLDuration,
-		databaseConnectionUrl:         getEnvVar(dbConnectionUrlEnv),
-		environmentStage:              global_config.EnvironmentStage(getEnvVar(environmentStageEnv)),
-		poktApplicationsEncryptionKey: getEnvVar(poktApplicationsEncryptionKeyEnv),
-		apiKey:                        getEnvVar(apiKey),
+		databaseConnectionUrl:         getEnvVar(dbConnectionUrlEnv, ""),
+		environmentStage:              global_config.EnvironmentStage(getEnvVar(environmentStageEnv, "")),
+		poktApplicationsEncryptionKey: getEnvVar(poktApplicationsEncryptionKeyEnv, ""),
+		apiKey:                        getEnvVar(apiKey, ""),
 		altruistRequestTimeout:        altruistRequestTimeoutDuration,
 	}
 }
 
 // getEnvVar retrieves the value of the environment variable with error handling.
-func getEnvVar(name string) string {
-	value, exists := os.LookupEnv(name)
-	if !exists {
-		panic(fmt.Errorf("%s not set", name))
+func getEnvVar(name string, defaultValue string) string {
+	if value, exists := os.LookupEnv(name); exists {
+		return value
 	}
-	return value
+	if defaultValue != "" {
+		return defaultValue
+	}
+	panic(fmt.Errorf("%s not set", name))
 }
