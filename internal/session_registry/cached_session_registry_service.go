@@ -229,10 +229,10 @@ func (c *CachedSessionRegistryService) primeSessions() error {
 					Chain:         chain,
 					SessionHeight: latestSessionHeight,
 				}
-				rsp, err := c.GetSession(req)
+				_, err := c.GetSession(req)
 				if err != nil {
 					errCount.Add(1)
-					c.logger.Sugar().Warnw("primeSessions: failed to prime session", "req", req, "err", err, "dispatcherSessionHeight", rsp.PocketSession.SessionHeader.SessionHeight, "latestSessionHeight", latestSessionHeight)
+					c.logger.Sugar().Warnw("primeSessions: failed to prime session", "req", req, "err", err, "latestSessionHeight", latestSessionHeight)
 				} else {
 					successCount.Add(1)
 				}
