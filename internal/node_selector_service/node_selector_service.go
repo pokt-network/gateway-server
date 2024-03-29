@@ -69,6 +69,8 @@ func (q NodeSelectorClient) FindNode(chainId string) (*models.QosNode, bool) {
 	return nil, false
 }
 
+// filterBySessionHeightNodes - filter by session height descending. This allows node selector to send relays with
+// latest session height which nodes are more likely to serve vs session rollover relays.
 func filterBySessionHeightNodes(nodes []*models.QosNode) ([]uint, map[uint][]*models.QosNode) {
 	nodesBySessionHeight := map[uint][]*models.QosNode{}
 
