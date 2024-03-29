@@ -86,6 +86,52 @@ func (_c *TTLCacheService_Get_Call[K, V]) RunAndReturn(run func(K, ...ttlcache.O
 	return _c
 }
 
+// Has provides a mock function with given fields: key
+func (_m *TTLCacheService[K, V]) Has(key K) bool {
+	ret := _m.Called(key)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Has")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(K) bool); ok {
+		r0 = rf(key)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// TTLCacheService_Has_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Has'
+type TTLCacheService_Has_Call[K comparable, V interface{}] struct {
+	*mock.Call
+}
+
+// Has is a helper method to define mock.On call
+//   - key K
+func (_e *TTLCacheService_Expecter[K, V]) Has(key interface{}) *TTLCacheService_Has_Call[K, V] {
+	return &TTLCacheService_Has_Call[K, V]{Call: _e.mock.On("Has", key)}
+}
+
+func (_c *TTLCacheService_Has_Call[K, V]) Run(run func(key K)) *TTLCacheService_Has_Call[K, V] {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(K))
+	})
+	return _c
+}
+
+func (_c *TTLCacheService_Has_Call[K, V]) Return(_a0 bool) *TTLCacheService_Has_Call[K, V] {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *TTLCacheService_Has_Call[K, V]) RunAndReturn(run func(K) bool) *TTLCacheService_Has_Call[K, V] {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Items provides a mock function with given fields:
 func (_m *TTLCacheService[K, V]) Items() map[K]*ttlcache.Item[K, V] {
 	ret := _m.Called()
