@@ -26,6 +26,7 @@ var (
 const (
 	blocksPerSession                      = 4
 	sessionPrimerInterval                 = time.Second * 5
+	ttlCacheCleanerInterval               = time.Second * 15
 	reasonSessionSuccessCached            = "session_cached"
 	reasonSessionSuccessColdHit           = "session_cold_hit"
 	reasonSessionFailedBackoff            = "session_failed_backoff"
@@ -73,8 +74,22 @@ func NewCachedSessionRegistryService(poktClient pokt_v0.PocketService, appRegist
 	cachedRegistry := &CachedSessionRegistryService{poktClient: poktClient, appRegistry: appRegistry, sessionCache: sessionCache, lastFailure: time.Time{}, concurrentDispatchPool: make(chan struct{}, maxConcurrentDispatch), chainNodes: nodeCache, logger: logger}
 	go sessionCache.Start()
 	go nodeCache.Start()
+	cachedRegistry.startTTLCacheCleaner()
 	cachedRegistry.startSessionUpdater()
 	return cachedRegistry
+}
+
+func (c *CachedSessionRegistryService) startTTLCacheCleaner() {
+	ticker := time.Tick(ttlCacheCleanerInterval)
+	go func() {
+		for {
+			select {
+			case <-ticker:
+				c.sessionCache.DeleteExpired()
+				c.chainNodes.DeleteExpired()
+			}
+		}
+	}()
 }
 
 func (c *CachedSessionRegistryService) GetNodesByChain(chainId string) []*qos_models.QosNode {

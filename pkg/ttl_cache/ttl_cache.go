@@ -12,4 +12,5 @@ type TTLCacheService[K comparable, V any] interface {
 	Set(key K, value V, ttl time.Duration) *ttlcache.Item[K, V]
 	Start()
 	Items() map[K]*ttlcache.Item[K, V]
+	DeleteExpired()
 }
