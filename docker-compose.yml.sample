@@ -11,9 +11,13 @@ services:
       - ./.env
     networks:
       - bridged_network
+#    depends_on:
+#       - postgres
     restart: on-failure
-    #depends_on:
-    #   - postgres
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
 
 # this postgres database is only to be used for testing. It should not be used in production systems
 # Leverage a production ready postgres database with HA/replicas in prod.

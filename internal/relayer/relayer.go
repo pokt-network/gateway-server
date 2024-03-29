@@ -115,13 +115,14 @@ func (r *Relayer) sendNodeSelectorRelay(req *models.SendRelayRequest) (*models.S
 	if err := req.Validate(); err != nil {
 		return nil, err
 	}
-	rsp, err := r.pocketClient.SendRelay(req)
 
+	start := time.Now()
+	rsp, err := r.pocketClient.SendRelay(req)
+	node.GetLatencyTracker().RecordMeasurement(float64(time.Now().Sub(start).Milliseconds()))
 	// Node returned an error, potentially penalize the node operator dependent on error
 	if err != nil {
 		checks.DefaultPunishNode(err, node, r.logger)
 	}
-
 	return rsp, err
 }
 

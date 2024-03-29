@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/influxdata/tdigest"
 	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
 	"sync"
 	"time"
@@ -10,6 +11,9 @@ type TimeoutReason string
 
 const (
 	maxErrorStr int = 100
+	// we use TDigest to quickly calculate percentile while conserving memory by using TDigest and its compression properties.
+	// Higher compression is more accuracy
+	latencyCompression = 1000
 )
 
 const (
@@ -24,18 +28,18 @@ const (
 )
 
 type LatencyTracker struct {
-	measurements []float64
-	lock         sync.RWMutex
-}
-
-func (l *LatencyTracker) GetP90Latency() float64 {
-	return -1.0
+	tDigest *tdigest.TDigest
+	lock    sync.RWMutex
 }
 
 func (l *LatencyTracker) RecordMeasurement(time float64) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
-	l.measurements = append(l.measurements, time)
+	l.tDigest.Add(time, 1)
+}
+
+func (l *LatencyTracker) GetP90Latency() float64 {
+	return l.tDigest.Quantile(.90)
 }
 
 // QosNode a FAT model to store the QoS information of a specific node in a session.
@@ -54,7 +58,7 @@ type QosNode struct {
 }
 
 func NewQosNode(morseNode *models.Node, pocketSession *models.Session, appSigner *models.Ed25519Account) *QosNode {
-	return &QosNode{MorseNode: morseNode, MorseSession: pocketSession, MorseSigner: appSigner, LatencyTracker: &LatencyTracker{measurements: []float64{}}}
+	return &QosNode{MorseNode: morseNode, MorseSession: pocketSession, MorseSigner: appSigner, LatencyTracker: &LatencyTracker{tDigest: tdigest.NewWithCompression(1000)}}
 }
 
 func (n *QosNode) IsHealthy() bool {
