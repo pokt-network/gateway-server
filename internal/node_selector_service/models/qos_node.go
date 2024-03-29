@@ -2,6 +2,7 @@ package models
 
 import (
 	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
+	"sync"
 	"time"
 )
 
@@ -22,12 +23,27 @@ const (
 	NodeResponseTimeout  TimeoutReason = "node_response_timeout"
 )
 
+type LatencyTracker struct {
+	measurements []float64
+	lock         sync.RWMutex
+}
+
+func (l *LatencyTracker) GetP90Latency() float64 {
+	return -1.0
+}
+
+func (l *LatencyTracker) RecordMeasurement(time float64) {
+	l.lock.Lock()
+	defer l.lock.Unlock()
+	l.measurements = append(l.measurements, time)
+}
+
 // QosNode a FAT model to store the QoS information of a specific node in a session.
 type QosNode struct {
 	MorseNode                  *models.Node
 	PocketSession              *models.Session
 	AppSigner                  *models.Ed25519Account
-	p90Latency                 float64
+	LatencyTracker             *LatencyTracker
 	timeoutUntil               time.Time
 	timeoutReason              TimeoutReason
 	lastDataIntegrityCheckTime time.Time
@@ -35,6 +51,10 @@ type QosNode struct {
 	synced                     bool
 	lastKnownError             error
 	lastHeightCheckTime        time.Time
+}
+
+func NewQosNode(morseNode *models.Node, pocketSession *models.Session, appSigner *models.Ed25519Account) *QosNode {
+	return &QosNode{MorseNode: morseNode, PocketSession: pocketSession, AppSigner: appSigner, LatencyTracker: &LatencyTracker{measurements: []float64{}}}
 }
 
 func (n *QosNode) IsHealthy() bool {
@@ -120,4 +140,8 @@ func (n *QosNode) GetLastKnownErrorStr() string {
 
 func (n *QosNode) GetTimeoutUntil() time.Time {
 	return n.timeoutUntil
+}
+
+func (n *QosNode) GetLatencyTracker() *LatencyTracker {
+	return n.LatencyTracker
 }

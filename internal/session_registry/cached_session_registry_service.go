@@ -138,11 +138,7 @@ func (c *CachedSessionRegistryService) GetSession(req *models.GetSessionRequest)
 
 	wrappedNodes := []*qos_models.QosNode{}
 	for _, a := range response.Session.Nodes {
-		wrappedNodes = append(wrappedNodes, &qos_models.QosNode{
-			PocketSession: response.Session,
-			MorseNode:     a,
-			AppSigner:     appSigner.Signer,
-		})
+		wrappedNodes = append(wrappedNodes, qos_models.NewQosNode(a, response.Session, appSigner.Signer))
 	}
 
 	// session with metadata
