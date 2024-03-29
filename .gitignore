@@ -48,3 +48,6 @@
 
 ## environment vars
 .env
+
+## docker compose file
+docker-compose.yml

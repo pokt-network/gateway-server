@@ -23,7 +23,7 @@ To onboard the gateway server without having to dig deep, you can follow the [Qu
 Every release candidate is published to https://github.com/pokt-network/gateway-server/pkgs/container/pocket-gateway-server
 
 ## Docker Compose
-There is an all-inclusive docker-compose file available for development [docker-compose.yml](docker-compose.yml)
+There is an all-inclusive docker-compose file available for development [docker-compose.yml](docker-compose.yml.sample)
 
 ## Minimum Hardware Requirements to run
 - 1GB of RAM
