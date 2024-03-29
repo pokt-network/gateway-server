@@ -9,8 +9,8 @@ func ToPublicQosNode(node *internal_model.QosNode) *models.PublicQosNode {
 	return &models.PublicQosNode{
 		ServiceUrl:      node.MorseNode.ServiceUrl,
 		Chain:           node.GetChain(),
-		SessionHeight:   node.PocketSession.SessionHeader.SessionHeight,
-		AppPublicKey:    node.AppSigner.PublicKey,
+		SessionHeight:   node.MorseSession.SessionHeader.SessionHeight,
+		AppPublicKey:    node.MorseSigner.PublicKey,
 		TimeoutReason:   string(node.GetTimeoutReason()),
 		LastKnownErr:    node.GetLastKnownErrorStr(),
 		IsHeathy:        node.IsHealthy(),

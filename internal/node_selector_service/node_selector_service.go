@@ -74,7 +74,7 @@ func filterBySessionHeightNodes(nodes []*models.QosNode) ([]uint, map[uint][]*mo
 
 	// Create map to retrieve nodes by session height
 	for _, r := range nodes {
-		sessionHeight := r.PocketSession.SessionHeader.SessionHeight
+		sessionHeight := r.MorseSession.SessionHeader.SessionHeight
 		nodesBySessionHeight[sessionHeight] = append(nodesBySessionHeight[sessionHeight], r)
 	}
 

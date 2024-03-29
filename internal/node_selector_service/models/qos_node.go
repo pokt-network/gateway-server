@@ -41,8 +41,8 @@ func (l *LatencyTracker) RecordMeasurement(time float64) {
 // QosNode a FAT model to store the QoS information of a specific node in a session.
 type QosNode struct {
 	MorseNode                  *models.Node
-	PocketSession              *models.Session
-	AppSigner                  *models.Ed25519Account
+	MorseSession               *models.Session
+	MorseSigner                *models.Ed25519Account
 	LatencyTracker             *LatencyTracker
 	timeoutUntil               time.Time
 	timeoutReason              TimeoutReason
@@ -54,7 +54,7 @@ type QosNode struct {
 }
 
 func NewQosNode(morseNode *models.Node, pocketSession *models.Session, appSigner *models.Ed25519Account) *QosNode {
-	return &QosNode{MorseNode: morseNode, PocketSession: pocketSession, AppSigner: appSigner, LatencyTracker: &LatencyTracker{measurements: []float64{}}}
+	return &QosNode{MorseNode: morseNode, MorseSession: pocketSession, MorseSigner: appSigner, LatencyTracker: &LatencyTracker{measurements: []float64{}}}
 }
 
 func (n *QosNode) IsHealthy() bool {
@@ -96,7 +96,7 @@ func (n *QosNode) GetLastKnownHeight() uint64 {
 }
 
 func (n *QosNode) GetChain() string {
-	return n.PocketSession.SessionHeader.Chain
+	return n.MorseSession.SessionHeader.Chain
 }
 
 func (n *QosNode) GetPublicKey() string {
@@ -104,7 +104,7 @@ func (n *QosNode) GetPublicKey() string {
 }
 
 func (n *QosNode) GetAppStakeSigner() *models.Ed25519Account {
-	return n.AppSigner
+	return n.MorseSigner
 }
 
 func (n *QosNode) GetLastDataIntegrityCheckTime() time.Time {

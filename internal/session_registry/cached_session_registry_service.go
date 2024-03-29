@@ -61,7 +61,6 @@ type CachedSessionRegistryService struct {
 	concurrentDispatchPool  chan struct{}
 	logger                  *zap.Logger
 	lastPrimedSessionHeight uint
-
 	// Lock used to synchronize inserting sessions and append sessions nodes.
 	sessionCacheLock sync.RWMutex
 	// Consist of sessions for a given app stake+chain+height. Cache exists to prevent round trip request

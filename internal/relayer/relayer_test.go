@@ -75,9 +75,9 @@ func (suite *RelayerTestSuite) TestNodeSelectorRelay() {
 				node := &models.Node{PublicKey: "123"}
 				session := &models.Session{}
 				suite.mockNodeSelectorService.EXPECT().FindNode("1234").Return(&qos_models.QosNode{
-					AppSigner:     signer,
-					MorseNode:     node,
-					PocketSession: session,
+					MorseSigner:  signer,
+					MorseNode:    node,
+					MorseSession: session,
 				}, true)
 				// expect sendRelay to have same parameters as find node, otherwise validation will fail
 				suite.mockPocketService.EXPECT().SendRelay(&models.SendRelayRequest{

@@ -26,7 +26,7 @@ func SendRelaysAsync(relayer pokt_v0.PocketRelayer, nodes []*models.QosNode, pay
 			Payload:            &relayer_models.Payload{Data: payload, Method: method},
 			Chain:              node.GetChain(),
 			SelectedNodePubKey: node.GetPublicKey(),
-			Session:            node.PocketSession,
+			Session:            node.MorseSession,
 		})
 		relayResponses <- &nodeRelayResponse{
 			Node:  node,
