@@ -93,6 +93,7 @@ func filterBySessionHeightNodes(nodes []*models.QosNode) ([]uint, map[uint][]*mo
 
 	return sortedSessionHeights, nodesBySessionHeight
 }
+
 func filterByHealthyNodes(nodes []*models.QosNode) []*models.QosNode {
 	var healthyNodes []*models.QosNode
 
