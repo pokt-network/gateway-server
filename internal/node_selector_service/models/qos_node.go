@@ -38,6 +38,12 @@ func (l *LatencyTracker) RecordMeasurement(time float64) {
 	l.tDigest.Add(time, 1)
 }
 
+func (l *LatencyTracker) GetMeasurementCount() float64 {
+	l.lock.RLock()
+	defer l.lock.RUnlock()
+	return l.tDigest.Count()
+}
+
 func (l *LatencyTracker) GetP90Latency() float64 {
 	return l.tDigest.Quantile(.90)
 }
