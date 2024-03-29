@@ -59,8 +59,8 @@ func main() {
 		ttlcache.WithTTL[string, *session_registry.Session](gatewayConfigProvider.GetSessionCacheTTL()),
 	)
 
-	nodeCache := ttlcache.New[string, []*qos_models.QosNode](
-		ttlcache.WithTTL[string, []*qos_models.QosNode](gatewayConfigProvider.GetSessionCacheTTL()),
+	nodeCache := ttlcache.New[qos_models.SessionChainKey, []*qos_models.QosNode](
+		ttlcache.WithTTL[qos_models.SessionChainKey, []*qos_models.QosNode](gatewayConfigProvider.GetSessionCacheTTL()),
 	)
 
 	poktApplicationRegistry := apps_registry.NewCachedAppsRegistry(client, querier, gatewayConfigProvider, logger.Named("pokt_application_registry"))

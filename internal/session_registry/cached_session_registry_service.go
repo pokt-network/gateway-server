@@ -66,10 +66,10 @@ type CachedSessionRegistryService struct {
 	// Consist of sessions for a given app stake+chain+height. Cache exists to prevent round trip request
 	sessionCache ttl_cache.TTLCacheService[string, *Session]
 	// Cache that contains all nodes by chain (chainId -> Nodes)
-	chainNodes ttl_cache.TTLCacheService[string, []*qos_models.QosNode] // sessionHeight -> nodes
+	chainNodes ttl_cache.TTLCacheService[qos_models.SessionChainKey, []*qos_models.QosNode] // sessionHeight -> nodes
 }
 
-func NewCachedSessionRegistryService(poktClient pokt_v0.PocketService, appRegistry apps_registry.AppsRegistryService, sessionCache ttl_cache.TTLCacheService[string, *Session], nodeCache ttl_cache.TTLCacheService[string, []*qos_models.QosNode], logger *zap.Logger) *CachedSessionRegistryService {
+func NewCachedSessionRegistryService(poktClient pokt_v0.PocketService, appRegistry apps_registry.AppsRegistryService, sessionCache ttl_cache.TTLCacheService[string, *Session], nodeCache ttl_cache.TTLCacheService[qos_models.SessionChainKey, []*qos_models.QosNode], logger *zap.Logger) *CachedSessionRegistryService {
 	cachedRegistry := &CachedSessionRegistryService{poktClient: poktClient, appRegistry: appRegistry, sessionCache: sessionCache, lastFailure: time.Time{}, concurrentDispatchPool: make(chan struct{}, maxConcurrentDispatch), chainNodes: nodeCache, logger: logger}
 	go sessionCache.Start()
 	go nodeCache.Start()
@@ -77,17 +77,18 @@ func NewCachedSessionRegistryService(poktClient pokt_v0.PocketService, appRegist
 	return cachedRegistry
 }
 
-func (c *CachedSessionRegistryService) GetNodesByChain(chainId string) ([]*qos_models.QosNode, bool) {
-	c.sessionCacheLock.RLock()
-	defer c.sessionCacheLock.RUnlock()
-	nodes := c.chainNodes.Get(chainId)
-	if nodes == nil {
-		return nil, false
+func (c *CachedSessionRegistryService) GetNodesByChain(chainId string) []*qos_models.QosNode {
+	items := c.GetNodesMap()
+	nodes := []*qos_models.QosNode{}
+	for sessionKey, item := range items {
+		if sessionKey.Chain == chainId {
+			nodes = append(nodes, item.Value()...)
+		}
 	}
-	return nodes.Value(), true
+	return nodes
 }
 
-func (c *CachedSessionRegistryService) GetNodesMap() map[string]*ttlcache.Item[string, []*qos_models.QosNode] {
+func (c *CachedSessionRegistryService) GetNodesMap() map[qos_models.SessionChainKey]*ttlcache.Item[qos_models.SessionChainKey, []*qos_models.QosNode] {
 	c.sessionCacheLock.RLock()
 	defer c.sessionCacheLock.RUnlock()
 	return c.chainNodes.Items()
@@ -151,7 +152,7 @@ func (c *CachedSessionRegistryService) GetSession(req *models.GetSessionRequest)
 	c.sessionCache.Set(sessionCacheKey, wrappedSession, ttlcache.DefaultTTL)
 
 	// Update node cache
-	chainNodeCacheKey := req.Chain
+	chainNodeCacheKey := qos_models.SessionChainKey{Chain: req.Chain, SessionHeight: wrappedSession.PocketSession.SessionHeader.SessionHeight}
 	if !c.chainNodes.Has(chainNodeCacheKey) {
 		// No values in session and chain cache
 		c.chainNodes.Set(chainNodeCacheKey, wrappedNodes, ttlcache.DefaultTTL)

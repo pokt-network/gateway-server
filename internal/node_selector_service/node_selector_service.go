@@ -50,8 +50,8 @@ func NewNodeSelectorService(sessionRegistry session_registry.SessionRegistryServ
 
 func (q NodeSelectorClient) FindNode(chainId string) (*models.QosNode, bool) {
 
-	nodes, ok := q.sessionRegistry.GetNodesByChain(chainId)
-	if !ok {
+	nodes := q.sessionRegistry.GetNodesByChain(chainId)
+	if len(nodes) == 0 {
 		return nil, false
 	}
 
@@ -110,8 +110,8 @@ func (q NodeSelectorClient) startJobChecker() {
 			case <-ticker:
 				for _, job := range q.checkJobs {
 					if job.ShouldRun() {
-						for chain, nodes := range q.sessionRegistry.GetNodesMap() {
-							q.logger.Sugar().Infow("running job", "job", job.Name(), "chain", chain)
+						for sessionChainKey, nodes := range q.sessionRegistry.GetNodesMap() {
+							q.logger.Sugar().Infow("running job", "job", job.Name(), "sessionChainKey", sessionChainKey)
 							job.SetNodes(nodes.Value())
 							job.Perform()
 						}

@@ -48,6 +48,11 @@ func (l *LatencyTracker) GetP90Latency() float64 {
 	return l.tDigest.Quantile(.90)
 }
 
+type SessionChainKey struct {
+	SessionHeight uint   `json:"session_height"`
+	Chain         string `json:"chain"`
+}
+
 // QosNode a FAT model to store the QoS information of a specific node in a session.
 type QosNode struct {
 	MorseNode                  *models.Node
