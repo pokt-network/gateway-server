@@ -47,10 +47,13 @@ func isTimeoutError(err error) bool {
 	if err == relayer_models.ErrPocketCoreInvalidBlockHeight {
 		return true
 	}
+
+	// Check if pocket error returns 500
 	pocketError, ok := err.(relayer_models.PocketRPCError)
-	if ok {
-		return pocketError.HttpCode >= 500
+	if ok && pocketError.HttpCode >= 500 {
+		return true
 	}
+
 	// Fallback in the event the error is not parsed correctly due to node operator configurations / custom clients, resort to a simple string check
 	return err == fasthttp.ErrTimeout || err == fasthttp.ErrDialTimeout || err == fasthttp.ErrTLSHandshakeTimeout || err != nil && (strings.Contains(err.Error(), errHttpNoSuchHostMsg) || strings.Contains(err.Error(), errPocketRequestTimeoutMsg) || strings.Contains(err.Error(), errPocketInvalidBlockHeightMsg))
 }
