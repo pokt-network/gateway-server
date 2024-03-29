@@ -24,6 +24,7 @@ const (
 )
 
 const (
+	errHttpIoTimeout     = "i/o timeout"
 	errHttpSSLExpired    = "tls: failed to verify certificate"
 	errHttpNoSuchHostMsg = "no such host"
 )
@@ -53,9 +54,8 @@ func isTimeoutError(err error) bool {
 	if ok && pocketError.HttpCode >= 500 {
 		return true
 	}
-
 	// Fallback in the event the error is not parsed correctly due to node operator configurations / custom clients, resort to a simple string check
-	return err == fasthttp.ErrTimeout || err == fasthttp.ErrDialTimeout || err == fasthttp.ErrTLSHandshakeTimeout || err != nil && (strings.Contains(err.Error(), errHttpNoSuchHostMsg) || strings.Contains(err.Error(), errPocketRequestTimeoutMsg) || strings.Contains(err.Error(), errPocketInvalidBlockHeightMsg))
+	return err == fasthttp.ErrTimeout || err == fasthttp.ErrDialTimeout || err == fasthttp.ErrTLSHandshakeTimeout || err != nil && (strings.Contains(err.Error(), errHttpIoTimeout) || strings.Contains(err.Error(), errHttpNoSuchHostMsg) || strings.Contains(err.Error(), errPocketRequestTimeoutMsg) || strings.Contains(err.Error(), errPocketInvalidBlockHeightMsg))
 }
 
 // DefaultPunishNode generic punisher for whenever a node returns an error independent of a specific check
