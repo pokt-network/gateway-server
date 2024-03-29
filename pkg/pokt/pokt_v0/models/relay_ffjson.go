@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	fflib "github.com/pquerna/ffjson/fflib/v1"
+	"time"
 )
 
 // MarshalJSON marshal bytes to json - template
@@ -1467,763 +1468,6 @@ done:
 }
 
 // MarshalJSON marshal bytes to json - template
-func (j *RelayProofHashPayload) MarshalJSON() ([]byte, error) {
-	var buf fflib.Buffer
-	if j == nil {
-		buf.WriteString("null")
-		return buf.Bytes(), nil
-	}
-	err := j.MarshalJSONBuf(&buf)
-	if err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
-}
-
-// MarshalJSONBuf marshal buff to json - template
-func (j *RelayProofHashPayload) MarshalJSONBuf(buf fflib.EncodingBuffer) error {
-	if j == nil {
-		buf.WriteString("null")
-		return nil
-	}
-	var err error
-	var obj []byte
-	_ = obj
-	_ = err
-	buf.WriteString(`{"entropy":`)
-	fflib.FormatBits2(buf, uint64(j.Entropy), 10, false)
-	buf.WriteString(`,"session_block_height":`)
-	fflib.FormatBits2(buf, uint64(j.SessionBlockHeight), 10, false)
-	buf.WriteString(`,"servicer_pub_key":`)
-	fflib.WriteJsonString(buf, string(j.ServicerPubKey))
-	buf.WriteString(`,"blockchain":`)
-	fflib.WriteJsonString(buf, string(j.Blockchain))
-	buf.WriteString(`,"signature":`)
-	fflib.WriteJsonString(buf, string(j.Signature))
-	buf.WriteString(`,"token":`)
-	fflib.WriteJsonString(buf, string(j.UnsignedAAT))
-	buf.WriteString(`,"request_hash":`)
-	fflib.WriteJsonString(buf, string(j.RequestHash))
-	buf.WriteByte('}')
-	return nil
-}
-
-const (
-	ffjtRelayProofHashPayloadbase = iota
-	ffjtRelayProofHashPayloadnosuchkey
-
-	ffjtRelayProofHashPayloadEntropy
-
-	ffjtRelayProofHashPayloadSessionBlockHeight
-
-	ffjtRelayProofHashPayloadServicerPubKey
-
-	ffjtRelayProofHashPayloadBlockchain
-
-	ffjtRelayProofHashPayloadSignature
-
-	ffjtRelayProofHashPayloadUnsignedAAT
-
-	ffjtRelayProofHashPayloadRequestHash
-)
-
-var ffjKeyRelayProofHashPayloadEntropy = []byte("entropy")
-
-var ffjKeyRelayProofHashPayloadSessionBlockHeight = []byte("session_block_height")
-
-var ffjKeyRelayProofHashPayloadServicerPubKey = []byte("servicer_pub_key")
-
-var ffjKeyRelayProofHashPayloadBlockchain = []byte("blockchain")
-
-var ffjKeyRelayProofHashPayloadSignature = []byte("signature")
-
-var ffjKeyRelayProofHashPayloadUnsignedAAT = []byte("token")
-
-var ffjKeyRelayProofHashPayloadRequestHash = []byte("request_hash")
-
-// UnmarshalJSON umarshall json - template of ffjson
-func (j *RelayProofHashPayload) UnmarshalJSON(input []byte) error {
-	fs := fflib.NewFFLexer(input)
-	return j.UnmarshalJSONFFLexer(fs, fflib.FFParse_map_start)
-}
-
-// UnmarshalJSONFFLexer fast json unmarshall - template ffjson
-func (j *RelayProofHashPayload) UnmarshalJSONFFLexer(fs *fflib.FFLexer, state fflib.FFParseState) error {
-	var err error
-	currentKey := ffjtRelayProofHashPayloadbase
-	_ = currentKey
-	tok := fflib.FFTok_init
-	wantedTok := fflib.FFTok_init
-
-mainparse:
-	for {
-		tok = fs.Scan()
-		//	println(fmt.Sprintf("debug: tok: %v  state: %v", tok, state))
-		if tok == fflib.FFTok_error {
-			goto tokerror
-		}
-
-		switch state {
-
-		case fflib.FFParse_map_start:
-			if tok != fflib.FFTok_left_bracket {
-				wantedTok = fflib.FFTok_left_bracket
-				goto wrongtokenerror
-			}
-			state = fflib.FFParse_want_key
-			continue
-
-		case fflib.FFParse_after_value:
-			if tok == fflib.FFTok_comma {
-				state = fflib.FFParse_want_key
-			} else if tok == fflib.FFTok_right_bracket {
-				goto done
-			} else {
-				wantedTok = fflib.FFTok_comma
-				goto wrongtokenerror
-			}
-
-		case fflib.FFParse_want_key:
-			// json {} ended. goto exit. woo.
-			if tok == fflib.FFTok_right_bracket {
-				goto done
-			}
-			if tok != fflib.FFTok_string {
-				wantedTok = fflib.FFTok_string
-				goto wrongtokenerror
-			}
-
-			kn := fs.Output.Bytes()
-			if len(kn) <= 0 {
-				// "" case. hrm.
-				currentKey = ffjtRelayProofHashPayloadnosuchkey
-				state = fflib.FFParse_want_colon
-				goto mainparse
-			} else {
-				switch kn[0] {
-
-				case 'b':
-
-					if bytes.Equal(ffjKeyRelayProofHashPayloadBlockchain, kn) {
-						currentKey = ffjtRelayProofHashPayloadBlockchain
-						state = fflib.FFParse_want_colon
-						goto mainparse
-					}
-
-				case 'e':
-
-					if bytes.Equal(ffjKeyRelayProofHashPayloadEntropy, kn) {
-						currentKey = ffjtRelayProofHashPayloadEntropy
-						state = fflib.FFParse_want_colon
-						goto mainparse
-					}
-
-				case 'r':
-
-					if bytes.Equal(ffjKeyRelayProofHashPayloadRequestHash, kn) {
-						currentKey = ffjtRelayProofHashPayloadRequestHash
-						state = fflib.FFParse_want_colon
-						goto mainparse
-					}
-
-				case 's':
-
-					if bytes.Equal(ffjKeyRelayProofHashPayloadSessionBlockHeight, kn) {
-						currentKey = ffjtRelayProofHashPayloadSessionBlockHeight
-						state = fflib.FFParse_want_colon
-						goto mainparse
-
-					} else if bytes.Equal(ffjKeyRelayProofHashPayloadServicerPubKey, kn) {
-						currentKey = ffjtRelayProofHashPayloadServicerPubKey
-						state = fflib.FFParse_want_colon
-						goto mainparse
-
-					} else if bytes.Equal(ffjKeyRelayProofHashPayloadSignature, kn) {
-						currentKey = ffjtRelayProofHashPayloadSignature
-						state = fflib.FFParse_want_colon
-						goto mainparse
-					}
-
-				case 't':
-
-					if bytes.Equal(ffjKeyRelayProofHashPayloadUnsignedAAT, kn) {
-						currentKey = ffjtRelayProofHashPayloadUnsignedAAT
-						state = fflib.FFParse_want_colon
-						goto mainparse
-					}
-
-				}
-
-				if fflib.EqualFoldRight(ffjKeyRelayProofHashPayloadRequestHash, kn) {
-					currentKey = ffjtRelayProofHashPayloadRequestHash
-					state = fflib.FFParse_want_colon
-					goto mainparse
-				}
-
-				if fflib.EqualFoldRight(ffjKeyRelayProofHashPayloadUnsignedAAT, kn) {
-					currentKey = ffjtRelayProofHashPayloadUnsignedAAT
-					state = fflib.FFParse_want_colon
-					goto mainparse
-				}
-
-				if fflib.EqualFoldRight(ffjKeyRelayProofHashPayloadSignature, kn) {
-					currentKey = ffjtRelayProofHashPayloadSignature
-					state = fflib.FFParse_want_colon
-					goto mainparse
-				}
-
-				if fflib.EqualFoldRight(ffjKeyRelayProofHashPayloadBlockchain, kn) {
-					currentKey = ffjtRelayProofHashPayloadBlockchain
-					state = fflib.FFParse_want_colon
-					goto mainparse
-				}
-
-				if fflib.EqualFoldRight(ffjKeyRelayProofHashPayloadServicerPubKey, kn) {
-					currentKey = ffjtRelayProofHashPayloadServicerPubKey
-					state = fflib.FFParse_want_colon
-					goto mainparse
-				}
-
-				if fflib.EqualFoldRight(ffjKeyRelayProofHashPayloadSessionBlockHeight, kn) {
-					currentKey = ffjtRelayProofHashPayloadSessionBlockHeight
-					state = fflib.FFParse_want_colon
-					goto mainparse
-				}
-
-				if fflib.SimpleLetterEqualFold(ffjKeyRelayProofHashPayloadEntropy, kn) {
-					currentKey = ffjtRelayProofHashPayloadEntropy
-					state = fflib.FFParse_want_colon
-					goto mainparse
-				}
-
-				currentKey = ffjtRelayProofHashPayloadnosuchkey
-				state = fflib.FFParse_want_colon
-				goto mainparse
-			}
-
-		case fflib.FFParse_want_colon:
-			if tok != fflib.FFTok_colon {
-				wantedTok = fflib.FFTok_colon
-				goto wrongtokenerror
-			}
-			state = fflib.FFParse_want_value
-			continue
-		case fflib.FFParse_want_value:
-
-			if tok == fflib.FFTok_left_brace || tok == fflib.FFTok_left_bracket || tok == fflib.FFTok_integer || tok == fflib.FFTok_double || tok == fflib.FFTok_string || tok == fflib.FFTok_bool || tok == fflib.FFTok_null {
-				switch currentKey {
-
-				case ffjtRelayProofHashPayloadEntropy:
-					goto handle_Entropy
-
-				case ffjtRelayProofHashPayloadSessionBlockHeight:
-					goto handle_SessionBlockHeight
-
-				case ffjtRelayProofHashPayloadServicerPubKey:
-					goto handle_ServicerPubKey
-
-				case ffjtRelayProofHashPayloadBlockchain:
-					goto handle_Blockchain
-
-				case ffjtRelayProofHashPayloadSignature:
-					goto handle_Signature
-
-				case ffjtRelayProofHashPayloadUnsignedAAT:
-					goto handle_UnsignedAAT
-
-				case ffjtRelayProofHashPayloadRequestHash:
-					goto handle_RequestHash
-
-				case ffjtRelayProofHashPayloadnosuchkey:
-					err = fs.SkipField(tok)
-					if err != nil {
-						return fs.WrapErr(err)
-					}
-					state = fflib.FFParse_after_value
-					goto mainparse
-				}
-			} else {
-				goto wantedvalue
-			}
-		}
-	}
-
-handle_Entropy:
-
-	/* handler: j.Entropy type=uint64 kind=uint64 quoted=false*/
-
-	{
-		if tok != fflib.FFTok_integer && tok != fflib.FFTok_null {
-			return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for uint64", tok))
-		}
-	}
-
-	{
-
-		if tok == fflib.FFTok_null {
-
-		} else {
-
-			tval, err := fflib.ParseUint(fs.Output.Bytes(), 10, 64)
-
-			if err != nil {
-				return fs.WrapErr(err)
-			}
-
-			j.Entropy = uint64(tval)
-
-		}
-	}
-
-	state = fflib.FFParse_after_value
-	goto mainparse
-
-handle_SessionBlockHeight:
-
-	/* handler: j.SessionBlockHeight type=uint kind=uint quoted=false*/
-
-	{
-		if tok != fflib.FFTok_integer && tok != fflib.FFTok_null {
-			return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for uint", tok))
-		}
-	}
-
-	{
-
-		if tok == fflib.FFTok_null {
-
-		} else {
-
-			tval, err := fflib.ParseUint(fs.Output.Bytes(), 10, 64)
-
-			if err != nil {
-				return fs.WrapErr(err)
-			}
-
-			j.SessionBlockHeight = uint(tval)
-
-		}
-	}
-
-	state = fflib.FFParse_after_value
-	goto mainparse
-
-handle_ServicerPubKey:
-
-	/* handler: j.ServicerPubKey type=string kind=string quoted=false*/
-
-	{
-
-		{
-			if tok != fflib.FFTok_string && tok != fflib.FFTok_null {
-				return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for string", tok))
-			}
-		}
-
-		if tok == fflib.FFTok_null {
-
-		} else {
-
-			outBuf := fs.Output.Bytes()
-
-			j.ServicerPubKey = string(string(outBuf))
-
-		}
-	}
-
-	state = fflib.FFParse_after_value
-	goto mainparse
-
-handle_Blockchain:
-
-	/* handler: j.Blockchain type=string kind=string quoted=false*/
-
-	{
-
-		{
-			if tok != fflib.FFTok_string && tok != fflib.FFTok_null {
-				return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for string", tok))
-			}
-		}
-
-		if tok == fflib.FFTok_null {
-
-		} else {
-
-			outBuf := fs.Output.Bytes()
-
-			j.Blockchain = string(string(outBuf))
-
-		}
-	}
-
-	state = fflib.FFParse_after_value
-	goto mainparse
-
-handle_Signature:
-
-	/* handler: j.Signature type=string kind=string quoted=false*/
-
-	{
-
-		{
-			if tok != fflib.FFTok_string && tok != fflib.FFTok_null {
-				return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for string", tok))
-			}
-		}
-
-		if tok == fflib.FFTok_null {
-
-		} else {
-
-			outBuf := fs.Output.Bytes()
-
-			j.Signature = string(string(outBuf))
-
-		}
-	}
-
-	state = fflib.FFParse_after_value
-	goto mainparse
-
-handle_UnsignedAAT:
-
-	/* handler: j.UnsignedAAT type=string kind=string quoted=false*/
-
-	{
-
-		{
-			if tok != fflib.FFTok_string && tok != fflib.FFTok_null {
-				return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for string", tok))
-			}
-		}
-
-		if tok == fflib.FFTok_null {
-
-		} else {
-
-			outBuf := fs.Output.Bytes()
-
-			j.UnsignedAAT = string(string(outBuf))
-
-		}
-	}
-
-	state = fflib.FFParse_after_value
-	goto mainparse
-
-handle_RequestHash:
-
-	/* handler: j.RequestHash type=string kind=string quoted=false*/
-
-	{
-
-		{
-			if tok != fflib.FFTok_string && tok != fflib.FFTok_null {
-				return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for string", tok))
-			}
-		}
-
-		if tok == fflib.FFTok_null {
-
-		} else {
-
-			outBuf := fs.Output.Bytes()
-
-			j.RequestHash = string(string(outBuf))
-
-		}
-	}
-
-	state = fflib.FFParse_after_value
-	goto mainparse
-
-wantedvalue:
-	return fs.WrapErr(fmt.Errorf("wanted value token, but got token: %v", tok))
-wrongtokenerror:
-	return fs.WrapErr(fmt.Errorf("ffjson: wanted token: %v, but got token: %v output=%s", wantedTok, tok, fs.Output.String()))
-tokerror:
-	if fs.BigError != nil {
-		return fs.WrapErr(fs.BigError)
-	}
-	err = fs.Error.ToError()
-	if err != nil {
-		return fs.WrapErr(err)
-	}
-	panic("ffjson-generated: unreachable, please report bug.")
-done:
-
-	return nil
-}
-
-// MarshalJSON marshal bytes to json - template
-func (j *RequestHashPayload) MarshalJSON() ([]byte, error) {
-	var buf fflib.Buffer
-	if j == nil {
-		buf.WriteString("null")
-		return buf.Bytes(), nil
-	}
-	err := j.MarshalJSONBuf(&buf)
-	if err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
-}
-
-// MarshalJSONBuf marshal buff to json - template
-func (j *RequestHashPayload) MarshalJSONBuf(buf fflib.EncodingBuffer) error {
-	if j == nil {
-		buf.WriteString("null")
-		return nil
-	}
-	var err error
-	var obj []byte
-	_ = obj
-	_ = err
-	if j.Payload != nil {
-		buf.WriteString(`{"payload":`)
-
-		{
-
-			err = j.Payload.MarshalJSONBuf(buf)
-			if err != nil {
-				return err
-			}
-
-		}
-	} else {
-		buf.WriteString(`{"payload":null`)
-	}
-	if j.Metadata != nil {
-		buf.WriteString(`,"meta":`)
-
-		{
-
-			err = j.Metadata.MarshalJSONBuf(buf)
-			if err != nil {
-				return err
-			}
-
-		}
-	} else {
-		buf.WriteString(`,"meta":null`)
-	}
-	buf.WriteByte('}')
-	return nil
-}
-
-const (
-	ffjtRequestHashPayloadbase = iota
-	ffjtRequestHashPayloadnosuchkey
-
-	ffjtRequestHashPayloadPayload
-
-	ffjtRequestHashPayloadMetadata
-)
-
-var ffjKeyRequestHashPayloadPayload = []byte("payload")
-
-var ffjKeyRequestHashPayloadMetadata = []byte("meta")
-
-// UnmarshalJSON umarshall json - template of ffjson
-func (j *RequestHashPayload) UnmarshalJSON(input []byte) error {
-	fs := fflib.NewFFLexer(input)
-	return j.UnmarshalJSONFFLexer(fs, fflib.FFParse_map_start)
-}
-
-// UnmarshalJSONFFLexer fast json unmarshall - template ffjson
-func (j *RequestHashPayload) UnmarshalJSONFFLexer(fs *fflib.FFLexer, state fflib.FFParseState) error {
-	var err error
-	currentKey := ffjtRequestHashPayloadbase
-	_ = currentKey
-	tok := fflib.FFTok_init
-	wantedTok := fflib.FFTok_init
-
-mainparse:
-	for {
-		tok = fs.Scan()
-		//	println(fmt.Sprintf("debug: tok: %v  state: %v", tok, state))
-		if tok == fflib.FFTok_error {
-			goto tokerror
-		}
-
-		switch state {
-
-		case fflib.FFParse_map_start:
-			if tok != fflib.FFTok_left_bracket {
-				wantedTok = fflib.FFTok_left_bracket
-				goto wrongtokenerror
-			}
-			state = fflib.FFParse_want_key
-			continue
-
-		case fflib.FFParse_after_value:
-			if tok == fflib.FFTok_comma {
-				state = fflib.FFParse_want_key
-			} else if tok == fflib.FFTok_right_bracket {
-				goto done
-			} else {
-				wantedTok = fflib.FFTok_comma
-				goto wrongtokenerror
-			}
-
-		case fflib.FFParse_want_key:
-			// json {} ended. goto exit. woo.
-			if tok == fflib.FFTok_right_bracket {
-				goto done
-			}
-			if tok != fflib.FFTok_string {
-				wantedTok = fflib.FFTok_string
-				goto wrongtokenerror
-			}
-
-			kn := fs.Output.Bytes()
-			if len(kn) <= 0 {
-				// "" case. hrm.
-				currentKey = ffjtRequestHashPayloadnosuchkey
-				state = fflib.FFParse_want_colon
-				goto mainparse
-			} else {
-				switch kn[0] {
-
-				case 'm':
-
-					if bytes.Equal(ffjKeyRequestHashPayloadMetadata, kn) {
-						currentKey = ffjtRequestHashPayloadMetadata
-						state = fflib.FFParse_want_colon
-						goto mainparse
-					}
-
-				case 'p':
-
-					if bytes.Equal(ffjKeyRequestHashPayloadPayload, kn) {
-						currentKey = ffjtRequestHashPayloadPayload
-						state = fflib.FFParse_want_colon
-						goto mainparse
-					}
-
-				}
-
-				if fflib.SimpleLetterEqualFold(ffjKeyRequestHashPayloadMetadata, kn) {
-					currentKey = ffjtRequestHashPayloadMetadata
-					state = fflib.FFParse_want_colon
-					goto mainparse
-				}
-
-				if fflib.SimpleLetterEqualFold(ffjKeyRequestHashPayloadPayload, kn) {
-					currentKey = ffjtRequestHashPayloadPayload
-					state = fflib.FFParse_want_colon
-					goto mainparse
-				}
-
-				currentKey = ffjtRequestHashPayloadnosuchkey
-				state = fflib.FFParse_want_colon
-				goto mainparse
-			}
-
-		case fflib.FFParse_want_colon:
-			if tok != fflib.FFTok_colon {
-				wantedTok = fflib.FFTok_colon
-				goto wrongtokenerror
-			}
-			state = fflib.FFParse_want_value
-			continue
-		case fflib.FFParse_want_value:
-
-			if tok == fflib.FFTok_left_brace || tok == fflib.FFTok_left_bracket || tok == fflib.FFTok_integer || tok == fflib.FFTok_double || tok == fflib.FFTok_string || tok == fflib.FFTok_bool || tok == fflib.FFTok_null {
-				switch currentKey {
-
-				case ffjtRequestHashPayloadPayload:
-					goto handle_Payload
-
-				case ffjtRequestHashPayloadMetadata:
-					goto handle_Metadata
-
-				case ffjtRequestHashPayloadnosuchkey:
-					err = fs.SkipField(tok)
-					if err != nil {
-						return fs.WrapErr(err)
-					}
-					state = fflib.FFParse_after_value
-					goto mainparse
-				}
-			} else {
-				goto wantedvalue
-			}
-		}
-	}
-
-handle_Payload:
-
-	/* handler: j.Payload type=models.Payload kind=struct quoted=false*/
-
-	{
-		if tok == fflib.FFTok_null {
-
-			j.Payload = nil
-
-		} else {
-
-			if j.Payload == nil {
-				j.Payload = new(Payload)
-			}
-
-			err = j.Payload.UnmarshalJSONFFLexer(fs, fflib.FFParse_want_key)
-			if err != nil {
-				return err
-			}
-		}
-		state = fflib.FFParse_after_value
-	}
-
-	state = fflib.FFParse_after_value
-	goto mainparse
-
-handle_Metadata:
-
-	/* handler: j.Metadata type=models.RelayMeta kind=struct quoted=false*/
-
-	{
-		if tok == fflib.FFTok_null {
-
-			j.Metadata = nil
-
-		} else {
-
-			if j.Metadata == nil {
-				j.Metadata = new(RelayMeta)
-			}
-
-			err = j.Metadata.UnmarshalJSONFFLexer(fs, fflib.FFParse_want_key)
-			if err != nil {
-				return err
-			}
-		}
-		state = fflib.FFParse_after_value
-	}
-
-	state = fflib.FFParse_after_value
-	goto mainparse
-
-wantedvalue:
-	return fs.WrapErr(fmt.Errorf("wanted value token, but got token: %v", tok))
-wrongtokenerror:
-	return fs.WrapErr(fmt.Errorf("ffjson: wanted token: %v, but got token: %v output=%s", wantedTok, tok, fs.Output.String()))
-tokerror:
-	if fs.BigError != nil {
-		return fs.WrapErr(fs.BigError)
-	}
-	err = fs.Error.ToError()
-	if err != nil {
-		return fs.WrapErr(err)
-	}
-	panic("ffjson-generated: unreachable, please report bug.")
-done:
-
-	return nil
-}
-
-// MarshalJSON marshal bytes to json - template
 func (j *SendRelayRequest) MarshalJSON() ([]byte, error) {
 	var buf fflib.Buffer
 	if j == nil {
@@ -2262,7 +1506,7 @@ func (j *SendRelayRequest) MarshalJSONBuf(buf fflib.EncodingBuffer) error {
 		buf.WriteString(`{"Payload":null`)
 	}
 	if j.Signer != nil {
-		buf.WriteString(`,"signer":`)
+		buf.WriteString(`,"Signer":`)
 
 		{
 
@@ -2273,7 +1517,7 @@ func (j *SendRelayRequest) MarshalJSONBuf(buf fflib.EncodingBuffer) error {
 
 		}
 	} else {
-		buf.WriteString(`,"signer":null`)
+		buf.WriteString(`,"Signer":null`)
 	}
 	buf.WriteString(`,"Chain":`)
 	fflib.WriteJsonString(buf, string(j.Chain))
@@ -2288,6 +1532,12 @@ func (j *SendRelayRequest) MarshalJSONBuf(buf fflib.EncodingBuffer) error {
 		}
 	} else {
 		buf.WriteString(`,"Session":null`)
+	}
+	if j.Timeout != nil {
+		buf.WriteString(`,"Timeout":`)
+		fflib.FormatBits2(buf, uint64(*j.Timeout), 10, *j.Timeout < 0)
+	} else {
+		buf.WriteString(`,"Timeout":null`)
 	}
 	buf.WriteByte('}')
 	return nil
@@ -2306,17 +1556,21 @@ const (
 	ffjtSendRelayRequestSelectedNodePubKey
 
 	ffjtSendRelayRequestSession
+
+	ffjtSendRelayRequestTimeout
 )
 
 var ffjKeySendRelayRequestPayload = []byte("Payload")
 
-var ffjKeySendRelayRequestSigner = []byte("signer")
+var ffjKeySendRelayRequestSigner = []byte("Signer")
 
 var ffjKeySendRelayRequestChain = []byte("Chain")
 
 var ffjKeySendRelayRequestSelectedNodePubKey = []byte("SelectedNodePubKey")
 
 var ffjKeySendRelayRequestSession = []byte("Session")
+
+var ffjKeySendRelayRequestTimeout = []byte("Timeout")
 
 // UnmarshalJSON umarshall json - template of ffjson
 func (j *SendRelayRequest) UnmarshalJSON(input []byte) error {
@@ -2413,6 +1667,20 @@ mainparse:
 						goto mainparse
 					}
 
+				case 'T':
+
+					if bytes.Equal(ffjKeySendRelayRequestTimeout, kn) {
+						currentKey = ffjtSendRelayRequestTimeout
+						state = fflib.FFParse_want_colon
+						goto mainparse
+					}
+
+				}
+
+				if fflib.SimpleLetterEqualFold(ffjKeySendRelayRequestTimeout, kn) {
+					currentKey = ffjtSendRelayRequestTimeout
+					state = fflib.FFParse_want_colon
+					goto mainparse
 				}
 
 				if fflib.EqualFoldRight(ffjKeySendRelayRequestSession, kn) {
@@ -2477,6 +1745,9 @@ mainparse:
 				case ffjtSendRelayRequestSession:
 					goto handle_Session
 
+				case ffjtSendRelayRequestTimeout:
+					goto handle_Timeout
+
 				case ffjtSendRelayRequestnosuchkey:
 					err = fs.SkipField(tok)
 					if err != nil {
@@ -2519,7 +1790,7 @@ handle_Payload:
 
 handle_Signer:
 
-	/* handler: j.signer type=models.Ed25519Account kind=struct quoted=false*/
+	/* handler: j.Signer type=models.Ed25519Account kind=struct quoted=false*/
 
 	{
 		if tok == fflib.FFTok_null {
@@ -2609,6 +1880,39 @@ handle_Session:
 		err = json.Unmarshal(tbuf, &j.Session)
 		if err != nil {
 			return fs.WrapErr(err)
+		}
+	}
+
+	state = fflib.FFParse_after_value
+	goto mainparse
+
+handle_Timeout:
+
+	/* handler: j.Timeout type=time.Duration kind=int64 quoted=false*/
+
+	{
+		if tok != fflib.FFTok_integer && tok != fflib.FFTok_null {
+			return fs.WrapErr(fmt.Errorf("cannot unmarshal %s into Go value for Duration", tok))
+		}
+	}
+
+	{
+
+		if tok == fflib.FFTok_null {
+
+			j.Timeout = nil
+
+		} else {
+
+			tval, err := fflib.ParseInt(fs.Output.Bytes(), 10, 64)
+
+			if err != nil {
+				return fs.WrapErr(err)
+			}
+
+			ttypval := time.Duration(tval)
+			j.Timeout = &ttypval
+
 		}
 	}
 

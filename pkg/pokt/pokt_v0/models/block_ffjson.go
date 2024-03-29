@@ -161,7 +161,7 @@ mainparse:
 
 handle_Height:
 
-	/* handler: j.SessionHeight type=uint kind=uint quoted=false*/
+	/* handler: j.Height type=uint kind=uint quoted=false*/
 
 	{
 		if tok != fflib.FFTok_integer && tok != fflib.FFTok_null {

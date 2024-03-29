@@ -55,6 +55,7 @@ type RelayProof struct {
 }
 
 // RequestHashPayload struct holding data needed to create a request hash
+// ffjson: skip
 type RequestHashPayload struct {
 	Payload  *Payload   `json:"payload"`
 	Metadata *RelayMeta `json:"meta"`
@@ -64,6 +65,7 @@ func (a *RequestHashPayload) Hash() string {
 	return common.Sha3_256HashHex(a)
 }
 
+// ffjson: skip
 type RelayProofHashPayload struct {
 	Entropy            uint64 `json:"entropy"`
 	SessionBlockHeight uint   `json:"session_block_height"`
