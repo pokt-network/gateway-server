@@ -26,7 +26,7 @@ func doesErrorContains(errsSubString []string, err error) bool {
 	}
 	errStr := err.Error()
 	for _, errSubString := range errsSubString {
-		if strings.Contains(errSubString, errStr) {
+		if strings.Contains(errStr, errSubString) {
 			return true
 		}
 	}
