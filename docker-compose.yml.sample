@@ -11,6 +11,7 @@ services:
       - ./.env
     networks:
       - bridged_network
+    restart: on-failure
     #depends_on:
     #   - postgres
 
