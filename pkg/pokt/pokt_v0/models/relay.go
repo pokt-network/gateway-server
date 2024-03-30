@@ -2,6 +2,7 @@
 package models
 
 import (
+	"github.com/pquerna/ffjson/ffjson"
 	"pokt_gateway_server/pkg/common"
 	"time"
 )
@@ -26,11 +27,32 @@ type SendRelayResponse struct {
 	Response string `json:"response"`
 }
 
+// ffjson: skip
 type Payload struct {
 	Data    string            `json:"data"`
 	Method  string            `json:"method"`
 	Path    string            `json:"path"`
+	Headers map[string]string `json:"headers,omitempty"`
+}
+
+// "payload" - A structure used for custom json marshalling/unmarshalling
+// ffjson: skip
+type payload struct {
+	Data    string            `json:"data"`
+	Method  string            `json:"method"`
+	Path    string            `json:"path"`
 	Headers map[string]string `json:"headers"`
+}
+
+// "MarshalJSON" - Overrides json marshalling
+func (p Payload) MarshalJSON() ([]byte, error) {
+	pay := payload{
+		Data:    p.Data,
+		Method:  p.Method,
+		Path:    p.Path,
+		Headers: p.Headers,
+	}
+	return ffjson.Marshal(pay)
 }
 
 type Relay struct {
