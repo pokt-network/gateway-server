@@ -15,18 +15,23 @@ const timeoutErrorPenalty = time.Second * 15
 // 24 hours is analogous to indefinite
 const kickOutSessionPenalty = time.Hour * 24
 
-const (
-	errPocketInvalidServicerMsg       = "failed to find correct servicer PK"
-	errPocketInvalidBlockHeightMsg    = "the block height passed is invalid"
-	errPocketRequestTimeoutMsg        = "request timeout"
-	errPocketOverServiceMsg           = "the max number of relays serviced for this node is exceeded"
-	errPocketMaximumEvidenceSealedMsg = "the evidence is sealed, either max relays reached or claim already submitted"
+var (
+	errsKickSession = []string{"failed to find correct servicer PK", "the max number of relays serviced for this node is exceeded", "the evidence is sealed, either max relays reached or claim already submitted"}
+	errsTimeout     = []string{"connection refused", "the request block height is out of sync with the current block height", "no route to host", "unexpected EOF", "i/o timeout", "tls: failed to verify certificate", "no such host", "the block height passed is invalid", "request timeout"}
 )
 
-const (
-	errHttpSSLExpired    = "tls: failed to verify certificate"
-	errHttpNoSuchHostMsg = "no such host"
-)
+func doesErrorContains(errsSubString []string, err error) bool {
+	if err == nil {
+		return false
+	}
+	errStr := err.Error()
+	for _, errSubString := range errsSubString {
+		if strings.Contains(errStr, errSubString) {
+			return true
+		}
+	}
+	return false
+}
 
 // isKickableSessionErr - determines if a node should be kicked from a session to send relays
 func isKickableSessionErr(err error) bool {
@@ -36,10 +41,7 @@ func isKickableSessionErr(err error) bool {
 	}
 	// Fallback in the event the error is not parsed correctly due to node operator configurations / custom clients, resort to a simple string check
 	// node runner cannot serve with expired ssl
-	if err != nil && (strings.Contains(err.Error(), errHttpSSLExpired) || strings.Contains(err.Error(), errPocketOverServiceMsg) || strings.Contains(err.Error(), errPocketMaximumEvidenceSealedMsg) || strings.Contains(err.Error(), errPocketInvalidServicerMsg)) {
-		return true
-	}
-	return false
+	return doesErrorContains(errsKickSession, err)
 }
 
 func isTimeoutError(err error) bool {
@@ -47,12 +49,14 @@ func isTimeoutError(err error) bool {
 	if err == relayer_models.ErrPocketCoreInvalidBlockHeight {
 		return true
 	}
+
+	// Check if pocket error returns 500
 	pocketError, ok := err.(relayer_models.PocketRPCError)
-	if ok {
-		return pocketError.HttpCode >= 500
+	if ok && pocketError.HttpCode >= 500 {
+		return true
 	}
 	// Fallback in the event the error is not parsed correctly due to node operator configurations / custom clients, resort to a simple string check
-	return err == fasthttp.ErrTimeout || err == fasthttp.ErrDialTimeout || err == fasthttp.ErrTLSHandshakeTimeout || err != nil && (strings.Contains(err.Error(), errHttpNoSuchHostMsg) || strings.Contains(err.Error(), errPocketRequestTimeoutMsg) || strings.Contains(err.Error(), errPocketInvalidBlockHeightMsg))
+	return err == fasthttp.ErrConnectionClosed || err == fasthttp.ErrTimeout || err == fasthttp.ErrDialTimeout || err == fasthttp.ErrTLSHandshakeTimeout || doesErrorContains(errsTimeout, err)
 }
 
 // DefaultPunishNode generic punisher for whenever a node returns an error independent of a specific check

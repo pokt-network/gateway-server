@@ -1,7 +1,9 @@
 package models
 
 import (
+	"github.com/influxdata/tdigest"
 	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
+	"sync"
 	"time"
 )
 
@@ -9,6 +11,9 @@ type TimeoutReason string
 
 const (
 	maxErrorStr int = 100
+	// we use TDigest to quickly calculate percentile while conserving memory by using TDigest and its compression properties.
+	// Higher compression is more accuracy
+	latencyCompression = 1000
 )
 
 const (
@@ -22,12 +27,38 @@ const (
 	NodeResponseTimeout  TimeoutReason = "node_response_timeout"
 )
 
+type LatencyTracker struct {
+	tDigest *tdigest.TDigest
+	lock    sync.RWMutex
+}
+
+func (l *LatencyTracker) RecordMeasurement(time float64) {
+	l.lock.Lock()
+	defer l.lock.Unlock()
+	l.tDigest.Add(time, 1)
+}
+
+func (l *LatencyTracker) GetMeasurementCount() float64 {
+	l.lock.RLock()
+	defer l.lock.RUnlock()
+	return l.tDigest.Count()
+}
+
+func (l *LatencyTracker) GetP90Latency() float64 {
+	return l.tDigest.Quantile(.90)
+}
+
+type SessionChainKey struct {
+	SessionHeight uint   `json:"session_height"`
+	Chain         string `json:"chain"`
+}
+
 // QosNode a FAT model to store the QoS information of a specific node in a session.
 type QosNode struct {
 	MorseNode                  *models.Node
-	PocketSession              *models.Session
-	AppSigner                  *models.Ed25519Account
-	p90Latency                 float64
+	MorseSession               *models.Session
+	MorseSigner                *models.Ed25519Account
+	LatencyTracker             *LatencyTracker
 	timeoutUntil               time.Time
 	timeoutReason              TimeoutReason
 	lastDataIntegrityCheckTime time.Time
@@ -35,6 +66,10 @@ type QosNode struct {
 	synced                     bool
 	lastKnownError             error
 	lastHeightCheckTime        time.Time
+}
+
+func NewQosNode(morseNode *models.Node, pocketSession *models.Session, appSigner *models.Ed25519Account) *QosNode {
+	return &QosNode{MorseNode: morseNode, MorseSession: pocketSession, MorseSigner: appSigner, LatencyTracker: &LatencyTracker{tDigest: tdigest.NewWithCompression(1000)}}
 }
 
 func (n *QosNode) IsHealthy() bool {
@@ -76,7 +111,7 @@ func (n *QosNode) GetLastKnownHeight() uint64 {
 }
 
 func (n *QosNode) GetChain() string {
-	return n.PocketSession.SessionHeader.Chain
+	return n.MorseSession.SessionHeader.Chain
 }
 
 func (n *QosNode) GetPublicKey() string {
@@ -84,7 +119,7 @@ func (n *QosNode) GetPublicKey() string {
 }
 
 func (n *QosNode) GetAppStakeSigner() *models.Ed25519Account {
-	return n.AppSigner
+	return n.MorseSigner
 }
 
 func (n *QosNode) GetLastDataIntegrityCheckTime() time.Time {
@@ -120,4 +155,8 @@ func (n *QosNode) GetLastKnownErrorStr() string {
 
 func (n *QosNode) GetTimeoutUntil() time.Time {
 	return n.timeoutUntil
+}
+
+func (n *QosNode) GetLatencyTracker() *LatencyTracker {
+	return n.LatencyTracker
 }

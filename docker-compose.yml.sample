@@ -1,0 +1,42 @@
+version: '3'
+
+services:
+  gateway-server:
+    build: .
+    volumes:
+      - .env:/app/.env
+    ports:
+      - "${HTTP_SERVER_PORT}:${HTTP_SERVER_PORT}"
+    env_file:
+      - ./.env
+    networks:
+      - bridged_network
+#    depends_on:
+#       - postgres
+    restart: on-failure
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+
+# this postgres database is only to be used for testing. It should not be used in production systems
+# Leverage a production ready postgres database with HA/replicas in prod.
+#  postgres:
+#    image: postgres:latest
+#    environment:
+#      POSTGRES_DB: postgres
+#      POSTGRES_USER: myuser
+#      POSTGRES_PASSWORD: mypassword
+#    ports:
+#      - "5433:5432"
+#    volumes:
+#      - postgres_data:/var/lib/postgresql/data
+#    networks:
+#      - bridged_network
+
+volumes:
+  postgres_data:
+
+networks:
+  bridged_network:
+    driver: bridge

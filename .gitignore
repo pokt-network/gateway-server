@@ -48,3 +48,9 @@
 
 ## environment vars
 .env
+
+## docker compose file
+docker-compose.yml
+
+## MAC
+.DS_Store

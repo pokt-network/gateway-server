@@ -14,6 +14,6 @@ type Session struct {
 
 type SessionRegistryService interface {
 	GetSession(req *models.GetSessionRequest) (*Session, error)
-	GetNodesMap() map[string]*ttlcache.Item[string, []*qos_models.QosNode]
-	GetNodesByChain(chainId string) ([]*qos_models.QosNode, bool)
+	GetNodesMap() map[qos_models.SessionChainKey]*ttlcache.Item[qos_models.SessionChainKey, []*qos_models.QosNode]
+	GetNodesByChain(chainId string) []*qos_models.QosNode
 }

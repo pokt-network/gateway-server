@@ -109,19 +109,20 @@ func (r *Relayer) sendNodeSelectorRelay(req *models.SendRelayRequest) (*models.S
 	if !ok {
 		return nil, errSelectNodeFail
 	}
-	req.Signer = node.AppSigner
-	req.Session = node.PocketSession
+	req.Signer = node.MorseSigner
+	req.Session = node.MorseSession
 	req.SelectedNodePubKey = node.GetPublicKey()
 	if err := req.Validate(); err != nil {
 		return nil, err
 	}
-	rsp, err := r.pocketClient.SendRelay(req)
 
+	start := time.Now()
+	rsp, err := r.pocketClient.SendRelay(req)
+	node.GetLatencyTracker().RecordMeasurement(float64(time.Now().Sub(start).Milliseconds()))
 	// Node returned an error, potentially penalize the node operator dependent on error
 	if err != nil {
 		checks.DefaultPunishNode(err, node, r.logger)
 	}
-
 	return rsp, err
 }
 
@@ -155,7 +156,7 @@ func (r *Relayer) sendRandomNodeRelay(req *models.SendRelayRequest) (*models.Sen
 
 	requestTimeout := r.getPocketRequestTimeout(req.Chain)
 	// populate request with session metadata
-	req.Session = randomNode.PocketSession
+	req.Session = randomNode.MorseSession
 	req.Signer = appStake.Signer
 	req.Timeout = &requestTimeout
 	req.SelectedNodePubKey = randomNode.GetPublicKey()

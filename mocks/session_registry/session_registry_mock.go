@@ -27,7 +27,7 @@ func (_m *SessionRegistryService) EXPECT() *SessionRegistryService_Expecter {
 }
 
 // GetNodesByChain provides a mock function with given fields: chainId
-func (_m *SessionRegistryService) GetNodesByChain(chainId string) ([]*models.QosNode, bool) {
+func (_m *SessionRegistryService) GetNodesByChain(chainId string) []*models.QosNode {
 	ret := _m.Called(chainId)
 
 	if len(ret) == 0 {
@@ -35,10 +35,6 @@ func (_m *SessionRegistryService) GetNodesByChain(chainId string) ([]*models.Qos
 	}
 
 	var r0 []*models.QosNode
-	var r1 bool
-	if rf, ok := ret.Get(0).(func(string) ([]*models.QosNode, bool)); ok {
-		return rf(chainId)
-	}
 	if rf, ok := ret.Get(0).(func(string) []*models.QosNode); ok {
 		r0 = rf(chainId)
 	} else {
@@ -47,13 +43,7 @@ func (_m *SessionRegistryService) GetNodesByChain(chainId string) ([]*models.Qos
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(string) bool); ok {
-		r1 = rf(chainId)
-	} else {
-		r1 = ret.Get(1).(bool)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // SessionRegistryService_GetNodesByChain_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetNodesByChain'
@@ -74,30 +64,30 @@ func (_c *SessionRegistryService_GetNodesByChain_Call) Run(run func(chainId stri
 	return _c
 }
 
-func (_c *SessionRegistryService_GetNodesByChain_Call) Return(_a0 []*models.QosNode, _a1 bool) *SessionRegistryService_GetNodesByChain_Call {
-	_c.Call.Return(_a0, _a1)
+func (_c *SessionRegistryService_GetNodesByChain_Call) Return(_a0 []*models.QosNode) *SessionRegistryService_GetNodesByChain_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *SessionRegistryService_GetNodesByChain_Call) RunAndReturn(run func(string) ([]*models.QosNode, bool)) *SessionRegistryService_GetNodesByChain_Call {
+func (_c *SessionRegistryService_GetNodesByChain_Call) RunAndReturn(run func(string) []*models.QosNode) *SessionRegistryService_GetNodesByChain_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetNodesMap provides a mock function with given fields:
-func (_m *SessionRegistryService) GetNodesMap() map[string]*ttlcache.Item[string, []*models.QosNode] {
+func (_m *SessionRegistryService) GetNodesMap() map[models.SessionChainKey]*ttlcache.Item[models.SessionChainKey, []*models.QosNode] {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetNodesMap")
 	}
 
-	var r0 map[string]*ttlcache.Item[string, []*models.QosNode]
-	if rf, ok := ret.Get(0).(func() map[string]*ttlcache.Item[string, []*models.QosNode]); ok {
+	var r0 map[models.SessionChainKey]*ttlcache.Item[models.SessionChainKey, []*models.QosNode]
+	if rf, ok := ret.Get(0).(func() map[models.SessionChainKey]*ttlcache.Item[models.SessionChainKey, []*models.QosNode]); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]*ttlcache.Item[string, []*models.QosNode])
+			r0 = ret.Get(0).(map[models.SessionChainKey]*ttlcache.Item[models.SessionChainKey, []*models.QosNode])
 		}
 	}
 
@@ -121,12 +111,12 @@ func (_c *SessionRegistryService_GetNodesMap_Call) Run(run func()) *SessionRegis
 	return _c
 }
 
-func (_c *SessionRegistryService_GetNodesMap_Call) Return(_a0 map[string]*ttlcache.Item[string, []*models.QosNode]) *SessionRegistryService_GetNodesMap_Call {
+func (_c *SessionRegistryService_GetNodesMap_Call) Return(_a0 map[models.SessionChainKey]*ttlcache.Item[models.SessionChainKey, []*models.QosNode]) *SessionRegistryService_GetNodesMap_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *SessionRegistryService_GetNodesMap_Call) RunAndReturn(run func() map[string]*ttlcache.Item[string, []*models.QosNode]) *SessionRegistryService_GetNodesMap_Call {
+func (_c *SessionRegistryService_GetNodesMap_Call) RunAndReturn(run func() map[models.SessionChainKey]*ttlcache.Item[models.SessionChainKey, []*models.QosNode]) *SessionRegistryService_GetNodesMap_Call {
 	_c.Call.Return(run)
 	return _c
 }

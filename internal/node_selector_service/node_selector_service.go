@@ -50,8 +50,8 @@ func NewNodeSelectorService(sessionRegistry session_registry.SessionRegistryServ
 
 func (q NodeSelectorClient) FindNode(chainId string) (*models.QosNode, bool) {
 
-	nodes, ok := q.sessionRegistry.GetNodesByChain(chainId)
-	if !ok {
+	nodes := q.sessionRegistry.GetNodesByChain(chainId)
+	if len(nodes) == 0 {
 		return nil, false
 	}
 
@@ -69,12 +69,14 @@ func (q NodeSelectorClient) FindNode(chainId string) (*models.QosNode, bool) {
 	return nil, false
 }
 
+// filterBySessionHeightNodes - filter by session height descending. This allows node selector to send relays with
+// latest session height which nodes are more likely to serve vs session rollover relays.
 func filterBySessionHeightNodes(nodes []*models.QosNode) ([]uint, map[uint][]*models.QosNode) {
 	nodesBySessionHeight := map[uint][]*models.QosNode{}
 
 	// Create map to retrieve nodes by session height
 	for _, r := range nodes {
-		sessionHeight := r.PocketSession.SessionHeader.SessionHeight
+		sessionHeight := r.MorseSession.SessionHeader.SessionHeight
 		nodesBySessionHeight[sessionHeight] = append(nodesBySessionHeight[sessionHeight], r)
 	}
 
@@ -91,6 +93,7 @@ func filterBySessionHeightNodes(nodes []*models.QosNode) ([]uint, map[uint][]*mo
 
 	return sortedSessionHeights, nodesBySessionHeight
 }
+
 func filterByHealthyNodes(nodes []*models.QosNode) []*models.QosNode {
 	var healthyNodes []*models.QosNode
 
@@ -110,8 +113,8 @@ func (q NodeSelectorClient) startJobChecker() {
 			case <-ticker:
 				for _, job := range q.checkJobs {
 					if job.ShouldRun() {
-						for chain, nodes := range q.sessionRegistry.GetNodesMap() {
-							q.logger.Sugar().Infow("running job", "job", job.Name(), "chain", chain)
+						for sessionChainKey, nodes := range q.sessionRegistry.GetNodesMap() {
+							q.logger.Sugar().Infow("running job", "job", job.Name(), "sessionChainKey", sessionChainKey)
 							job.SetNodes(nodes.Value())
 							job.Perform()
 						}

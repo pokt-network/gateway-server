@@ -13,4 +13,5 @@ type PublicQosNode struct {
 	IsHeathy        bool      `json:"is_heathy"`
 	IsSynced        bool      `json:"is_synced"`
 	LastKnownHeight uint64    `json:"last_known_height"`
+	P90Latency      float64   `json:"p90_latency"`
 }
