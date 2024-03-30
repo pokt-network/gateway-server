@@ -26,6 +26,7 @@ type SendRelayResponse struct {
 	Response string `json:"response"`
 }
 
+// ffjson: skip
 type Payload struct {
 	Data    string            `json:"data"`
 	Method  string            `json:"method"`
@@ -33,6 +34,7 @@ type Payload struct {
 	Headers map[string]string `json:"headers"`
 }
 
+// ffjson: skip
 type Relay struct {
 	Payload    *Payload    `json:"payload"`
 	Metadata   *RelayMeta  `json:"meta"`
@@ -44,6 +46,7 @@ type RelayMeta struct {
 }
 
 // RelayProof represents proof of a relay
+// ffjson: skip
 type RelayProof struct {
 	Entropy            uint64 `json:"entropy"`
 	SessionBlockHeight uint   `json:"session_block_height"`
