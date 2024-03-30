@@ -108,6 +108,11 @@ func (c *EvmDataIntegrityCheck) Perform() {
 
 	majorityBlockHash := findMajorityBlockHash(nodeResponseCounts)
 
+	// Blcok hash must not be empty
+	if majorityBlockHash == "" {
+		return
+	}
+
 	// Penalize other node operators with a timeout if they don't attest with same block hash.
 	for _, nodeResp := range nodeResponsePairs {
 		if nodeResp.result.Result.Hash != majorityBlockHash {
