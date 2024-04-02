@@ -222,7 +222,7 @@ func (r *Relayer) getPocketRequestTimeout(chainId string) time.Duration {
 	if !ok {
 		return r.globalConfigProvider.GetPoktRPCRequestTimeout()
 	}
-	configTime, err := time.ParseDuration(chainConfig.AltruistRequestTimeoutDuration.String)
+	configTime, err := time.ParseDuration(chainConfig.PocketRequestTimeoutDuration.String)
 	if err != nil {
 		return r.globalConfigProvider.GetPoktRPCRequestTimeout()
 	}
