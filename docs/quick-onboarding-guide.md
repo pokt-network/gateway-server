@@ -39,16 +39,16 @@ Create an encryption password for your app stake keys. This password will be use
 Fill out the `.env` variables for the gateway server. This can be done by injecting environment variables directly or using a `.env` file.
 
 ### Env Variables Description
-| Variable Name                      | Description                                         | Example Value                                                                                     |
-|------------------------------------|-----------------------------------------------------|---------------------------------------------------------------------------------------------------|
-| `POKT_RPC_FULL_HOST`               | Used for dispatching sessions                       | `https://pokt-testnet-rpc.nodies.org` (a complimentary testnet dispatcher URL provided by Nodies) |
-| `HTTP_SERVER_PORT`                 | Gateway server port                                 | `8080`                                                                                            |
-| `POKT_RPC_TIMEOUT`                 | Max response time for a POKT node to respond        | `10s`                                                                                             |
-| `POKT_RPC_TIMEOUT`                 | Max response time for an altruist backup to respond | `10s`                                                                                             |
-| `ENVIRONMENT_STAGE`                | Log verbosity                                       | `development`, `production`                                                                       |
-| `SESSION_CACHE_TTL`                | Duration for sessions to stay in cache              | `75m`                                                                                             |
-| `POKT_APPLICATIONS_ENCRYPTION_KEY` | User-generated encryption key                       | `a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6`                                                                |
-| `DB_CONNECTION_URL`                | PostgreSQL Database connection URL                  | `postgres://user:password@localhost:5432/postgres`                                                |
+| Variable Name                       | Description                                         | Example Value                                                                                     |
+|-------------------------------------|-----------------------------------------------------|---------------------------------------------------------------------------------------------------|
+| `POKT_RPC_FULL_HOST`                | Used for dispatching sessions                       | `https://pokt-testnet-rpc.nodies.org` (a complimentary testnet dispatcher URL provided by Nodies) |
+| `HTTP_SERVER_PORT`                  | Gateway server port                                 | `8080`                                                                                            |
+| `POKT_RPC_TIMEOUT`                  | Max response time for a POKT node to respond        | `10s`                                                                                             |
+| `ALTRUIST_REQUEST_TIMEOUT`          | Max response time for an altruist backup to respond | `10s`                                                                                             |
+| `ENVIRONMENT_STAGE`                 | Log verbosity                                       | `development`, `production`                                                                       |
+| `SESSION_CACHE_TTL`                 | Duration for sessions to stay in cache              | `75m`                                                                                             |
+| `POKT_APPLICATIONS_ENCRYPTION_KEY`  | User-generated encryption key                       | `a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6`                                                                |
+| `DB_CONNECTION_URL`                 | PostgreSQL Database connection URL                  | `postgres://user:password@localhost:5432/postgres`                                                |
 
 See [.env.sample](..%2F.env.sample) for a sample.
 
