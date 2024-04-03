@@ -12,6 +12,7 @@ func ToPublicQosNode(node *internal_model.QosNode) *models.PublicQosNode {
 		latency = 0.0
 	}
 	return &models.PublicQosNode{
+		NodePublicKey:   node.MorseNode.PublicKey,
 		ServiceUrl:      node.MorseNode.ServiceUrl,
 		Chain:           node.GetChain(),
 		SessionHeight:   node.MorseSession.SessionHeader.SessionHeight,

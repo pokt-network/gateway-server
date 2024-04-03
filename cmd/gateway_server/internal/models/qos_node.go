@@ -3,6 +3,7 @@ package models
 import "time"
 
 type PublicQosNode struct {
+	NodePublicKey   string    `json:"node_public_key"`
 	ServiceUrl      string    `json:"service_url"`
 	Chain           string    `json:"chain"`
 	SessionHeight   uint      `json:"session_height"`
