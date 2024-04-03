@@ -11,7 +11,7 @@ type PublicQosNode struct {
 	TimeoutUntil    time.Time `json:"timeout_until"`
 	TimeoutReason   string    `json:"timeout_reason"`
 	LastKnownErr    string    `json:"last_known_err"`
-	IsHeathy        bool      `json:"is_heathy"`
+	IsHealthy       bool      `json:"is_healthy"`
 	IsSynced        bool      `json:"is_synced"`
 	LastKnownHeight uint64    `json:"last_known_height"`
 	P90Latency      float64   `json:"p90_latency"`

@@ -19,7 +19,7 @@ func ToPublicQosNode(node *internal_model.QosNode) *models.PublicQosNode {
 		AppPublicKey:    node.MorseSigner.PublicKey,
 		TimeoutReason:   string(node.GetTimeoutReason()),
 		LastKnownErr:    node.GetLastKnownErrorStr(),
-		IsHeathy:        node.IsHealthy(),
+		IsHealthy:       node.IsHealthy(),
 		IsSynced:        node.IsSynced(),
 		LastKnownHeight: node.GetLastKnownHeight(),
 		TimeoutUntil:    node.GetTimeoutUntil(),
