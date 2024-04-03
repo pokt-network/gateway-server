@@ -21,7 +21,7 @@ import (
 
 var (
 	counterRelayRequest          *prometheus.CounterVec
-	histogramRelayRequestLatency prometheus.Histogram
+	histogramRelayRequestLatency *prometheus.HistogramVec
 )
 
 const (
@@ -40,13 +40,14 @@ func init() {
 			Name: "relay_counter",
 			Help: "Request to send an actual relay and if it succeeded",
 		},
-		[]string{"success", "altruist", "reason"},
+		[]string{"success", "altruist", "reason", "chain_id"},
 	)
-	histogramRelayRequestLatency = prometheus.NewHistogram(
+	histogramRelayRequestLatency = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
 			Name: "relay_latency",
 			Help: "percentile on the request to send a relay",
 		},
+		[]string{"success", "altruist", "chain_id"},
 	)
 	prometheus.MustRegister(counterRelayRequest, histogramRelayRequestLatency)
 }
@@ -77,21 +78,26 @@ func NewRelayer(pocketService pokt_v0.PocketService, sessionRegistry session_reg
 
 func (r *Relayer) SendRelay(req *models.SendRelayRequest) (*models.SendRelayResponse, error) {
 
+	success := false
+	altruist := false
+
 	startTime := time.Now()
 	// Measure end to end latency for send relay
 	defer func() {
-		histogramRelayRequestLatency.Observe(float64(time.Since(startTime)))
+		histogramRelayRequestLatency.WithLabelValues(strconv.FormatBool(success), strconv.FormatBool(altruist), req.Chain).Observe(float64(time.Since(startTime)))
 	}()
 
 	rsp, err := r.sendNodeSelectorRelay(req)
 
 	// Node selector relay was successful
 	if err == nil {
+		success = true
 		counterRelayRequest.WithLabelValues("true", "false", "").Inc()
 		return rsp, nil
 	}
 
-	counterRelayRequest.WithLabelValues("false", "true", reasonRelayFailedPocketErr).Inc()
+	altruist = true
+	counterRelayRequest.WithLabelValues("false", "true", reasonRelayFailedPocketErr, req.Chain).Inc()
 
 	r.logger.Sugar().Errorw("failed to send to pokt", "poktErr", err)
 	altruistRsp, altruistErr := r.altruistRelay(req)
@@ -145,7 +151,7 @@ func (r *Relayer) sendRandomNodeRelay(req *models.SendRelayRequest) (*models.Sen
 	})
 
 	if err != nil {
-		counterRelayRequest.WithLabelValues("false", "true", reasonRelayFailedSessionErr).Inc()
+		counterRelayRequest.WithLabelValues("false", "true", reasonRelayFailedSessionErr, req.Chain).Inc()
 		return nil, err
 	}
 
@@ -163,7 +169,7 @@ func (r *Relayer) sendRandomNodeRelay(req *models.SendRelayRequest) (*models.Sen
 	rsp, err := r.pocketClient.SendRelay(req)
 
 	// record if relay was successful
-	counterRelayRequest.WithLabelValues(strconv.FormatBool(err == nil), "false", "").Inc()
+	counterRelayRequest.WithLabelValues(strconv.FormatBool(err == nil), "false", "", req.Chain).Inc()
 
 	return rsp, err
 }
@@ -195,7 +201,7 @@ func (r *Relayer) altruistRelay(req *models.SendRelayRequest) (*models.SendRelay
 	err := r.httpRequester.DoTimeout(request, response, requestTimeout)
 
 	success := err == nil
-	counterRelayRequest.WithLabelValues(strconv.FormatBool(success), "true", "").Inc()
+	counterRelayRequest.WithLabelValues(strconv.FormatBool(success), "true", "", req.Chain).Inc()
 
 	if !success {
 		return nil, err
