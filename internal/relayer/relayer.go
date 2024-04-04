@@ -92,7 +92,7 @@ func (r *Relayer) SendRelay(req *models.SendRelayRequest) (*models.SendRelayResp
 	// Node selector relay was successful
 	if err == nil {
 		success = true
-		counterRelayRequest.WithLabelValues("true", "false", "").Inc()
+		counterRelayRequest.WithLabelValues("true", "false", "", req.Chain).Inc()
 		return rsp, nil
 	}
 
