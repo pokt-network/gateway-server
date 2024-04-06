@@ -1,4 +1,4 @@
-module pokt_gateway_server
+module gateway-server
 
 go 1.21.4
 
