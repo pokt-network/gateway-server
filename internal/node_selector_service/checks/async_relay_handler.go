@@ -1,9 +1,9 @@
 package checks
 
 import (
-	"pokt_gateway_server/internal/node_selector_service/models"
-	"pokt_gateway_server/pkg/pokt/pokt_v0"
-	relayer_models "pokt_gateway_server/pkg/pokt/pokt_v0/models"
+	"github.com/pokt-network/gateway-server/internal/node_selector_service/models"
+	"github.com/pokt-network/gateway-server/pkg/pokt/pokt_v0"
+	relayer_models "github.com/pokt-network/gateway-server/pkg/pokt/pokt_v0/models"
 	"sync"
 )
 

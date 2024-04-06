@@ -1,9 +1,9 @@
 package transform
 
 import (
+	"github.com/pokt-network/gateway-server/cmd/gateway_server/internal/models"
+	internal_model "github.com/pokt-network/gateway-server/internal/node_selector_service/models"
 	"math"
-	"pokt_gateway_server/cmd/gateway_server/internal/models"
-	internal_model "pokt_gateway_server/internal/node_selector_service/models"
 )
 
 func ToPublicQosNode(node *internal_model.QosNode) *models.PublicQosNode {

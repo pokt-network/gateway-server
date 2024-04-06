@@ -1,8 +1,8 @@
 package logging
 
 import (
+	"github.com/pokt-network/gateway-server/internal/global_config"
 	"go.uber.org/zap"
-	"pokt_gateway_server/internal/global_config"
 )
 
 func NewLogger(provider global_config.EnvironmentProvider) (*zap.Logger, error) {

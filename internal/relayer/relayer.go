@@ -3,25 +3,26 @@ package relayer
 import (
 	"errors"
 	"fmt"
+	"github.com/pokt-network/gateway-server/internal/apps_registry"
+	"github.com/pokt-network/gateway-server/internal/chain_configurations_registry"
+	"github.com/pokt-network/gateway-server/internal/global_config"
+	"github.com/pokt-network/gateway-server/internal/node_selector_service"
+	"github.com/pokt-network/gateway-server/internal/node_selector_service/checks"
+	"github.com/pokt-network/gateway-server/internal/session_registry"
+	"github.com/pokt-network/gateway-server/pkg/common"
+	"github.com/pokt-network/gateway-server/pkg/pokt/pokt_v0"
+	"github.com/pokt-network/gateway-server/pkg/pokt/pokt_v0/models"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
-	"pokt_gateway_server/internal/apps_registry"
-	"pokt_gateway_server/internal/chain_configurations_registry"
-	"pokt_gateway_server/internal/global_config"
-	"pokt_gateway_server/internal/node_selector_service"
-	"pokt_gateway_server/internal/node_selector_service/checks"
-	"pokt_gateway_server/internal/session_registry"
-	"pokt_gateway_server/pkg/common"
-	"pokt_gateway_server/pkg/pokt/pokt_v0"
-	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
 	"strconv"
 	"time"
 )
 
 var (
-	counterRelayRequest          *prometheus.CounterVec
-	histogramRelayRequestLatency *prometheus.HistogramVec
+	counterRelayRequest                      *prometheus.CounterVec
+	histogramRelayRequestLatency             *prometheus.HistogramVec
+	pocketClientHistogramRelayRequestLatency *prometheus.HistogramVec
 )
 
 const (
@@ -44,12 +45,21 @@ func init() {
 	)
 	histogramRelayRequestLatency = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name: "relay_latency",
-			Help: "percentile on the request to send a relay",
+			Buckets: []float64{.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10, 15, 20, 30, 40, 50, 60},
+			Name:    "relay_latency",
+			Help:    "percentile on the request on latency to select a node, sign a request and send it to the network",
 		},
 		[]string{"success", "altruist", "chain_id"},
 	)
-	prometheus.MustRegister(counterRelayRequest, histogramRelayRequestLatency)
+	pocketClientHistogramRelayRequestLatency = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Buckets: []float64{.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10, 15, 20, 30, 40, 50, 60},
+			Name:    "pocket_client_relay_latency",
+			Help:    "percentile on the request on latency to sign a request and send it to the network",
+		},
+		[]string{"success", "altruist", "chain_id"},
+	)
+	prometheus.MustRegister(counterRelayRequest, histogramRelayRequestLatency, pocketClientHistogramRelayRequestLatency)
 }
 
 type Relayer struct {
@@ -84,7 +94,7 @@ func (r *Relayer) SendRelay(req *models.SendRelayRequest) (*models.SendRelayResp
 	startTime := time.Now()
 	// Measure end to end latency for send relay
 	defer func() {
-		histogramRelayRequestLatency.WithLabelValues(strconv.FormatBool(success), strconv.FormatBool(altruist), req.Chain).Observe(float64(time.Since(startTime)))
+		histogramRelayRequestLatency.WithLabelValues(strconv.FormatBool(success), strconv.FormatBool(altruist), req.Chain).Observe(time.Since(startTime).Seconds())
 	}()
 
 	rsp, err := r.sendNodeSelectorRelay(req)
@@ -122,13 +132,19 @@ func (r *Relayer) sendNodeSelectorRelay(req *models.SendRelayRequest) (*models.S
 		return nil, err
 	}
 
-	start := time.Now()
+	startRequestTime := time.Now()
+
 	rsp, err := r.pocketClient.SendRelay(req)
-	node.GetLatencyTracker().RecordMeasurement(float64(time.Now().Sub(start).Milliseconds()))
+
+	// Record latency to prom and latency tracker
+	latency := time.Now().Sub(startRequestTime)
+	pocketClientHistogramRelayRequestLatency.WithLabelValues(strconv.FormatBool(err == nil), "false", req.Chain).Observe(latency.Seconds())
+	node.GetLatencyTracker().RecordMeasurement(float64(latency.Milliseconds()))
 	// Node returned an error, potentially penalize the node operator dependent on error
 	if err != nil {
 		checks.DefaultPunishNode(err, node, r.logger)
 	}
+
 	return rsp, err
 }
 

@@ -2,10 +2,10 @@ package pokt_v0
 
 import (
 	"errors"
+	pocket_service_mock "github.com/pokt-network/gateway-server/mocks/pocket_service"
+	"github.com/pokt-network/gateway-server/pkg/pokt/pokt_v0/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	pocket_service_mock "pokt_gateway_server/mocks/pocket_service"
-	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
 	"testing"
 )
 

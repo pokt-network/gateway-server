@@ -1,15 +1,15 @@
 package node_selector_service
 
 import (
+	"github.com/pokt-network/gateway-server/internal/chain_configurations_registry"
+	"github.com/pokt-network/gateway-server/internal/node_selector_service/checks"
+	"github.com/pokt-network/gateway-server/internal/node_selector_service/checks/evm_data_integrity_check"
+	"github.com/pokt-network/gateway-server/internal/node_selector_service/checks/evm_height_check"
+	"github.com/pokt-network/gateway-server/internal/node_selector_service/models"
+	"github.com/pokt-network/gateway-server/internal/session_registry"
+	"github.com/pokt-network/gateway-server/pkg/common"
+	"github.com/pokt-network/gateway-server/pkg/pokt/pokt_v0"
 	"go.uber.org/zap"
-	"pokt_gateway_server/internal/chain_configurations_registry"
-	"pokt_gateway_server/internal/node_selector_service/checks"
-	"pokt_gateway_server/internal/node_selector_service/checks/evm_data_integrity_check"
-	"pokt_gateway_server/internal/node_selector_service/checks/evm_height_check"
-	"pokt_gateway_server/internal/node_selector_service/models"
-	"pokt_gateway_server/internal/session_registry"
-	"pokt_gateway_server/pkg/common"
-	"pokt_gateway_server/pkg/pokt/pokt_v0"
 	"sort"
 	"time"
 )

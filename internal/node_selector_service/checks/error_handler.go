@@ -1,10 +1,10 @@
 package checks
 
 import (
+	"github.com/pokt-network/gateway-server/internal/node_selector_service/models"
+	relayer_models "github.com/pokt-network/gateway-server/pkg/pokt/pokt_v0/models"
 	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
-	"pokt_gateway_server/internal/node_selector_service/models"
-	relayer_models "pokt_gateway_server/pkg/pokt/pokt_v0/models"
 	"strings"
 	"time"
 )

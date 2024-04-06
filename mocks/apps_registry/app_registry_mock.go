@@ -3,7 +3,7 @@
 package apps_registry_mock
 
 import (
-	models "pokt_gateway_server/internal/apps_registry/models"
+	models "github.com/pokt-network/gateway-server/internal/apps_registry/models"
 
 	mock "github.com/stretchr/testify/mock"
 )

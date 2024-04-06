@@ -1,12 +1,12 @@
 package controllers
 
 import (
+	"github.com/pokt-network/gateway-server/cmd/gateway_server/internal/common"
+	"github.com/pokt-network/gateway-server/cmd/gateway_server/internal/models"
+	"github.com/pokt-network/gateway-server/cmd/gateway_server/internal/transform"
+	"github.com/pokt-network/gateway-server/internal/session_registry"
 	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
-	"pokt_gateway_server/cmd/gateway_server/internal/common"
-	"pokt_gateway_server/cmd/gateway_server/internal/models"
-	"pokt_gateway_server/cmd/gateway_server/internal/transform"
-	"pokt_gateway_server/internal/session_registry"
 )
 
 // QosNodeController handles requests for staked applications

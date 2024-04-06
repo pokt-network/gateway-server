@@ -2,8 +2,8 @@ package session_registry
 
 import (
 	"github.com/jellydator/ttlcache/v3"
-	qos_models "pokt_gateway_server/internal/node_selector_service/models"
-	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
+	qos_models "github.com/pokt-network/gateway-server/internal/node_selector_service/models"
+	"github.com/pokt-network/gateway-server/pkg/pokt/pokt_v0/models"
 )
 
 type Session struct {

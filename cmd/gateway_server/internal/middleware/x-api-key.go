@@ -1,9 +1,9 @@
 package middleware
 
 import (
+	"github.com/pokt-network/gateway-server/cmd/gateway_server/internal/common"
+	config2 "github.com/pokt-network/gateway-server/internal/global_config"
 	"github.com/valyala/fasthttp"
-	"pokt_gateway_server/cmd/gateway_server/internal/common"
-	config2 "pokt_gateway_server/internal/global_config"
 )
 
 func retrieveAPIKey(ctx *fasthttp.RequestCtx) string {

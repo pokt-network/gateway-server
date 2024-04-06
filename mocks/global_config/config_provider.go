@@ -3,7 +3,7 @@
 package global_config_mock
 
 import (
-	global_config "pokt_gateway_server/internal/global_config"
+	global_config "github.com/pokt-network/gateway-server/internal/global_config"
 
 	mock "github.com/stretchr/testify/mock"
 

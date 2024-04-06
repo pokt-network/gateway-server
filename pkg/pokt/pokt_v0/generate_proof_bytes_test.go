@@ -1,8 +1,8 @@
 package pokt_v0
 
 import (
+	"github.com/pokt-network/gateway-server/pkg/pokt/pokt_v0/models"
 	"github.com/stretchr/testify/assert"
-	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
 	"testing"
 )
 

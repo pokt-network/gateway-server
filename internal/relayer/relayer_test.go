@@ -3,19 +3,19 @@ package relayer
 // Basic imports
 import (
 	"github.com/jackc/pgtype"
+	"github.com/pokt-network/gateway-server/internal/db_query"
+	qos_models "github.com/pokt-network/gateway-server/internal/node_selector_service/models"
+	apps_registry_mock "github.com/pokt-network/gateway-server/mocks/apps_registry"
+	chain_configurations_registry_mock "github.com/pokt-network/gateway-server/mocks/chain_configurations_registry"
+	global_config_mock "github.com/pokt-network/gateway-server/mocks/global_config"
+	node_selector_mock "github.com/pokt-network/gateway-server/mocks/node_selector"
+	pocket_service_mock "github.com/pokt-network/gateway-server/mocks/pocket_service"
+	session_registry_mock "github.com/pokt-network/gateway-server/mocks/session_registry"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
-	"pokt_gateway_server/internal/db_query"
-	qos_models "pokt_gateway_server/internal/node_selector_service/models"
-	apps_registry_mock "pokt_gateway_server/mocks/apps_registry"
-	chain_configurations_registry_mock "pokt_gateway_server/mocks/chain_configurations_registry"
-	global_config_mock "pokt_gateway_server/mocks/global_config"
-	node_selector_mock "pokt_gateway_server/mocks/node_selector"
-	pocket_service_mock "pokt_gateway_server/mocks/pocket_service"
-	session_registry_mock "pokt_gateway_server/mocks/session_registry"
 	"time"
 
-	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
+	"github.com/pokt-network/gateway-server/pkg/pokt/pokt_v0/models"
 	"testing"
 )
 

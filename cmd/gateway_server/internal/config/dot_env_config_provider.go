@@ -3,8 +3,8 @@ package config
 import (
 	"fmt"
 	"github.com/joho/godotenv"
+	"github.com/pokt-network/gateway-server/internal/global_config"
 	"os"
-	"pokt_gateway_server/internal/global_config"
 	"strconv"
 	"time"
 )

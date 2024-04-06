@@ -2,11 +2,11 @@ package pokt_v0
 
 import (
 	"errors"
+	"github.com/pokt-network/gateway-server/pkg/common"
+	"github.com/pokt-network/gateway-server/pkg/pokt/pokt_v0/models"
 	"github.com/pquerna/ffjson/ffjson"
 	"github.com/valyala/fasthttp"
 	"math/rand"
-	"pokt_gateway_server/pkg/common"
-	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
 	"time"
 )
 
