@@ -86,8 +86,3 @@ Queries are added inside [queries.sql](internal%2Fdb_query%2Fqueries.sql) and th
 - **internal:** Shared internal folder for all binaries
 - **pkg:** Distributable dependencies
 - **docs:** Project documentation and specifications
-
-### Why It's More Efficient/Faster
-1. **FastHTTP:** This library is designed for high-performance scenarios, providing a faster alternative to standard HTTP clients. Its concurrency-focused design allows our Pocket client to handle multiple requests concurrently, improving overall responsiveness.
-2. **FastJSON:** The use of FastJSON ensures swift and efficient JSON serialization and deserialization. This directly contributes to reduced processing times, making our Pocket client an excellent choice for high-scale web traffic.
-
