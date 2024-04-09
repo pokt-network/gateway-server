@@ -4,13 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jellydator/ttlcache/v3"
+	"github.com/pokt-network/gateway-server/internal/apps_registry"
+	qos_models "github.com/pokt-network/gateway-server/internal/node_selector_service/models"
+	"github.com/pokt-network/gateway-server/pkg/pokt/pokt_v0"
+	"github.com/pokt-network/gateway-server/pkg/pokt/pokt_v0/models"
+	"github.com/pokt-network/gateway-server/pkg/ttl_cache"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
-	"pokt_gateway_server/internal/apps_registry"
-	qos_models "pokt_gateway_server/internal/node_selector_service/models"
-	"pokt_gateway_server/pkg/pokt/pokt_v0"
-	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
-	"pokt_gateway_server/pkg/ttl_cache"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -46,8 +46,9 @@ func init() {
 
 	histogramSessionRequestLatency = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name: "cached_client_session_request_latency",
-			Help: "percentile on the request to get a session",
+			Buckets: []float64{.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10, 15, 20, 30, 40, 50, 60},
+			Name:    "cached_client_session_request_latency",
+			Help:    "percentile on the request to get a session",
 		},
 		[]string{"cached"},
 	)
@@ -116,7 +117,7 @@ func (c *CachedSessionRegistryService) GetSession(req *models.GetSessionRequest)
 	startTime := time.Now()
 	// Measure end to end latency for send relay
 	defer func() {
-		histogramSessionRequestLatency.WithLabelValues(strconv.FormatBool(isCached)).Observe(float64(time.Since(startTime)))
+		histogramSessionRequestLatency.WithLabelValues(strconv.FormatBool(isCached)).Observe(time.Since(startTime).Seconds())
 	}()
 
 	if isCached {

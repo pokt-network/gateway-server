@@ -2,7 +2,7 @@
 package models
 
 import (
-	"pokt_gateway_server/pkg/common"
+	"github.com/pokt-network/gateway-server/pkg/common"
 )
 
 type AAT struct {

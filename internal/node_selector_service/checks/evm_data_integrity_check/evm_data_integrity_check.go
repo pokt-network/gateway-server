@@ -3,11 +3,11 @@ package evm_data_integrity_check
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/pokt-network/gateway-server/internal/node_selector_service/checks"
+	"github.com/pokt-network/gateway-server/internal/node_selector_service/models"
+	"github.com/pokt-network/gateway-server/pkg/common"
 	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
-	"pokt_gateway_server/internal/node_selector_service/checks"
-	"pokt_gateway_server/internal/node_selector_service/models"
-	"pokt_gateway_server/pkg/common"
 	"strconv"
 	"time"
 )
@@ -107,6 +107,11 @@ func (c *EvmDataIntegrityCheck) Perform() {
 	}
 
 	majorityBlockHash := findMajorityBlockHash(nodeResponseCounts)
+
+	// Blcok hash must not be empty
+	if majorityBlockHash == "" {
+		return
+	}
 
 	// Penalize other node operators with a timeout if they don't attest with same block hash.
 	for _, nodeResp := range nodeResponsePairs {

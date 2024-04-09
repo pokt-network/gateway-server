@@ -3,12 +3,12 @@
 package session_registry_mock
 
 import (
-	models "pokt_gateway_server/internal/node_selector_service/models"
-	pokt_v0models "pokt_gateway_server/pkg/pokt/pokt_v0/models"
+	models "github.com/pokt-network/gateway-server/internal/node_selector_service/models"
+	pokt_v0models "github.com/pokt-network/gateway-server/pkg/pokt/pokt_v0/models"
 
 	mock "github.com/stretchr/testify/mock"
 
-	session_registry "pokt_gateway_server/internal/session_registry"
+	session_registry "github.com/pokt-network/gateway-server/internal/session_registry"
 
 	ttlcache "github.com/jellydator/ttlcache/v3"
 )

@@ -1,6 +1,6 @@
 package checks
 
-import "pokt_gateway_server/internal/chain_configurations_registry"
+import "github.com/pokt-network/gateway-server/internal/chain_configurations_registry"
 
 // GetBlockHeightTolerance - helper function to retrieve block height tolerance across checks
 func GetBlockHeightTolerance(chainConfiguration chain_configurations_registry.ChainConfigurationsService, chainId string, defaultValue int) int {

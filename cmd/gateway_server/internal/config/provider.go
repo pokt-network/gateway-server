@@ -1,7 +1,7 @@
 package config
 
 import (
-	"pokt_gateway_server/internal/global_config"
+	"github.com/pokt-network/gateway-server/internal/global_config"
 )
 
 type GatewayServerProvider interface {

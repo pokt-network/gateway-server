@@ -3,25 +3,26 @@ package relayer
 import (
 	"errors"
 	"fmt"
+	"github.com/pokt-network/gateway-server/internal/apps_registry"
+	"github.com/pokt-network/gateway-server/internal/chain_configurations_registry"
+	"github.com/pokt-network/gateway-server/internal/global_config"
+	"github.com/pokt-network/gateway-server/internal/node_selector_service"
+	"github.com/pokt-network/gateway-server/internal/node_selector_service/checks"
+	"github.com/pokt-network/gateway-server/internal/session_registry"
+	"github.com/pokt-network/gateway-server/pkg/common"
+	"github.com/pokt-network/gateway-server/pkg/pokt/pokt_v0"
+	"github.com/pokt-network/gateway-server/pkg/pokt/pokt_v0/models"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
-	"pokt_gateway_server/internal/apps_registry"
-	"pokt_gateway_server/internal/chain_configurations_registry"
-	"pokt_gateway_server/internal/global_config"
-	"pokt_gateway_server/internal/node_selector_service"
-	"pokt_gateway_server/internal/node_selector_service/checks"
-	"pokt_gateway_server/internal/session_registry"
-	"pokt_gateway_server/pkg/common"
-	"pokt_gateway_server/pkg/pokt/pokt_v0"
-	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
 	"strconv"
 	"time"
 )
 
 var (
-	counterRelayRequest          *prometheus.CounterVec
-	histogramRelayRequestLatency prometheus.Histogram
+	counterRelayRequest                      *prometheus.CounterVec
+	histogramRelayRequestLatency             *prometheus.HistogramVec
+	pocketClientHistogramRelayRequestLatency *prometheus.HistogramVec
 )
 
 const (
@@ -40,15 +41,25 @@ func init() {
 			Name: "relay_counter",
 			Help: "Request to send an actual relay and if it succeeded",
 		},
-		[]string{"success", "altruist", "reason"},
+		[]string{"success", "altruist", "reason", "chain_id"},
 	)
-	histogramRelayRequestLatency = prometheus.NewHistogram(
+	histogramRelayRequestLatency = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name: "relay_latency",
-			Help: "percentile on the request to send a relay",
+			Buckets: []float64{.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10, 15, 20, 30, 40, 50, 60},
+			Name:    "relay_latency",
+			Help:    "percentile on the request on latency to select a node, sign a request and send it to the network",
 		},
+		[]string{"success", "altruist", "chain_id"},
 	)
-	prometheus.MustRegister(counterRelayRequest, histogramRelayRequestLatency)
+	pocketClientHistogramRelayRequestLatency = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Buckets: []float64{.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10, 15, 20, 30, 40, 50, 60},
+			Name:    "pocket_client_relay_latency",
+			Help:    "percentile on the request on latency to sign a request and send it to the network",
+		},
+		[]string{"success", "altruist", "chain_id"},
+	)
+	prometheus.MustRegister(counterRelayRequest, histogramRelayRequestLatency, pocketClientHistogramRelayRequestLatency)
 }
 
 type Relayer struct {
@@ -59,10 +70,11 @@ type Relayer struct {
 	nodeSelector               node_selector_service.NodeSelectorService
 	applicationRegistry        apps_registry.AppsRegistryService
 	httpRequester              httpRequester
+	userAgent                  string
 	logger                     *zap.Logger
 }
 
-func NewRelayer(pocketService pokt_v0.PocketService, sessionRegistry session_registry.SessionRegistryService, applicationRegistry apps_registry.AppsRegistryService, nodeSelector node_selector_service.NodeSelectorService, altruistRegistry chain_configurations_registry.ChainConfigurationsService, globalConfigProvider global_config.GlobalConfigProvider, logger *zap.Logger) *Relayer {
+func NewRelayer(pocketService pokt_v0.PocketService, sessionRegistry session_registry.SessionRegistryService, applicationRegistry apps_registry.AppsRegistryService, nodeSelector node_selector_service.NodeSelectorService, altruistRegistry chain_configurations_registry.ChainConfigurationsService, userAgent string, globalConfigProvider global_config.GlobalConfigProvider, logger *zap.Logger) *Relayer {
 	return &Relayer{
 		pocketClient:               pocketService,
 		sessionRegistry:            sessionRegistry,
@@ -72,26 +84,32 @@ func NewRelayer(pocketService pokt_v0.PocketService, sessionRegistry session_reg
 		nodeSelector:               nodeSelector,
 		httpRequester:              fastHttpRequester{},
 		globalConfigProvider:       globalConfigProvider,
+		userAgent:                  userAgent,
 	}
 }
 
 func (r *Relayer) SendRelay(req *models.SendRelayRequest) (*models.SendRelayResponse, error) {
 
+	success := false
+	altruist := false
+
 	startTime := time.Now()
 	// Measure end to end latency for send relay
 	defer func() {
-		histogramRelayRequestLatency.Observe(float64(time.Since(startTime)))
+		histogramRelayRequestLatency.WithLabelValues(strconv.FormatBool(success), strconv.FormatBool(altruist), req.Chain).Observe(time.Since(startTime).Seconds())
 	}()
 
 	rsp, err := r.sendNodeSelectorRelay(req)
 
 	// Node selector relay was successful
 	if err == nil {
-		counterRelayRequest.WithLabelValues("true", "false", "").Inc()
+		success = true
+		counterRelayRequest.WithLabelValues("true", "false", "", req.Chain).Inc()
 		return rsp, nil
 	}
 
-	counterRelayRequest.WithLabelValues("false", "true", reasonRelayFailedPocketErr).Inc()
+	altruist = true
+	counterRelayRequest.WithLabelValues("false", "true", reasonRelayFailedPocketErr, req.Chain).Inc()
 
 	r.logger.Sugar().Errorw("failed to send to pokt", "poktErr", err)
 	altruistRsp, altruistErr := r.altruistRelay(req)
@@ -116,13 +134,19 @@ func (r *Relayer) sendNodeSelectorRelay(req *models.SendRelayRequest) (*models.S
 		return nil, err
 	}
 
-	start := time.Now()
+	startRequestTime := time.Now()
+
 	rsp, err := r.pocketClient.SendRelay(req)
-	node.GetLatencyTracker().RecordMeasurement(float64(time.Now().Sub(start).Milliseconds()))
+
+	// Record latency to prom and latency tracker
+	latency := time.Now().Sub(startRequestTime)
+	pocketClientHistogramRelayRequestLatency.WithLabelValues(strconv.FormatBool(err == nil), "false", req.Chain).Observe(latency.Seconds())
+	node.GetLatencyTracker().RecordMeasurement(float64(latency.Milliseconds()))
 	// Node returned an error, potentially penalize the node operator dependent on error
 	if err != nil {
 		checks.DefaultPunishNode(err, node, r.logger)
 	}
+
 	return rsp, err
 }
 
@@ -145,7 +169,7 @@ func (r *Relayer) sendRandomNodeRelay(req *models.SendRelayRequest) (*models.Sen
 	})
 
 	if err != nil {
-		counterRelayRequest.WithLabelValues("false", "true", reasonRelayFailedSessionErr).Inc()
+		counterRelayRequest.WithLabelValues("false", "true", reasonRelayFailedSessionErr, req.Chain).Inc()
 		return nil, err
 	}
 
@@ -163,7 +187,7 @@ func (r *Relayer) sendRandomNodeRelay(req *models.SendRelayRequest) (*models.Sen
 	rsp, err := r.pocketClient.SendRelay(req)
 
 	// record if relay was successful
-	counterRelayRequest.WithLabelValues(strconv.FormatBool(err == nil), "false", "").Inc()
+	counterRelayRequest.WithLabelValues(strconv.FormatBool(err == nil), "false", "", req.Chain).Inc()
 
 	return rsp, err
 }
@@ -186,6 +210,7 @@ func (r *Relayer) altruistRelay(req *models.SendRelayRequest) (*models.SendRelay
 	}()
 
 	requestTimeout := r.getAltruistRequestTimeout(req.Chain)
+	request.Header.SetUserAgent(r.userAgent)
 	request.SetRequestURI(chainConfig.AltruistUrl.String)
 
 	if req.Payload.Method == "POST" {
@@ -195,7 +220,7 @@ func (r *Relayer) altruistRelay(req *models.SendRelayRequest) (*models.SendRelay
 	err := r.httpRequester.DoTimeout(request, response, requestTimeout)
 
 	success := err == nil
-	counterRelayRequest.WithLabelValues(strconv.FormatBool(success), "true", "").Inc()
+	counterRelayRequest.WithLabelValues(strconv.FormatBool(success), "true", "", req.Chain).Inc()
 
 	if !success {
 		return nil, err

@@ -1,7 +1,7 @@
 package pokt_v0
 
 import (
-	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
+	"github.com/pokt-network/gateway-server/pkg/pokt/pokt_v0/models"
 )
 
 type PocketRelayer interface {

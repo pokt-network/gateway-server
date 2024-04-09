@@ -2,11 +2,11 @@ package controllers
 
 import (
 	"fmt"
+	"github.com/pokt-network/gateway-server/cmd/gateway_server/internal/common"
+	"github.com/pokt-network/gateway-server/pkg/pokt/pokt_v0"
+	"github.com/pokt-network/gateway-server/pkg/pokt/pokt_v0/models"
 	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
-	"pokt_gateway_server/cmd/gateway_server/internal/common"
-	"pokt_gateway_server/pkg/pokt/pokt_v0"
-	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
 	"strings"
 )
 

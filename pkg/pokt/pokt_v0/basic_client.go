@@ -2,11 +2,11 @@ package pokt_v0
 
 import (
 	"errors"
+	"github.com/pokt-network/gateway-server/pkg/common"
+	"github.com/pokt-network/gateway-server/pkg/pokt/pokt_v0/models"
 	"github.com/pquerna/ffjson/ffjson"
 	"github.com/valyala/fasthttp"
 	"math/rand"
-	"pokt_gateway_server/pkg/common"
-	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
 	"time"
 )
 
@@ -24,6 +24,7 @@ const (
 type BasicClient struct {
 	fullNodeHost         string
 	globalRequestTimeout time.Duration
+	userAgent            string
 }
 
 // NewBasicClient creates a new BasicClient instance.
@@ -35,13 +36,14 @@ type BasicClient struct {
 // Returns:
 //   - (*BasicClient): New BasicClient instance.
 //   - (error): Error, if any.
-func NewBasicClient(fullNodeHost string, timeout time.Duration) (*BasicClient, error) {
+func NewBasicClient(fullNodeHost string, userAgent string, timeout time.Duration) (*BasicClient, error) {
 	if len(fullNodeHost) == 0 {
 		return nil, models.ErrMissingFullNodes
 	}
 	return &BasicClient{
 		fullNodeHost:         fullNodeHost,
 		globalRequestTimeout: timeout,
+		userAgent:            userAgent,
 	}, nil
 }
 
@@ -163,6 +165,8 @@ func (r BasicClient) makeRequest(endpoint string, method string, requestData any
 		fasthttp.ReleaseRequest(request)
 		fasthttp.ReleaseResponse(response)
 	}()
+
+	request.Header.SetUserAgent(r.userAgent)
 
 	if hostOverride != nil {
 		request.SetRequestURI(*hostOverride + endpoint)

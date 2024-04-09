@@ -1,10 +1,10 @@
 package checks
 
 import (
+	"github.com/pokt-network/gateway-server/internal/node_selector_service/models"
+	relayer_models "github.com/pokt-network/gateway-server/pkg/pokt/pokt_v0/models"
 	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
-	"pokt_gateway_server/internal/node_selector_service/models"
-	relayer_models "pokt_gateway_server/pkg/pokt/pokt_v0/models"
 	"strings"
 	"time"
 )
@@ -17,7 +17,7 @@ const kickOutSessionPenalty = time.Hour * 24
 
 var (
 	errsKickSession = []string{"failed to find correct servicer PK", "the max number of relays serviced for this node is exceeded", "the evidence is sealed, either max relays reached or claim already submitted"}
-	errsTimeout     = []string{"connection refused", "the request block height is out of sync with the current block height", "no route to host", "unexpected EOF", "i/o timeout", "tls: failed to verify certificate", "no such host", "the block height passed is invalid", "request timeout"}
+	errsTimeout     = []string{"connection refused", "the request block height is out of sync with the current block height", "no route to host", "unexpected EOF", "i/o timeout", "tls: failed to verify certificate", "no such host", "the block height passed is invalid", "request timeout", "error executing the http request"}
 )
 
 func doesErrorContains(errsSubString []string, err error) bool {

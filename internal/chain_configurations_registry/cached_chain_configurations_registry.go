@@ -2,8 +2,8 @@ package chain_configurations_registry
 
 import (
 	"context"
+	"github.com/pokt-network/gateway-server/internal/db_query"
 	"go.uber.org/zap"
-	"pokt_gateway_server/internal/db_query"
 	"sync"
 	"time"
 )

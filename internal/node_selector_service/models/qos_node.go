@@ -2,7 +2,7 @@ package models
 
 import (
 	"github.com/influxdata/tdigest"
-	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
+	"github.com/pokt-network/gateway-server/pkg/pokt/pokt_v0/models"
 	"sync"
 	"time"
 )

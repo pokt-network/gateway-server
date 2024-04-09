@@ -3,17 +3,17 @@ package controllers
 import (
 	"context"
 	"github.com/jackc/pgtype"
+	"github.com/pokt-network/gateway-server/cmd/gateway_server/internal/common"
+	"github.com/pokt-network/gateway-server/cmd/gateway_server/internal/models"
+	"github.com/pokt-network/gateway-server/cmd/gateway_server/internal/transform"
+	"github.com/pokt-network/gateway-server/internal/apps_registry"
+	"github.com/pokt-network/gateway-server/internal/db_query"
+	"github.com/pokt-network/gateway-server/internal/global_config"
+	"github.com/pokt-network/gateway-server/pkg/pokt/pokt_v0"
+	pokt_models "github.com/pokt-network/gateway-server/pkg/pokt/pokt_v0/models"
 	"github.com/pquerna/ffjson/ffjson"
 	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
-	"pokt_gateway_server/cmd/gateway_server/internal/common"
-	"pokt_gateway_server/cmd/gateway_server/internal/models"
-	"pokt_gateway_server/cmd/gateway_server/internal/transform"
-	"pokt_gateway_server/internal/apps_registry"
-	"pokt_gateway_server/internal/db_query"
-	"pokt_gateway_server/internal/global_config"
-	"pokt_gateway_server/pkg/pokt/pokt_v0"
-	pokt_models "pokt_gateway_server/pkg/pokt/pokt_v0/models"
 )
 
 type addApplicationBody struct {

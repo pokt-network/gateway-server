@@ -1,6 +1,6 @@
 package apps_registry
 
-import "pokt_gateway_server/internal/apps_registry/models"
+import "github.com/pokt-network/gateway-server/internal/apps_registry/models"
 
 type AppsRegistryService interface {
 	GetApplications() []*models.PoktApplicationSigner

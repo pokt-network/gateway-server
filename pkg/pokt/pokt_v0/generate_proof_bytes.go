@@ -2,8 +2,8 @@ package pokt_v0
 
 import (
 	"encoding/hex"
-	"pokt_gateway_server/pkg/common"
-	"pokt_gateway_server/pkg/pokt/pokt_v0/models"
+	"github.com/pokt-network/gateway-server/pkg/common"
+	"github.com/pokt-network/gateway-server/pkg/pokt/pokt_v0/models"
 )
 
 // generateRelayProof generates a relay proof.

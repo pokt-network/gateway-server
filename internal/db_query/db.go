@@ -9,9 +9,9 @@ import (
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
+	root "github.com/pokt-network/gateway-server"
+	"github.com/pokt-network/gateway-server/internal/global_config"
 	"go.uber.org/zap"
-	root "pokt_gateway_server"
-	"pokt_gateway_server/internal/global_config"
 )
 
 // InitDB - runs DB migrations and provides a code-generated query interface
