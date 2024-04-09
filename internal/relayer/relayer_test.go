@@ -37,7 +37,7 @@ func (suite *RelayerTestSuite) SetupTest() {
 	suite.mockChainConfigurationsService = new(chain_configurations_registry_mock.ChainConfigurationsService)
 	suite.mockAppRegistry = new(apps_registry_mock.AppsRegistryService)
 	suite.mockConfigProvider = new(global_config_mock.GlobalConfigProvider)
-	suite.relayer = NewRelayer(suite.mockPocketService, suite.mockSessionRegistryService, suite.mockAppRegistry, suite.mockNodeSelectorService, suite.mockChainConfigurationsService, suite.mockConfigProvider, zap.NewNop())
+	suite.relayer = NewRelayer(suite.mockPocketService, suite.mockSessionRegistryService, suite.mockAppRegistry, suite.mockNodeSelectorService, suite.mockChainConfigurationsService, "", suite.mockConfigProvider, zap.NewNop())
 }
 
 func (suite *RelayerTestSuite) TestNodeSelectorRelay() {

@@ -70,10 +70,11 @@ type Relayer struct {
 	nodeSelector               node_selector_service.NodeSelectorService
 	applicationRegistry        apps_registry.AppsRegistryService
 	httpRequester              httpRequester
+	userAgent                  string
 	logger                     *zap.Logger
 }
 
-func NewRelayer(pocketService pokt_v0.PocketService, sessionRegistry session_registry.SessionRegistryService, applicationRegistry apps_registry.AppsRegistryService, nodeSelector node_selector_service.NodeSelectorService, altruistRegistry chain_configurations_registry.ChainConfigurationsService, globalConfigProvider global_config.GlobalConfigProvider, logger *zap.Logger) *Relayer {
+func NewRelayer(pocketService pokt_v0.PocketService, sessionRegistry session_registry.SessionRegistryService, applicationRegistry apps_registry.AppsRegistryService, nodeSelector node_selector_service.NodeSelectorService, altruistRegistry chain_configurations_registry.ChainConfigurationsService, userAgent string, globalConfigProvider global_config.GlobalConfigProvider, logger *zap.Logger) *Relayer {
 	return &Relayer{
 		pocketClient:               pocketService,
 		sessionRegistry:            sessionRegistry,
@@ -83,6 +84,7 @@ func NewRelayer(pocketService pokt_v0.PocketService, sessionRegistry session_reg
 		nodeSelector:               nodeSelector,
 		httpRequester:              fastHttpRequester{},
 		globalConfigProvider:       globalConfigProvider,
+		userAgent:                  userAgent,
 	}
 }
 
@@ -208,6 +210,7 @@ func (r *Relayer) altruistRelay(req *models.SendRelayRequest) (*models.SendRelay
 	}()
 
 	requestTimeout := r.getAltruistRequestTimeout(req.Chain)
+	request.Header.SetUserAgent(r.userAgent)
 	request.SetRequestURI(chainConfig.AltruistUrl.String)
 
 	if req.Payload.Method == "POST" {
