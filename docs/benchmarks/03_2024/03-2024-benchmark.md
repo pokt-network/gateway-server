@@ -89,7 +89,7 @@ This deep dive revealed that the bottleneck does not lie in QoS/Node selection, 
 The baseline latency overhead therefore is attributed to protocol requirements (hashing/signing a relay) and hardware specifications. To mitigate this latency, upgrading to more powerful CPUs or dedicated machines should decrease this latency. Nodies currently uses the AMD 5950X CPU for their gateway servers.
 
 ### Summary
-This benchmark provides a comprehensive quantitative assessment of the gateway server's performance under varying loads within the POKT Testnet environment. Analysis of CPU metrics reveals a slight uptick in CPU utilization from approximately 10% to around 125% at peak load of 1,000 RPS, with a maximum observed utilization of 800%. Memory metrics also show a similar pattern, with memory utilization increasing from around 120MiB to approximately 280MiB at peak load.
+This benchmark provides a comprehensive quantitative assessment of the gateway server's performance under varying loads within the POKT Testnet environment. Analysis of CPU metrics reveals a slight uptick in CPU utilization from approximately 10% to around 125% at peak load of 1,000 RPS (max capacity of 800%). Memory metrics also show a similar pattern, with memory utilization increasing from around 120MiB to approximately 280MiB at peak load.
 
 Despite the increase in load, the gateway server demonstrates resilience, maintaining consistent latency across different request rates.
 
