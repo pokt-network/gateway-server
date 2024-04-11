@@ -15,7 +15,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
+	"net/url"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -140,6 +142,7 @@ func (r *Relayer) sendNodeSelectorRelay(req *models.SendRelayRequest) (*models.S
 
 	// Record latency to prom and latency tracker
 	latency := time.Now().Sub(startRequestTime)
+
 	pocketClientHistogramRelayRequestLatency.WithLabelValues(strconv.FormatBool(err == nil), "false", req.Chain).Observe(latency.Seconds())
 	node.GetLatencyTracker().RecordMeasurement(float64(latency.Milliseconds()))
 	// Node returned an error, potentially penalize the node operator dependent on error
@@ -252,4 +255,32 @@ func (r *Relayer) getPocketRequestTimeout(chainId string) time.Duration {
 		return r.globalConfigProvider.GetPoktRPCRequestTimeout()
 	}
 	return configTime
+}
+
+func extractHostFromServiceUrl(urlStr string) string {
+	parsedURL, err := url.Parse(urlStr)
+	if err != nil {
+		return "" // return empty string or handle error
+	}
+
+	// Get the hostname from the parsed URL
+	hostname := parsedURL.Hostname()
+
+	// Find the last occurrence of "." in the hostname
+	index := strings.LastIndex(hostname, ".")
+
+	// If there is no "." or it's the first character, return the hostname itself
+	if index == -1 || index == 0 {
+		return hostname
+	}
+
+	// Find the index of the second-to-last occurrence of "." (root domain separator)
+	index = strings.LastIndex(hostname[:index-1], ".")
+	if index == -1 {
+		// If there is only one ".", return the hostname itself
+		return hostname
+	}
+
+	// Extract and return the root domain
+	return hostname[index+1:]
 }
