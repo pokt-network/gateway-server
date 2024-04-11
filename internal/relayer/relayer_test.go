@@ -49,6 +49,7 @@ func (suite *RelayerTestSuite) TestNodeSelectorRelay() {
 		request          *models.SendRelayRequest
 		setupMocks       func(*models.SendRelayRequest)
 		expectedResponse *models.SendRelayResponse
+		expectedNodeHost string
 		expectedError    error
 	}{
 		{
@@ -61,6 +62,7 @@ func (suite *RelayerTestSuite) TestNodeSelectorRelay() {
 				suite.mockNodeSelectorService.EXPECT().FindNode("1234").Return(nil, false)
 			},
 			expectedResponse: nil,
+			expectedNodeHost: "",
 			expectedError:    errSelectNodeFail,
 		},
 		{
@@ -72,7 +74,7 @@ func (suite *RelayerTestSuite) TestNodeSelectorRelay() {
 			setupMocks: func(request *models.SendRelayRequest) {
 
 				signer := &models.Ed25519Account{}
-				node := &models.Node{PublicKey: "123"}
+				node := &models.Node{PublicKey: "123", ServiceUrl: "http://complex.subdomain.root.com/test/123"}
 				session := &models.Session{}
 				suite.mockNodeSelectorService.EXPECT().FindNode("1234").Return(qos_models.NewQosNode(node, session, signer), true)
 				// expect sendRelay to have same parameters as find node, otherwise validation will fail
@@ -84,6 +86,7 @@ func (suite *RelayerTestSuite) TestNodeSelectorRelay() {
 					Session:            session,
 				}).Return(expectedResponse, nil)
 			},
+			expectedNodeHost: "root.com",
 			expectedResponse: expectedResponse,
 			expectedError:    nil,
 		},
@@ -97,12 +100,12 @@ func (suite *RelayerTestSuite) TestNodeSelectorRelay() {
 
 			tc.setupMocks(tc.request) // setup mocks
 
-			rsp, err := suite.relayer.sendNodeSelectorRelay(tc.request)
+			rsp, host, err := suite.relayer.sendNodeSelectorRelay(tc.request)
 
 			// assert results
 			suite.Equal(tc.expectedResponse, rsp)
+			suite.Equal(tc.expectedNodeHost, host)
 			suite.Equal(tc.expectedError, err)
-
 		})
 	}
 
