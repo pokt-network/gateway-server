@@ -33,10 +33,24 @@ type CheckJob interface {
 ```
 Under the hood, the NodeSelectorService is responsible for asynchronously executing all the initialized `CheckJobs`.
 
+### Existing QoS checks:
+- **Height Check:** The general flow would be:
+   1) Query all node operators height, 
+   2) compares heights with other node operators within a specific threshold
+   3) filters out node operators that exceed the configurable block height tolerance.
+
+- **Data Integrity Check:** The general flow would be: 
+   1) Retrieve a unique block identifier (i.e block hash or total block tx count, etc) with a configurable block offset for randomness, 
+   2) Query other node operators for the same block identifier
+   3) filter out other node operators that return a different identifier.
+
 Some existing implementations of Checks can be found in:
 1. [evm_data_integrity_check.go](..%2Finternal%2Fnode_selector_service%2Fchecks%2Fevm_data_integrity_check%2Fevm_data_integrity_check.go)
 2. [evm_height_check.go](..%2Finternal%2Fnode_selector_service%2Fchecks%2Fevm_height_check%2Fevm_height_check.go)
-
+3. [pokt_height_check.go](..%2Finternal%2Fnode_selector_service%2Fchecks%2Fpokt_height_check%2Fpokt_height_check.go)
+4. [pokt_data_integrity_check.go](..%2Finternal%2Fnode_selector_service%2Fchecks%2Fpokt_data_integrity_check%2Fpokt_data_integrity_check.go)
+5. [solana_height_check.go](..%2Finternal%2Fnode_selector_service%2Fchecks%2Fsolana_height_check%2Fsolana_height_check.go)
+6. [solana_data_integrity_check.go](..%2Finternal%2Fnode_selector_service%2Fchecks%2Fsolana_data_integrity_check%2Fsolana_data_integrity_check.go)
 ### Adding custom QoS checks
 
 Every custom check must conform to the `CheckJob` interface. The gateway server provides a base check:

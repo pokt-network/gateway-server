@@ -14,6 +14,11 @@ type GlobalConfigProvider interface {
 	EnvironmentProvider
 	PoktNodeConfigProvider
 	AltruistConfigProvider
+	PromMetricsProvider
+}
+
+type PromMetricsProvider interface {
+	ShouldEmitServiceUrl() bool
 }
 
 type SecretProvider interface {

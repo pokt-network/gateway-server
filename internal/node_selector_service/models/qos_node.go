@@ -18,6 +18,7 @@ const (
 
 const (
 	chainSolanaCustom = "C006"
+	chainPokt         = "0001"
 	chainSolana       = "0006"
 )
 const (
@@ -69,7 +70,7 @@ type QosNode struct {
 }
 
 func NewQosNode(morseNode *models.Node, pocketSession *models.Session, appSigner *models.Ed25519Account) *QosNode {
-	return &QosNode{MorseNode: morseNode, MorseSession: pocketSession, MorseSigner: appSigner, LatencyTracker: &LatencyTracker{tDigest: tdigest.NewWithCompression(1000)}}
+	return &QosNode{MorseNode: morseNode, MorseSession: pocketSession, MorseSigner: appSigner, LatencyTracker: &LatencyTracker{tDigest: tdigest.NewWithCompression(latencyCompression)}}
 }
 
 func (n *QosNode) IsHealthy() bool {
@@ -134,8 +135,12 @@ func (n *QosNode) IsSolanaChain() bool {
 	return chainId == chainSolana || chainId == chainSolanaCustom
 }
 
+func (n *QosNode) IsPoktChain() bool {
+	return n.GetChain() == chainPokt
+}
+
 func (n *QosNode) IsEvmChain() bool {
-	return !n.IsSolanaChain()
+	return !n.IsSolanaChain() && !n.IsPoktChain()
 }
 
 func (n *QosNode) GetTimeoutReason() TimeoutReason {

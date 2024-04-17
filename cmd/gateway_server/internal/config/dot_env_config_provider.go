@@ -15,6 +15,7 @@ const (
 
 // Environment variable names
 const (
+	emitServiceUrlPromMetricsEnv     = "EMIT_SERVICE_URL_PROM_METRICS"
 	poktRPCFullHostEnv               = "POKT_RPC_FULL_HOST"
 	httpServerPortEnv                = "HTTP_SERVER_PORT"
 	poktRPCTimeoutEnv                = "POKT_RPC_TIMEOUT"
@@ -36,6 +37,7 @@ type DotEnvGlobalConfigProvider struct {
 	poktApplicationsEncryptionKey string
 	databaseConnectionUrl         string
 	apiKey                        string
+	emitServiceUrlPromMetrics     bool
 	altruistRequestTimeout        time.Duration
 }
 
@@ -108,7 +110,14 @@ func NewDotEnvConfigProvider() *DotEnvGlobalConfigProvider {
 		altruistRequestTimeoutDuration = defaultAltruistRequestTimeout
 	}
 
+	emitServiceUrlPromMetrics, err := strconv.ParseBool(getEnvVar(emitServiceUrlPromMetricsEnv, "false"))
+
+	if err != nil {
+		emitServiceUrlPromMetrics = false
+	}
+
 	return &DotEnvGlobalConfigProvider{
+		emitServiceUrlPromMetrics:     emitServiceUrlPromMetrics,
 		poktRPCFullHost:               getEnvVar(poktRPCFullHostEnv, ""),
 		httpServerPort:                uint(httpServerPort),
 		poktRPCRequestTimeout:         poktRPCTimeout,
