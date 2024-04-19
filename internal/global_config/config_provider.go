@@ -18,7 +18,7 @@ type GlobalConfigProvider interface {
 }
 
 type PromMetricsProvider interface {
-	ShouldEmitServiceUrl() bool
+	ShouldEmitServiceUrlPromMetrics() bool
 }
 
 type SecretProvider interface {

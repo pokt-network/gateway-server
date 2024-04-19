@@ -85,6 +85,11 @@ func (c DotEnvGlobalConfigProvider) GetAltruistRequestTimeout() time.Duration {
 	return c.altruistRequestTimeout
 }
 
+// ShouldEmitServiceUrl returns whether to emit service url tags as part of relay metrics.
+func (c DotEnvGlobalConfigProvider) ShouldEmitServiceUrlPromMetrics() bool {
+	return c.emitServiceUrlPromMetrics
+}
+
 // NewDotEnvConfigProvider creates a new instance of DotEnvGlobalConfigProvider.
 func NewDotEnvConfigProvider() *DotEnvGlobalConfigProvider {
 	_ = godotenv.Load()
