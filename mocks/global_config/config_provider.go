@@ -4,7 +4,6 @@ package global_config_mock
 
 import (
 	global_config "github.com/pokt-network/gateway-server/internal/global_config"
-
 	mock "github.com/stretchr/testify/mock"
 
 	time "time"
@@ -334,6 +333,51 @@ func (_c *GlobalConfigProvider_GetPoktRPCRequestTimeout_Call) Return(_a0 time.Du
 }
 
 func (_c *GlobalConfigProvider_GetPoktRPCRequestTimeout_Call) RunAndReturn(run func() time.Duration) *GlobalConfigProvider_GetPoktRPCRequestTimeout_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ShouldEmitServiceUrlPromMetrics provides a mock function with given fields:
+func (_m *GlobalConfigProvider) ShouldEmitServiceUrlPromMetrics() bool {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for ShouldEmitServiceUrlPromMetrics")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// GlobalConfigProvider_ShouldEmitServiceUrlPromMetrics_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ShouldEmitServiceUrlPromMetrics'
+type GlobalConfigProvider_ShouldEmitServiceUrlPromMetrics_Call struct {
+	*mock.Call
+}
+
+// ShouldEmitServiceUrlPromMetrics is a helper method to define mock.On call
+func (_e *GlobalConfigProvider_Expecter) ShouldEmitServiceUrlPromMetrics() *GlobalConfigProvider_ShouldEmitServiceUrlPromMetrics_Call {
+	return &GlobalConfigProvider_ShouldEmitServiceUrlPromMetrics_Call{Call: _e.mock.On("ShouldEmitServiceUrlPromMetrics")}
+}
+
+func (_c *GlobalConfigProvider_ShouldEmitServiceUrlPromMetrics_Call) Run(run func()) *GlobalConfigProvider_ShouldEmitServiceUrlPromMetrics_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *GlobalConfigProvider_ShouldEmitServiceUrlPromMetrics_Call) Return(_a0 bool) *GlobalConfigProvider_ShouldEmitServiceUrlPromMetrics_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *GlobalConfigProvider_ShouldEmitServiceUrlPromMetrics_Call) RunAndReturn(run func() bool) *GlobalConfigProvider_ShouldEmitServiceUrlPromMetrics_Call {
 	_c.Call.Return(run)
 	return _c
 }
