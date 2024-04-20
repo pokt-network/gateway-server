@@ -93,6 +93,11 @@ func (c DotEnvGlobalConfigProvider) ShouldEmitServiceUrlPromMetrics() bool {
 	return c.emitServiceUrlPromMetrics
 }
 
+// GetChainNetwork returns the current network, this can be useful for identifying the correct chain ids dependent on testnet or mainnet.
+func (c DotEnvGlobalConfigProvider) GetChainNetwork() chain_network.ChainNetwork {
+	return c.chainNetwork
+}
+
 // NewDotEnvConfigProvider creates a new instance of DotEnvGlobalConfigProvider.
 func NewDotEnvConfigProvider() *DotEnvGlobalConfigProvider {
 	_ = godotenv.Load()
