@@ -2,6 +2,7 @@ package node_selector_service
 
 import (
 	"github.com/pokt-network/gateway-server/internal/chain_configurations_registry"
+	"github.com/pokt-network/gateway-server/internal/global_config"
 	"github.com/pokt-network/gateway-server/internal/node_selector_service/checks"
 	"github.com/pokt-network/gateway-server/internal/node_selector_service/checks/evm_data_integrity_check"
 	"github.com/pokt-network/gateway-server/internal/node_selector_service/checks/evm_height_check"
@@ -33,10 +34,10 @@ type NodeSelectorClient struct {
 	checkJobs       []checks.CheckJob
 }
 
-func NewNodeSelectorService(sessionRegistry session_registry.SessionRegistryService, pocketRelayer pokt_v0.PocketRelayer, chainConfiguration chain_configurations_registry.ChainConfigurationsService, logger *zap.Logger) *NodeSelectorClient {
+func NewNodeSelectorService(sessionRegistry session_registry.SessionRegistryService, pocketRelayer pokt_v0.PocketRelayer, chainConfiguration chain_configurations_registry.ChainConfigurationsService, networkProvider global_config.ChainNetworkProvider, logger *zap.Logger) *NodeSelectorClient {
 
 	// base checks will share same node list and pocket relayer
-	baseCheck := checks.NewCheck(pocketRelayer, chainConfiguration)
+	baseCheck := checks.NewCheck(pocketRelayer, chainConfiguration, networkProvider)
 
 	// enabled checks
 	enabledChecks := []checks.CheckJob{

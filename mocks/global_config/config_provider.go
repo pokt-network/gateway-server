@@ -3,7 +3,9 @@
 package global_config_mock
 
 import (
+	chain_network "github.com/pokt-network/gateway-server/internal/chain_network"
 	global_config "github.com/pokt-network/gateway-server/internal/global_config"
+
 	mock "github.com/stretchr/testify/mock"
 
 	time "time"
@@ -113,20 +115,18 @@ func (_c *GlobalConfigProvider_GetAltruistRequestTimeout_Call) RunAndReturn(run 
 }
 
 // GetChainNetwork provides a mock function with given fields:
-func (_m *GlobalConfigProvider) GetChainNetwork() global_config.ChainNetworkProvider {
+func (_m *GlobalConfigProvider) GetChainNetwork() chain_network.ChainNetwork {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetChainNetwork")
 	}
 
-	var r0 global_config.ChainNetworkProvider
-	if rf, ok := ret.Get(0).(func() global_config.ChainNetworkProvider); ok {
+	var r0 chain_network.ChainNetwork
+	if rf, ok := ret.Get(0).(func() chain_network.ChainNetwork); ok {
 		r0 = rf()
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(global_config.ChainNetworkProvider)
-		}
+		r0 = ret.Get(0).(chain_network.ChainNetwork)
 	}
 
 	return r0
@@ -149,12 +149,12 @@ func (_c *GlobalConfigProvider_GetChainNetwork_Call) Run(run func()) *GlobalConf
 	return _c
 }
 
-func (_c *GlobalConfigProvider_GetChainNetwork_Call) Return(_a0 global_config.ChainNetworkProvider) *GlobalConfigProvider_GetChainNetwork_Call {
+func (_c *GlobalConfigProvider_GetChainNetwork_Call) Return(_a0 chain_network.ChainNetwork) *GlobalConfigProvider_GetChainNetwork_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *GlobalConfigProvider_GetChainNetwork_Call) RunAndReturn(run func() global_config.ChainNetworkProvider) *GlobalConfigProvider_GetChainNetwork_Call {
+func (_c *GlobalConfigProvider_GetChainNetwork_Call) RunAndReturn(run func() chain_network.ChainNetwork) *GlobalConfigProvider_GetChainNetwork_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -37,8 +37,8 @@ func (c *PoktHeightCheck) Name() string {
 
 func (c *PoktHeightCheck) Perform() {
 
-	// Session is not meant for EVM
-	if len(c.NodeList) == 0 || !c.NodeList[0].IsPoktChain() {
+	// Session is not meant for POKT
+	if len(c.NodeList) == 0 || !c.IsPoktChain(c.NodeList[0]) {
 		return
 	}
 	checks.PerformDefaultHeightCheck(c.Check, heightJsonPayload, "/v1/query/height", c.getHeightFromNodeResponse, c.logger)

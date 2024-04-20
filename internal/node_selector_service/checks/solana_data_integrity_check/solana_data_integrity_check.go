@@ -54,7 +54,7 @@ func (c *SolanaDataIntegrityCheck) SetNodes(nodes []*models.QosNode) {
 func (c *SolanaDataIntegrityCheck) Perform() {
 
 	// Session is not meant for Solana
-	if len(c.NodeList) == 0 || !c.NodeList[0].IsSolanaChain() {
+	if len(c.NodeList) == 0 || !c.IsSolanaChain(c.NodeList[0]) {
 		return
 	}
 	checks.PerformDataIntegrityCheck(c.Check, getBlockByNumberPayload, "", c.getBlockIdentifierFromNodeResponse, c.logger)

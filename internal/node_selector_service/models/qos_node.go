@@ -17,11 +17,6 @@ const (
 )
 
 const (
-	chainSolanaCustom = "C006"
-	chainPokt         = "0001"
-	chainSolana       = "0006"
-)
-const (
 	OutOfSyncTimeout     TimeoutReason = "out_of_sync_timeout"
 	DataIntegrityTimeout TimeoutReason = "invalid_data_timeout"
 	MaximumRelaysTimeout TimeoutReason = "maximum_relays_timeout"
@@ -128,19 +123,6 @@ func (n *QosNode) GetLastDataIntegrityCheckTime() time.Time {
 }
 func (n *QosNode) SetLastDataIntegrityCheckTime(lastDataIntegrityCheckTime time.Time) {
 	n.lastDataIntegrityCheckTime = lastDataIntegrityCheckTime
-}
-
-func (n *QosNode) IsSolanaChain() bool {
-	chainId := n.GetChain()
-	return chainId == chainSolana || chainId == chainSolanaCustom
-}
-
-func (n *QosNode) IsPoktChain() bool {
-	return n.GetChain() == chainPokt
-}
-
-func (n *QosNode) IsEvmChain() bool {
-	return !n.IsSolanaChain() && !n.IsPoktChain()
 }
 
 func (n *QosNode) GetTimeoutReason() TimeoutReason {

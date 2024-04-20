@@ -139,7 +139,7 @@ func NewDotEnvConfigProvider() *DotEnvGlobalConfigProvider {
 		environmentStage:              global_config.EnvironmentStage(getEnvVar(environmentStageEnv, "")),
 		poktApplicationsEncryptionKey: getEnvVar(poktApplicationsEncryptionKeyEnv, ""),
 		apiKey:                        getEnvVar(apiKey, ""),
-		chainNetwork:                  chain_network.ChainNetwork(getEnvVar(chainNetworkEnv, chain_network.MorseMainnet)),
+		chainNetwork:                  chain_network.ChainNetwork(getEnvVar(chainNetworkEnv, string(chain_network.MorseMainnet))),
 		altruistRequestTimeout:        altruistRequestTimeoutDuration,
 	}
 }

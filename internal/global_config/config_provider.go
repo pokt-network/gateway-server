@@ -1,6 +1,9 @@
 package global_config
 
-import "time"
+import (
+	"github.com/pokt-network/gateway-server/internal/chain_network"
+	"time"
+)
 
 type EnvironmentStage string
 
@@ -45,5 +48,5 @@ type AltruistConfigProvider interface {
 }
 
 type ChainNetworkProvider interface {
-	GetChainNetwork() ChainNetworkProvider
+	GetChainNetwork() chain_network.ChainNetwork
 }

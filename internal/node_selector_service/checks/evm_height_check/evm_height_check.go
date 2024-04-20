@@ -67,7 +67,7 @@ func (c *EvmHeightCheck) Name() string {
 func (c *EvmHeightCheck) Perform() {
 
 	// Session is not meant for EVM
-	if len(c.NodeList) == 0 || !c.NodeList[0].IsEvmChain() {
+	if len(c.NodeList) == 0 || !c.IsEvmChain(c.NodeList[0]) {
 		return
 	}
 	checks.PerformDefaultHeightCheck(c.Check, heightJsonPayload, "", c.getHeightFromNodeResponse, c.logger)

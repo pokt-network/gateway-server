@@ -38,7 +38,7 @@ func (c *SolanaHeightCheck) Name() string {
 func (c *SolanaHeightCheck) Perform() {
 
 	// Session is not meant for Solana
-	if len(c.NodeList) == 0 || !c.NodeList[0].IsSolanaChain() {
+	if len(c.NodeList) == 0 || !c.IsSolanaChain(c.NodeList[0]) {
 		return
 	}
 	checks.PerformDefaultHeightCheck(c.Check, heightJsonPayload, "", c.getHeightFromNodeResponse, c.logger)

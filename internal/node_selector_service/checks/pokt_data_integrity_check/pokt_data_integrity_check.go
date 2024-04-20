@@ -55,7 +55,7 @@ func (c *PoktDataIntegrityCheck) SetNodes(nodes []*models.QosNode) {
 func (c *PoktDataIntegrityCheck) Perform() {
 
 	// Session is not meant for POKT
-	if len(c.NodeList) == 0 || !c.NodeList[0].IsPoktChain() {
+	if len(c.NodeList) == 0 || !c.IsPoktChain(c.NodeList[0]) {
 		return
 	}
 	checks.PerformDataIntegrityCheck(c.Check, getBlockByNumberPayload, poktBlockTxEndpoint, c.getBlockIdentifierFromNodeResponse, c.logger)

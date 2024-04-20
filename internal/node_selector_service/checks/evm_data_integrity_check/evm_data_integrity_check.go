@@ -54,7 +54,7 @@ func (c *EvmDataIntegrityCheck) SetNodes(nodes []*models.QosNode) {
 func (c *EvmDataIntegrityCheck) Perform() {
 
 	// Session is not meant for EVM
-	if len(c.NodeList) == 0 || !c.NodeList[0].IsEvmChain() {
+	if len(c.NodeList) == 0 || !c.IsEvmChain(c.NodeList[0]) {
 		return
 	}
 	checks.PerformDataIntegrityCheck(c.Check, getBlockByNumberPayload, "", c.getBlockHashFromNodeResponse, c.logger)
