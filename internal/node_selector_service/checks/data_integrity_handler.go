@@ -30,7 +30,7 @@ type BlockHashParser func(response string) (string, error)
 type GetBlockByNumberPayloadFmter func(blockToFind uint64) string
 
 // PerformDataIntegrityCheck: is the default implementation of a data integrity check by:
-func PerformDataIntegrityCheck(check *Check, calculatePayload GetBlockByNumberPayloadFmter, path string, retrieveBlockHash BlockHashParser, logger *zap.Logger) {
+func PerformDataIntegrityCheck(check *Check, calculatePayload GetBlockByNumberPayloadFmter, path string, retrieveBlockIdentifier BlockHashParser, logger *zap.Logger) {
 	// Find a node that has been reported as healthy to use as source of truth
 	sourceOfTruth := findRandomHealthyNode(check.NodeList)
 
@@ -39,6 +39,8 @@ func PerformDataIntegrityCheck(check *Check, calculatePayload GetBlockByNumberPa
 		logger.Sugar().Warnw("cannot find source of truth for data integrity check", "chain", check.NodeList[0].GetChain())
 		return
 	}
+
+	logger.Sugar().Infow("running default data integrity check", "chain", check.NodeList[0].GetChain())
 
 	// Map to count number of nodes that return blockHash -> counter
 	nodeResponseCounts := make(map[string]int)
@@ -56,7 +58,7 @@ func PerformDataIntegrityCheck(check *Check, calculatePayload GetBlockByNumberPa
 			continue
 		}
 
-		hash, err := retrieveBlockHash(rsp.Relay.Response)
+		hash, err := retrieveBlockIdentifier(rsp.Relay.Response)
 		if err != nil {
 			logger.Sugar().Warnw("failed to unmarshal response", "err", err)
 			DefaultPunishNode(fasthttp.ErrTimeout, rsp.Node, logger)

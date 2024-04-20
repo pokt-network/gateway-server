@@ -6,7 +6,6 @@ import (
 	"github.com/pokt-network/gateway-server/internal/node_selector_service/checks"
 	"github.com/pokt-network/gateway-server/internal/node_selector_service/models"
 	"go.uber.org/zap"
-	"strconv"
 	"time"
 )
 
@@ -15,7 +14,8 @@ const (
 	dataIntegrityCheckInterval = time.Second * 1
 
 	//json rpc payload to send a data integrity check
-	blockPayloadFmt = `{"jsonrpc":"2.0","method":"getBlock","params":[%s, {"encoding": "json"}],"id":1}`
+	// we use signatures for transaction detail to prevent large payloads and we don't need anything but block hash
+	blockPayloadFmt = `{"jsonrpc":"2.0","method":"getBlock","params":[%d, {"encoding": "jsonParsed", "maxSupportedTransactionVersion":0, "transactionDetails":"signatures"}],"id":1}`
 )
 
 type blockByNumberResponse struct {
@@ -66,5 +66,5 @@ func (c *SolanaDataIntegrityCheck) ShouldRun() bool {
 }
 
 func getBlockByNumberPayload(blockNumber uint64) string {
-	return fmt.Sprintf(blockPayloadFmt, "0x"+strconv.FormatInt(int64(blockNumber), 16))
+	return fmt.Sprintf(blockPayloadFmt, blockNumber)
 }

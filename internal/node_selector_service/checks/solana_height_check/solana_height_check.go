@@ -18,9 +18,7 @@ const (
 )
 
 type solanaHeightResponse struct {
-	Result struct {
-		Slot uint64 `json:"slot"`
-	} `json:"result"`
+	Result uint64 `json:"result"`
 }
 
 type SolanaHeightCheck struct {
@@ -43,9 +41,7 @@ func (c *SolanaHeightCheck) Perform() {
 	if len(c.NodeList) == 0 || !c.NodeList[0].IsSolanaChain() {
 		return
 	}
-
 	checks.PerformDefaultHeightCheck(c.Check, heightJsonPayload, "", c.getHeightFromNodeResponse, c.logger)
-
 	c.nextCheckTime = time.Now().Add(solanaHeightCheckInterval)
 }
 
@@ -63,5 +59,5 @@ func (c *SolanaHeightCheck) getHeightFromNodeResponse(response string) (uint64, 
 	if err != nil {
 		return 0, err
 	}
-	return solanaRsp.Result.Slot, nil
+	return solanaRsp.Result, nil
 }

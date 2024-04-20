@@ -3,10 +3,6 @@ package node_selector_service
 import (
 	"github.com/pokt-network/gateway-server/internal/chain_configurations_registry"
 	"github.com/pokt-network/gateway-server/internal/node_selector_service/checks"
-	"github.com/pokt-network/gateway-server/internal/node_selector_service/checks/evm_data_integrity_check"
-	"github.com/pokt-network/gateway-server/internal/node_selector_service/checks/evm_height_check"
-	"github.com/pokt-network/gateway-server/internal/node_selector_service/checks/pokt_data_integrity_check"
-	"github.com/pokt-network/gateway-server/internal/node_selector_service/checks/pokt_height_check"
 	"github.com/pokt-network/gateway-server/internal/node_selector_service/checks/solana_data_integrity_check"
 	"github.com/pokt-network/gateway-server/internal/node_selector_service/checks/solana_height_check"
 	"github.com/pokt-network/gateway-server/internal/node_selector_service/models"
@@ -40,12 +36,12 @@ func NewNodeSelectorService(sessionRegistry session_registry.SessionRegistryServ
 
 	// enabled checks
 	enabledChecks := []checks.CheckJob{
-		evm_height_check.NewEvmHeightCheck(baseCheck, logger.Named("evm_height_checker")),
-		evm_data_integrity_check.NewEvmDataIntegrityCheck(baseCheck, logger.Named("evm_data_integrity_checker")),
+		//evm_height_check.NewEvmHeightCheck(baseCheck, logger.Named("evm_height_checker")),
+		//evm_data_integrity_check.NewEvmDataIntegrityCheck(baseCheck, logger.Named("evm_data_integrity_checker")),
 		solana_height_check.NewSolanaHeightCheck(baseCheck, logger.Named("solana_height_check")),
 		solana_data_integrity_check.NewSolanaDataIntegrityCheck(baseCheck, logger.Named("solana_data_integrity_check")),
-		pokt_height_check.NewPoktHeightCheck(baseCheck, logger.Named("pokt_height_check")),
-		pokt_data_integrity_check.NewPoktDataIntegrityCheck(baseCheck, logger.Named("pokt_data_integrity_check")),
+		//pokt_height_check.NewPoktHeightCheck(baseCheck, logger.Named("pokt_height_check")),
+		//pokt_data_integrity_check.NewPoktDataIntegrityCheck(baseCheck, logger.Named("pokt_data_integrity_check")),
 	}
 	selectorService := &NodeSelectorClient{
 		sessionRegistry: sessionRegistry,
@@ -121,8 +117,7 @@ func (q NodeSelectorClient) startJobChecker() {
 			case <-ticker:
 				for _, job := range q.checkJobs {
 					if job.ShouldRun() {
-						for sessionChainKey, nodes := range q.sessionRegistry.GetNodesMap() {
-							q.logger.Sugar().Infow("running job", "job", job.Name(), "sessionChainKey", sessionChainKey)
+						for _, nodes := range q.sessionRegistry.GetNodesMap() {
 							job.SetNodes(nodes.Value())
 							job.Perform()
 						}

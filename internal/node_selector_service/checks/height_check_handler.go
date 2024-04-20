@@ -26,6 +26,9 @@ type HeightJsonParser func(response string) (uint64, error)
 // 3. Filtering out nodes that are returning a height out of the zScore threshold
 // 4. Punishing the nodes with defaultCheckPenalty that exceed the height tolerance.
 func PerformDefaultHeightCheck(check *Check, payload string, path string, parseHeight HeightJsonParser, logger *zap.Logger) {
+
+	logger.Sugar().Infow("running default height check", "chain", check.NodeList[0].GetChain())
+
 	var nodesResponded []*models.QosNode
 	// Send request to all nodes
 	relayResponses := SendRelaysAsync(check.PocketRelayer, getEligibleHeightCheckNodes(check.NodeList), payload, "POST", path)
