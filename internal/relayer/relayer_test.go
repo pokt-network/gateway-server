@@ -76,6 +76,7 @@ func (suite *RelayerTestSuite) TestNodeSelectorRelay() {
 				signer := &models.Ed25519Account{}
 				node := &models.Node{PublicKey: "123", ServiceUrl: "http://complex.subdomain.root.com/test/123"}
 				session := &models.Session{}
+				suite.mockConfigProvider.EXPECT().ShouldEmitServiceUrlPromMetrics().Return(true)
 				suite.mockNodeSelectorService.EXPECT().FindNode("1234").Return(qos_models.NewQosNode(node, session, signer), true)
 				// expect sendRelay to have same parameters as find node, otherwise validation will fail
 				suite.mockPocketService.EXPECT().SendRelay(&models.SendRelayRequest{

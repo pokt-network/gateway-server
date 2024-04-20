@@ -146,7 +146,7 @@ func (r *Relayer) sendNodeSelectorRelay(req *models.SendRelayRequest) (*models.S
 	// Record latency to prom and latency tracker
 	latency := time.Now().Sub(startRequestTime)
 
-	nodeHost := extractHostFromServiceUrl(node.MorseNode.ServiceUrl)
+	nodeHost := r.extractHostFromServiceUrl(node.MorseNode.ServiceUrl)
 	pocketClientHistogramRelayRequestLatency.WithLabelValues(strconv.FormatBool(err == nil), req.Chain, nodeHost).Observe(latency.Seconds())
 	node.GetLatencyTracker().RecordMeasurement(float64(latency.Milliseconds()))
 	// Node returned an error, potentially penalize the node operator dependent on error
@@ -194,7 +194,7 @@ func (r *Relayer) sendRandomNodeRelay(req *models.SendRelayRequest) (*models.Sen
 	rsp, err := r.pocketClient.SendRelay(req)
 
 	// record if relay was successful
-	counterRelayRequest.WithLabelValues(strconv.FormatBool(err == nil), "false", "", req.Chain, extractHostFromServiceUrl(randomNode.MorseNode.ServiceUrl)).Inc()
+	counterRelayRequest.WithLabelValues(strconv.FormatBool(err == nil), "false", "", req.Chain, r.extractHostFromServiceUrl(randomNode.MorseNode.ServiceUrl)).Inc()
 
 	return rsp, err
 }
@@ -261,7 +261,10 @@ func (r *Relayer) getPocketRequestTimeout(chainId string) time.Duration {
 	return configTime
 }
 
-func extractHostFromServiceUrl(urlStr string) string {
+func (r *Relayer) extractHostFromServiceUrl(urlStr string) string {
+	if !r.globalConfigProvider.ShouldEmitServiceUrlPromMetrics() {
+		return ""
+	}
 	parsedURL, err := url.Parse(urlStr)
 	if err != nil {
 		return "" // return empty string or handle error
