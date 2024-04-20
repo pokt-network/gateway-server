@@ -112,6 +112,53 @@ func (_c *GlobalConfigProvider_GetAltruistRequestTimeout_Call) RunAndReturn(run 
 	return _c
 }
 
+// GetChainNetwork provides a mock function with given fields:
+func (_m *GlobalConfigProvider) GetChainNetwork() global_config.ChainNetworkProvider {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetChainNetwork")
+	}
+
+	var r0 global_config.ChainNetworkProvider
+	if rf, ok := ret.Get(0).(func() global_config.ChainNetworkProvider); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(global_config.ChainNetworkProvider)
+		}
+	}
+
+	return r0
+}
+
+// GlobalConfigProvider_GetChainNetwork_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetChainNetwork'
+type GlobalConfigProvider_GetChainNetwork_Call struct {
+	*mock.Call
+}
+
+// GetChainNetwork is a helper method to define mock.On call
+func (_e *GlobalConfigProvider_Expecter) GetChainNetwork() *GlobalConfigProvider_GetChainNetwork_Call {
+	return &GlobalConfigProvider_GetChainNetwork_Call{Call: _e.mock.On("GetChainNetwork")}
+}
+
+func (_c *GlobalConfigProvider_GetChainNetwork_Call) Run(run func()) *GlobalConfigProvider_GetChainNetwork_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *GlobalConfigProvider_GetChainNetwork_Call) Return(_a0 global_config.ChainNetworkProvider) *GlobalConfigProvider_GetChainNetwork_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *GlobalConfigProvider_GetChainNetwork_Call) RunAndReturn(run func() global_config.ChainNetworkProvider) *GlobalConfigProvider_GetChainNetwork_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetDatabaseConnectionUrl provides a mock function with given fields:
 func (_m *GlobalConfigProvider) GetDatabaseConnectionUrl() string {
 	ret := _m.Called()

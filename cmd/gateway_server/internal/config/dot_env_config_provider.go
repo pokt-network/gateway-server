@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"github.com/joho/godotenv"
+	"github.com/pokt-network/gateway-server/internal/chain_network"
 	"github.com/pokt-network/gateway-server/internal/global_config"
 	"os"
 	"strconv"
@@ -15,6 +16,7 @@ const (
 
 // Environment variable names
 const (
+	chainNetworkEnv                  = "CHAIN_NETWORK"
 	emitServiceUrlPromMetricsEnv     = "EMIT_SERVICE_URL_PROM_METRICS"
 	poktRPCFullHostEnv               = "POKT_RPC_FULL_HOST"
 	httpServerPortEnv                = "HTTP_SERVER_PORT"
@@ -30,6 +32,7 @@ const (
 // DotEnvGlobalConfigProvider implements the GatewayServerProvider interface.
 type DotEnvGlobalConfigProvider struct {
 	poktRPCFullHost               string
+	chainNetwork                  chain_network.ChainNetwork
 	httpServerPort                uint
 	poktRPCRequestTimeout         time.Duration
 	sessionCacheTTL               time.Duration
@@ -131,6 +134,7 @@ func NewDotEnvConfigProvider() *DotEnvGlobalConfigProvider {
 		environmentStage:              global_config.EnvironmentStage(getEnvVar(environmentStageEnv, "")),
 		poktApplicationsEncryptionKey: getEnvVar(poktApplicationsEncryptionKeyEnv, ""),
 		apiKey:                        getEnvVar(apiKey, ""),
+		chainNetwork:                  chain_network.ChainNetwork(getEnvVar(chainNetworkEnv, chain_network.MorseMainnet)),
 		altruistRequestTimeout:        altruistRequestTimeoutDuration,
 	}
 }

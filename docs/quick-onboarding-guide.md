@@ -50,6 +50,7 @@ Fill out the `.env` variables for the gateway server. This can be done by inject
 | `POKT_APPLICATIONS_ENCRYPTION_KEY` | User-generated encryption key                                                                               | `a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6`                                                                |
 | `DB_CONNECTION_URL`                | PostgreSQL Database connection URL                                                                          | `postgres://user:password@localhost:5432/postgres`                                                |
 | `EMIT_SERVICE_URL_PROM_METRICS`    | Boolean flag to enable service url for relay metrics (disabled by default to prevent cardinality explosion) | `false`, `true`                                                                                   |
+| `CHAIN_NETWORK`                    | Identifies which network the gateway server is running on.                                                  | `morse_mainnnet`, `morse_testnet`                                                                 |
 See [.env.sample](..%2F.env.sample) for a sample.
 
 ## 4. Run Migration Script

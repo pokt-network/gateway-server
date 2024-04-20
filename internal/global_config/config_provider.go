@@ -15,6 +15,7 @@ type GlobalConfigProvider interface {
 	PoktNodeConfigProvider
 	AltruistConfigProvider
 	PromMetricsProvider
+	ChainNetworkProvider
 }
 
 type PromMetricsProvider interface {
@@ -41,4 +42,8 @@ type PoktNodeConfigProvider interface {
 
 type AltruistConfigProvider interface {
 	GetAltruistRequestTimeout() time.Duration
+}
+
+type ChainNetworkProvider interface {
+	GetChainNetwork() ChainNetworkProvider
 }
