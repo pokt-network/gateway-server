@@ -20,7 +20,7 @@ heuristics:
 ## Node Selector
 After the sessions are primed, the nodes are fed to the `NodeSelectorService` which is responsible for:
 1. Running various QoS checks (Height and Data Integrity Checks)
-2. Exposing functions for the main process to select a healthy node `findNode(chainId) string`
+2. Exposing functions for the main process to select a healthy node `FindNode(chainId string) string`
 
 ### Checks Framework
 The gateway server provides a simple interface called a `CheckJob`. This interface consists of three simple functions
