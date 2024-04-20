@@ -58,7 +58,7 @@ func PerformDataIntegrityCheck(check *Check, calculatePayload GetBlockByNumberPa
 			continue
 		}
 
-		hash, err := retrieveBlockIdentifier(rsp.Relay.Response)
+		blockIdentifier, err := retrieveBlockIdentifier(rsp.Relay.Response)
 		if err != nil {
 			logger.Sugar().Warnw("failed to unmarshal response", "err", err)
 			DefaultPunishNode(fasthttp.ErrTimeout, rsp.Node, logger)
@@ -68,9 +68,9 @@ func PerformDataIntegrityCheck(check *Check, calculatePayload GetBlockByNumberPa
 		rsp.Node.SetLastDataIntegrityCheckTime(time.Now())
 		nodeResponsePairs = append(nodeResponsePairs, &nodeHashRspPair{
 			node:            rsp.Node,
-			blockIdentifier: hash,
+			blockIdentifier: blockIdentifier,
 		})
-		nodeResponseCounts[hash]++
+		nodeResponseCounts[blockIdentifier]++
 	}
 
 	majorityBlockIdentifier := findMajorityBlockIdentifier(nodeResponseCounts)
