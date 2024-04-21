@@ -4,7 +4,6 @@ package chain_configurations_registry_mock
 
 import (
 	db_query "github.com/pokt-network/gateway-server/internal/db_query"
-
 	mock "github.com/stretchr/testify/mock"
 )
 

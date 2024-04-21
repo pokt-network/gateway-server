@@ -23,6 +23,38 @@ func (_m *TTLCacheService[K, V]) EXPECT() *TTLCacheService_Expecter[K, V] {
 	return &TTLCacheService_Expecter[K, V]{mock: &_m.Mock}
 }
 
+// DeleteExpired provides a mock function with given fields:
+func (_m *TTLCacheService[K, V]) DeleteExpired() {
+	_m.Called()
+}
+
+// TTLCacheService_DeleteExpired_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteExpired'
+type TTLCacheService_DeleteExpired_Call[K comparable, V interface{}] struct {
+	*mock.Call
+}
+
+// DeleteExpired is a helper method to define mock.On call
+func (_e *TTLCacheService_Expecter[K, V]) DeleteExpired() *TTLCacheService_DeleteExpired_Call[K, V] {
+	return &TTLCacheService_DeleteExpired_Call[K, V]{Call: _e.mock.On("DeleteExpired")}
+}
+
+func (_c *TTLCacheService_DeleteExpired_Call[K, V]) Run(run func()) *TTLCacheService_DeleteExpired_Call[K, V] {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *TTLCacheService_DeleteExpired_Call[K, V]) Return() *TTLCacheService_DeleteExpired_Call[K, V] {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *TTLCacheService_DeleteExpired_Call[K, V]) RunAndReturn(run func()) *TTLCacheService_DeleteExpired_Call[K, V] {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Get provides a mock function with given fields: key, opts
 func (_m *TTLCacheService[K, V]) Get(key K, opts ...ttlcache.Option[K, V]) *ttlcache.Item[K, V] {
 	_va := make([]interface{}, len(opts))

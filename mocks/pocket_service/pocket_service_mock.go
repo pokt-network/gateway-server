@@ -4,7 +4,6 @@ package pocket_service_mock
 
 import (
 	models "github.com/pokt-network/gateway-server/pkg/pokt/pokt_v0/models"
-
 	mock "github.com/stretchr/testify/mock"
 )
 

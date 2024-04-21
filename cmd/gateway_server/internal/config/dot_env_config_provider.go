@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"github.com/joho/godotenv"
+	"github.com/pokt-network/gateway-server/internal/chain_network"
 	"github.com/pokt-network/gateway-server/internal/global_config"
 	"os"
 	"strconv"
@@ -15,6 +16,8 @@ const (
 
 // Environment variable names
 const (
+	chainNetworkEnv                  = "CHAIN_NETWORK"
+	emitServiceUrlPromMetricsEnv     = "EMIT_SERVICE_URL_PROM_METRICS"
 	poktRPCFullHostEnv               = "POKT_RPC_FULL_HOST"
 	httpServerPortEnv                = "HTTP_SERVER_PORT"
 	poktRPCTimeoutEnv                = "POKT_RPC_TIMEOUT"
@@ -29,6 +32,7 @@ const (
 // DotEnvGlobalConfigProvider implements the GatewayServerProvider interface.
 type DotEnvGlobalConfigProvider struct {
 	poktRPCFullHost               string
+	chainNetwork                  chain_network.ChainNetwork
 	httpServerPort                uint
 	poktRPCRequestTimeout         time.Duration
 	sessionCacheTTL               time.Duration
@@ -36,6 +40,7 @@ type DotEnvGlobalConfigProvider struct {
 	poktApplicationsEncryptionKey string
 	databaseConnectionUrl         string
 	apiKey                        string
+	emitServiceUrlPromMetrics     bool
 	altruistRequestTimeout        time.Duration
 }
 
@@ -83,6 +88,16 @@ func (c DotEnvGlobalConfigProvider) GetAltruistRequestTimeout() time.Duration {
 	return c.altruistRequestTimeout
 }
 
+// ShouldEmitServiceUrl returns whether to emit service url tags as part of relay metrics.
+func (c DotEnvGlobalConfigProvider) ShouldEmitServiceUrlPromMetrics() bool {
+	return c.emitServiceUrlPromMetrics
+}
+
+// GetChainNetwork returns the current network, this can be useful for identifying the correct chain ids dependent on testnet or mainnet.
+func (c DotEnvGlobalConfigProvider) GetChainNetwork() chain_network.ChainNetwork {
+	return c.chainNetwork
+}
+
 // NewDotEnvConfigProvider creates a new instance of DotEnvGlobalConfigProvider.
 func NewDotEnvConfigProvider() *DotEnvGlobalConfigProvider {
 	_ = godotenv.Load()
@@ -108,7 +123,14 @@ func NewDotEnvConfigProvider() *DotEnvGlobalConfigProvider {
 		altruistRequestTimeoutDuration = defaultAltruistRequestTimeout
 	}
 
+	emitServiceUrlPromMetrics, err := strconv.ParseBool(getEnvVar(emitServiceUrlPromMetricsEnv, "false"))
+
+	if err != nil {
+		emitServiceUrlPromMetrics = false
+	}
+
 	return &DotEnvGlobalConfigProvider{
+		emitServiceUrlPromMetrics:     emitServiceUrlPromMetrics,
 		poktRPCFullHost:               getEnvVar(poktRPCFullHostEnv, ""),
 		httpServerPort:                uint(httpServerPort),
 		poktRPCRequestTimeout:         poktRPCTimeout,
@@ -117,6 +139,7 @@ func NewDotEnvConfigProvider() *DotEnvGlobalConfigProvider {
 		environmentStage:              global_config.EnvironmentStage(getEnvVar(environmentStageEnv, "")),
 		poktApplicationsEncryptionKey: getEnvVar(poktApplicationsEncryptionKeyEnv, ""),
 		apiKey:                        getEnvVar(apiKey, ""),
+		chainNetwork:                  chain_network.ChainNetwork(getEnvVar(chainNetworkEnv, string(chain_network.MorseMainnet))),
 		altruistRequestTimeout:        altruistRequestTimeoutDuration,
 	}
 }

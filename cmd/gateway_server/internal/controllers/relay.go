@@ -57,6 +57,8 @@ func (c *RelayController) HandleRelay(ctx *fasthttp.RequestCtx) {
 	return
 }
 
+// getPathSegmented: returns the chain being requested and other parts to be proxied to pokt nodes
+// Example: /relay/0001/v1/client, returns 0001, /v1/client
 func getPathSegmented(path []byte) (chain, otherParts string) {
 	paths := strings.Split(string(path), "/")
 

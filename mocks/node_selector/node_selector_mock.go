@@ -4,7 +4,6 @@ package node_selector_mock
 
 import (
 	models "github.com/pokt-network/gateway-server/internal/node_selector_service/models"
-
 	mock "github.com/stretchr/testify/mock"
 )
 

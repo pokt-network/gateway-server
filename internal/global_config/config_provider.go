@@ -1,6 +1,9 @@
 package global_config
 
-import "time"
+import (
+	"github.com/pokt-network/gateway-server/internal/chain_network"
+	"time"
+)
 
 type EnvironmentStage string
 
@@ -14,6 +17,12 @@ type GlobalConfigProvider interface {
 	EnvironmentProvider
 	PoktNodeConfigProvider
 	AltruistConfigProvider
+	PromMetricsProvider
+	ChainNetworkProvider
+}
+
+type PromMetricsProvider interface {
+	ShouldEmitServiceUrlPromMetrics() bool
 }
 
 type SecretProvider interface {
@@ -36,4 +45,8 @@ type PoktNodeConfigProvider interface {
 
 type AltruistConfigProvider interface {
 	GetAltruistRequestTimeout() time.Duration
+}
+
+type ChainNetworkProvider interface {
+	GetChainNetwork() chain_network.ChainNetwork
 }

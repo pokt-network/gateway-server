@@ -3,6 +3,7 @@
 package global_config_mock
 
 import (
+	chain_network "github.com/pokt-network/gateway-server/internal/chain_network"
 	global_config "github.com/pokt-network/gateway-server/internal/global_config"
 
 	mock "github.com/stretchr/testify/mock"
@@ -109,6 +110,51 @@ func (_c *GlobalConfigProvider_GetAltruistRequestTimeout_Call) Return(_a0 time.D
 }
 
 func (_c *GlobalConfigProvider_GetAltruistRequestTimeout_Call) RunAndReturn(run func() time.Duration) *GlobalConfigProvider_GetAltruistRequestTimeout_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetChainNetwork provides a mock function with given fields:
+func (_m *GlobalConfigProvider) GetChainNetwork() chain_network.ChainNetwork {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetChainNetwork")
+	}
+
+	var r0 chain_network.ChainNetwork
+	if rf, ok := ret.Get(0).(func() chain_network.ChainNetwork); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(chain_network.ChainNetwork)
+	}
+
+	return r0
+}
+
+// GlobalConfigProvider_GetChainNetwork_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetChainNetwork'
+type GlobalConfigProvider_GetChainNetwork_Call struct {
+	*mock.Call
+}
+
+// GetChainNetwork is a helper method to define mock.On call
+func (_e *GlobalConfigProvider_Expecter) GetChainNetwork() *GlobalConfigProvider_GetChainNetwork_Call {
+	return &GlobalConfigProvider_GetChainNetwork_Call{Call: _e.mock.On("GetChainNetwork")}
+}
+
+func (_c *GlobalConfigProvider_GetChainNetwork_Call) Run(run func()) *GlobalConfigProvider_GetChainNetwork_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *GlobalConfigProvider_GetChainNetwork_Call) Return(_a0 chain_network.ChainNetwork) *GlobalConfigProvider_GetChainNetwork_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *GlobalConfigProvider_GetChainNetwork_Call) RunAndReturn(run func() chain_network.ChainNetwork) *GlobalConfigProvider_GetChainNetwork_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -334,6 +380,51 @@ func (_c *GlobalConfigProvider_GetPoktRPCRequestTimeout_Call) Return(_a0 time.Du
 }
 
 func (_c *GlobalConfigProvider_GetPoktRPCRequestTimeout_Call) RunAndReturn(run func() time.Duration) *GlobalConfigProvider_GetPoktRPCRequestTimeout_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ShouldEmitServiceUrlPromMetrics provides a mock function with given fields:
+func (_m *GlobalConfigProvider) ShouldEmitServiceUrlPromMetrics() bool {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for ShouldEmitServiceUrlPromMetrics")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// GlobalConfigProvider_ShouldEmitServiceUrlPromMetrics_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ShouldEmitServiceUrlPromMetrics'
+type GlobalConfigProvider_ShouldEmitServiceUrlPromMetrics_Call struct {
+	*mock.Call
+}
+
+// ShouldEmitServiceUrlPromMetrics is a helper method to define mock.On call
+func (_e *GlobalConfigProvider_Expecter) ShouldEmitServiceUrlPromMetrics() *GlobalConfigProvider_ShouldEmitServiceUrlPromMetrics_Call {
+	return &GlobalConfigProvider_ShouldEmitServiceUrlPromMetrics_Call{Call: _e.mock.On("ShouldEmitServiceUrlPromMetrics")}
+}
+
+func (_c *GlobalConfigProvider_ShouldEmitServiceUrlPromMetrics_Call) Run(run func()) *GlobalConfigProvider_ShouldEmitServiceUrlPromMetrics_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *GlobalConfigProvider_ShouldEmitServiceUrlPromMetrics_Call) Return(_a0 bool) *GlobalConfigProvider_ShouldEmitServiceUrlPromMetrics_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *GlobalConfigProvider_ShouldEmitServiceUrlPromMetrics_Call) RunAndReturn(run func() bool) *GlobalConfigProvider_ShouldEmitServiceUrlPromMetrics_Call {
 	_c.Call.Return(run)
 	return _c
 }
