@@ -36,7 +36,7 @@ case $key in
         DOWN_MIGRATION_NUMBER="$2"
         shift
     else
-        echo "Error: Down migration requires a specific number of migrations or -all flag to revert all migrations."
+        echo "Error: Down migration requires a specific number of migrations or --all flag to revert all migrations."
         exit 1
     fi
     shift # past argument
