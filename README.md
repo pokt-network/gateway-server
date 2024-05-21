@@ -43,9 +43,34 @@ This command will generate a up and down migration in `db_migrations`
 DB Migrations are applied upon server start, but as well, it can be applied manually through:
 ```sh
 ./scripts/migration.sh {--down or --up} {number_of_times} 
-./scripts/migration.sh -d 1
-./scripts/migration.sh -u 1
 ```
+
+### Usage
+
+#### Apply Migrations
+
+- To apply all migrations:
+  ```sh
+  ./scripts/migration.sh --up
+  ```
+
+- To apply a specific number of migrations:
+  ```sh
+  ./scripts/migration.sh --up 2
+  ```
+
+#### Rollback Migrations
+Make sure to provide either the number of migrations to rollback or the `--all` flag to rollback all migrations.
+
+- To roll back a specific number of migrations:
+  ```sh
+  ./scripts/migration.sh --down 2
+  ```
+
+- To roll back all migrations:
+  ```sh
+  ./scripts/migration.sh --down --all
+  ```
 
 ## Running Tests
 Install Mockery with
