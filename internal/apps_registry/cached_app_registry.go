@@ -174,9 +174,16 @@ func arePoktApplicationSignersEqual(slice1, slice2 []*models.PoktApplicationSign
 	// Now that slices are sorted, check if address keys are same.
 	for i := range slice1 {
 		// Check if any field is different
-		if !strings.EqualFold(sortedSlice1[i].NetworkApp.Address, sortedSlice2[i].NetworkApp.Address) {
+		networkApp1 := sortedSlice1[i].NetworkApp
+		networkApp2 := sortedSlice2[i].NetworkApp
+		if !strings.EqualFold(networkApp1.Address, networkApp2.Address) {
 			return false
 		}
+
+		if !strings.EqualFold(strings.Join(networkApp1.Chains, ","), strings.Join(networkApp2.Chains, ",")) {
+			return false
+		}
+
 	}
 
 	// Slices are equal
