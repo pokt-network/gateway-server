@@ -176,6 +176,8 @@ func arePoktApplicationSignersEqual(slice1, slice2 []*models.PoktApplicationSign
 		// Check if any field is different
 		networkApp1 := sortedSlice1[i].NetworkApp
 		networkApp2 := sortedSlice2[i].NetworkApp
+
+		// If address are not same, gateway operator added or remove some application
 		if !strings.EqualFold(networkApp1.Address, networkApp2.Address) {
 			return false
 		}
