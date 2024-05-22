@@ -180,6 +180,7 @@ func arePoktApplicationSignersEqual(slice1, slice2 []*models.PoktApplicationSign
 			return false
 		}
 
+		// Gateway operator may have updated chains staked
 		if !strings.EqualFold(strings.Join(networkApp1.Chains, ","), strings.Join(networkApp2.Chains, ",")) {
 			return false
 		}
