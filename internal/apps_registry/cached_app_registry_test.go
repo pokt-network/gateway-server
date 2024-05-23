@@ -71,7 +71,7 @@ func Test_arePoktApplicationSignersEqual(t *testing.T) {
 			want: false,
 		},
 		{
-			name: "same apps",
+			name: "same apps with exact chains",
 			args: args{
 				slice1: []*models.PoktApplicationSigner{{NetworkApp: &pokt_models.PoktApplication{
 					Address:   "123",
@@ -83,6 +83,26 @@ func Test_arePoktApplicationSignersEqual(t *testing.T) {
 				slice2: []*models.PoktApplicationSigner{{NetworkApp: &pokt_models.PoktApplication{
 					Address:   "123",
 					Chains:    []string{"123", "123"},
+					PublicKey: "",
+					Status:    0,
+					MaxRelays: 0,
+				}}},
+			},
+			want: true,
+		},
+		{
+			name: "same apps with same chains different ordering",
+			args: args{
+				slice1: []*models.PoktApplicationSigner{{NetworkApp: &pokt_models.PoktApplication{
+					Address:   "123",
+					Chains:    []string{"123", "1234", "1235"},
+					PublicKey: "",
+					Status:    0,
+					MaxRelays: 0,
+				}}},
+				slice2: []*models.PoktApplicationSigner{{NetworkApp: &pokt_models.PoktApplication{
+					Address:   "123",
+					Chains:    []string{"123", "1235", "1234"},
 					PublicKey: "",
 					Status:    0,
 					MaxRelays: 0,
