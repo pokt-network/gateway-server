@@ -60,7 +60,7 @@ func init() {
 	healthyNodesPerChainGauge = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "cached_client_session_healthy_nodes",
-			Help: "Number of healthy nodes per chain",
+			Help: "Number of healthy (synced + not in timeout) nodes per chain",
 		},
 		[]string{"chain_id"},
 	)
