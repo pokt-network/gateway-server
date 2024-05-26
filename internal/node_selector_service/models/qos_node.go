@@ -69,7 +69,7 @@ func NewQosNode(morseNode *models.Node, pocketSession *models.Session, appSigner
 }
 
 func (n *QosNode) IsHealthy() bool {
-	return !n.isInTimeout() && n.IsSynced()
+	return !n.IsInTimeout() && n.IsSynced()
 }
 
 func (n *QosNode) IsSynced() bool {
@@ -80,7 +80,7 @@ func (n *QosNode) SetSynced(synced bool) {
 	n.synced = synced
 }
 
-func (n *QosNode) isInTimeout() bool {
+func (n *QosNode) IsInTimeout() bool {
 	return !n.timeoutUntil.IsZero() && time.Now().Before(n.timeoutUntil)
 }
 

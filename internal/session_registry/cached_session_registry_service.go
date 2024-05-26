@@ -20,6 +20,9 @@ import (
 var (
 	counterSessionRequest          *prometheus.CounterVec
 	histogramSessionRequestLatency *prometheus.HistogramVec
+	healthyNodesPerChainGauge      *prometheus.GaugeVec
+	syncedNodesPerChainGauge       *prometheus.GaugeVec
+	timeoutNodesPerChainGauge      *prometheus.GaugeVec
 	ErrRecentlyFailed              = errors.New("dispatch recently failed, returning early")
 )
 
@@ -27,6 +30,7 @@ const (
 	blocksPerSession                      = 4
 	sessionPrimerInterval                 = time.Second * 5
 	ttlCacheCleanerInterval               = time.Second * 15
+	nodeMetricsExporterInterval           = time.Second * 20
 	reasonSessionSuccessCached            = "session_cached"
 	reasonSessionSuccessColdHit           = "session_cold_hit"
 	reasonSessionFailedBackoff            = "session_failed_backoff"
@@ -53,7 +57,28 @@ func init() {
 		[]string{"cached"},
 	)
 
-	prometheus.MustRegister(counterSessionRequest, histogramSessionRequestLatency)
+	healthyNodesPerChainGauge = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "cached_client_session_healthy_nodes",
+			Help: "Number of healthy nodes per chain",
+		},
+		[]string{"chain_id"},
+	)
+	syncedNodesPerChainGauge = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "cached_client_session_synced_nodes",
+			Help: "Number of synced nodes per chain",
+		},
+		[]string{"chain_id"},
+	)
+	timeoutNodesPerChainGauge = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "cached_client_session_timeout_nodes",
+			Help: "Number of nodes in timeout per chain",
+		},
+		[]string{"chain_id"},
+	)
+	prometheus.MustRegister(counterSessionRequest, histogramSessionRequestLatency, healthyNodesPerChainGauge, syncedNodesPerChainGauge, timeoutNodesPerChainGauge)
 }
 
 type CachedSessionRegistryService struct {
@@ -77,6 +102,7 @@ func NewCachedSessionRegistryService(poktClient pokt_v0.PocketService, appRegist
 	go nodeCache.Start()
 	cachedRegistry.startTTLCacheCleaner()
 	cachedRegistry.startSessionUpdater()
+	cachedRegistry.startNodeMetricsExporter()
 	return cachedRegistry
 }
 
@@ -281,4 +307,40 @@ func (c *CachedSessionRegistryService) shouldBackoffDispatchFailure() bool {
 // getSessionCacheKey - used to keep track of a session for a specific app stake, height, and chain.
 func getSessionCacheKey(req *models.GetSessionRequest) string {
 	return fmt.Sprintf("%s-%s-%d", req.AppPubKey, req.Chain, req.SessionHeight)
+}
+
+func (c *CachedSessionRegistryService) exportNodeMetrics() {
+	nodesMap := c.GetNodesMap()
+	for sessionKey, sessionItem := range nodesMap {
+		chainId := sessionKey.Chain
+		var healthyNodesCount, syncedNodesCount, timeoutNodesCount int
+
+		for _, node := range sessionItem.Value() {
+			if node.IsHealthy() {
+				healthyNodesCount++
+			}
+			if node.IsSynced() {
+				syncedNodesCount++
+			}
+			if node.IsInTimeout() {
+				timeoutNodesCount++
+			}
+		}
+
+		healthyNodesPerChainGauge.WithLabelValues(chainId).Set(float64(healthyNodesCount))
+		syncedNodesPerChainGauge.WithLabelValues(chainId).Set(float64(syncedNodesCount))
+		timeoutNodesPerChainGauge.WithLabelValues(chainId).Set(float64(timeoutNodesCount))
+	}
+}
+
+func (c *CachedSessionRegistryService) startNodeMetricsExporter() {
+	ticker := time.Tick(nodeMetricsExporterInterval)
+	go func() {
+		for {
+			select {
+			case <-ticker:
+				c.exportNodeMetrics()
+			}
+		}
+	}()
 }
