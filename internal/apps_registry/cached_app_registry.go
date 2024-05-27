@@ -9,6 +9,7 @@ import (
 	"github.com/pokt-network/gateway-server/pkg/pokt/pokt_v0"
 	pokt "github.com/pokt-network/gateway-server/pkg/pokt/pokt_v0/models"
 	"go.uber.org/zap"
+	"reflect"
 	"sort"
 	"strings"
 	"sync"
@@ -171,14 +172,35 @@ func arePoktApplicationSignersEqual(slice1, slice2 []*models.PoktApplicationSign
 		return sortedSlice2[i].NetworkApp.Address < sortedSlice2[j].NetworkApp.Address
 	})
 
-	// Now that slices are sorted, check if address keys are same.
+	// Now that slices are sorted, check if address keys and chains are same.
 	for i := range slice1 {
-		// Check if any field is different
-		if !strings.EqualFold(sortedSlice1[i].NetworkApp.Address, sortedSlice2[i].NetworkApp.Address) {
+
+		networkApp1 := sortedSlice1[i].NetworkApp
+		networkApp2 := sortedSlice2[i].NetworkApp
+
+		// If address are not same, gateway operator added or remove some application
+		if !strings.EqualFold(networkApp1.Address, networkApp2.Address) {
 			return false
 		}
+
+		// Copy network chains and sort them.
+		// Applications are equal if they have same chains but different ordering
+		chains1Copy := append([]string{}, networkApp1.Chains...)
+		chains2Copy := append([]string{}, networkApp2.Chains...)
+		sort.Strings(chains1Copy)
+		sort.Strings(chains2Copy)
+
+		if len(chains1Copy) != len(chains2Copy) {
+			return false
+		}
+
+		// Gateway operator may have updated chains staked
+		if !reflect.DeepEqual(chains1Copy, chains2Copy) {
+			return false
+		}
+
 	}
 
-	// Slices are equal
+	// Applications are equal
 	return true
 }
