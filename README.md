@@ -28,7 +28,9 @@ There is an all-inclusive docker-compose file available for development [docker-
 ## Minimum Hardware Requirements to run
 - 1GB of RAM
 - 1GB of storage
-- 4 vCPUs
+- 4 vCPUs+
+
+In production, we have observed memory usage increase to 4GB+. The memory footprint will be dependent on the number of app stakes/chains staked and total traffic throughput.
 
 ## Creating a DB Migration
 Migrations are like version control for your database, allowing your team to define and share the application's database schema definition.
