@@ -10,7 +10,7 @@
   - [6. Run Gateway Server](#6-run-gateway-server)
     - [6.1 Locally From Source](#61-locally-from-source)
     - [6.2 From A Docker Image](#62-from-a-docker-image)
-    - [6.3 From docker-compose](#63-from-docker-compose)
+    - [6.3 From docker-compose (on remote server)](#63-from-docker-compose-on-remote-server)
   - [7. Send a Relay](#7-send-a-relay)
     - [POKT TestNet](#pokt-testnet)
     - [POKT MainNet](#pokt-mainnet)
@@ -71,7 +71,7 @@ Run `cp .env.sample .env` and update the `.env` appropriately.
 
 ### Env Variables Description
 
-See [.env.sample](..%2F.env.sample) for a sample.
+See [.env.sample](../.env.sample) for a sample.
 
 | Variable Name                      | Description                                         | Example Value                                                                                                                      |
 | ---------------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
@@ -135,7 +135,9 @@ And run it with:
 
 You can leverage our published [docker images](https://github.com/pokt-network/gateway-server/pkgs/container/pocket-gateway-server)
 
-### 6.3 From docker-compose
+### 6.3 From docker-compose (on remote server)
+
+See the rough notes in [docs](./docker-compose.md) for running the gateway server on a remote server.
 
 ## 7. Send a Relay
 
