@@ -54,3 +54,9 @@ docker-compose.yml
 
 ## MAC
 .DS_Store
+
+## VSCode
+.vscode
+
+## Copmiled binary
+main
