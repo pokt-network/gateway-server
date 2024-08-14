@@ -7,6 +7,7 @@ Postman collection can be found [here](https://www.postman.com/dark-shadow-85160
 `x-api-key` is an api key set by the gateway operator to transmit internal private data
 
 _TODO_IMPROVE: Move this to Swagger in the future if our API endpoints become more complex._
+_TODO_IMPROVE: Add an OpenAPI spec if the admin endpoints are kept and/or expanded on.._
 
 - [API Endpoints](#api-endpoints)
 - [Examples](#examples)

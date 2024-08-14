@@ -50,7 +50,7 @@
 .env
 
 ## docker compose file
-# docker-compose.yml
+docker-compose.yml
 
 ## MAC
 .DS_Store
