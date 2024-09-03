@@ -73,21 +73,20 @@ Run `cp .env.sample .env` and update the `.env` appropriately.
 
 See [.env.sample](../.env.sample) for a sample.
 
-| Variable Name                      | Description                                         | Example Value                                                                                                                      |
-| ---------------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `POKT_RPC_FULL_HOST`               | Used for dispatching sessions                       | `https://pokt-testnet-rpc.nodies.org` (a complimentary testnet dispatcher URL provided by Nodies)                                  |
-| `HTTP_SERVER_PORT`                 | Gateway server port                                 | `8080`                                                                                                                             |
-| `POKT_RPC_TIMEOUT`                 | Max response time for a POKT node to respond        | `10s`                                                                                                                              |
-| `ALTRUIST_REQUEST_TIMEOUT`         | Max response time for an altruist backup to respond | `10s`                                                                                                                              |
-| `ENVIRONMENT_STAGE`                | Log verbosity                                       | `development`, `production`                                                                                                        |
-| `SESSION_CACHE_TTL`                | Duration for sessions to stay in cache              | `75m`                                                                                                                              |
-| `POKT_APPLICATIONS_ENCRYPTION_KEY` | User-generated encryption key                       | `a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6`                                                                                                 |
-| `POKT_APPLICATION_PRIVATE_KEY`     | Optional - Pocket application private key           | `1d06f04dcf5199a7f93f625d4fa507c2e0aca2f94fa3ebc2022c5e589406a9133d7ec4fef2ef676b340ce1df6ec5d0264ce1f40fae7fe9e07c415fa06fc1ffd6` |
-
-| `DB_CONNECTION_URL` | PostgreSQL Database connection URL | `postgres://user:password@localhost:5432/postgres` |
-| `EMIT_SERVICE_URL_PROM_METRICS` | Boolean flag to enable service url for relay metrics | `false`, `true` |
-| `CHAIN_NETWORK` | Identifies which network the gateway server is running on. | `morse_mainnet`, `morse_testnet` |
-| `API_KEY` | Any user generated key used to authenticate the user when calling the `poktapps` and `qosnodes` endpoints | `efe8eVTcWtXhp9ZfeTZcQuy49oDND4gh`, |
+| Variable Name                      | Description                                                                                               | Example Value                                                                                                                      |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `POKT_RPC_FULL_HOST`               | Used for dispatching sessions                                                                             | `https://pokt-testnet-rpc.nodies.org` (a complimentary testnet dispatcher URL provided by Nodies)                                  |
+| `HTTP_SERVER_PORT`                 | Gateway server port                                                                                       | `8080`                                                                                                                             |
+| `POKT_RPC_TIMEOUT`                 | Max response time for a POKT node to respond                                                              | `10s`                                                                                                                              |
+| `ALTRUIST_REQUEST_TIMEOUT`         | Max response time for an altruist backup to respond                                                       | `10s`                                                                                                                              |
+| `ENVIRONMENT_STAGE`                | Log verbosity                                                                                             | `development`, `production`                                                                                                        |
+| `SESSION_CACHE_TTL`                | Duration for sessions to stay in cache                                                                    | `75m`                                                                                                                              |
+| `POKT_APPLICATIONS_ENCRYPTION_KEY` | User-generated encryption key                                                                             | `a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6`                                                                                                 |
+| `POKT_APPLICATION_PRIVATE_KEY`     | Optional - Pocket application private key                                                                 | `1d06f04dcf5199a7f93f625d4fa507c2e0aca2f94fa3ebc2022c5e589406a9133d7ec4fef2ef676b340ce1df6ec5d0264ce1f40fae7fe9e07c415fa06fc1ffd6` |
+| `DB_CONNECTION_URL`                | PostgreSQL Database connection URL                                                                        | `postgres://user:password@localhost:5432/postgres`                                                                                 |
+| `EMIT_SERVICE_URL_PROM_METRICS`    | Boolean flag to enable service url for relay metrics                                                      | `false`, `true`                                                                                                                    |
+| `CHAIN_NETWORK`                    | Identifies which network the gateway server is running on.                                                | `morse_mainnet`, `morse_testnet`                                                                                                   |
+| `API_KEY`                          | Any user generated key used to authenticate the user when calling the `poktapps` and `qosnodes` endpoints | `efe8eVTcWtXhp9ZfeTZcQuy49oDND4gh`,                                                                                                |
 
 ## 4. Run Migration Script
 

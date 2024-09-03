@@ -48,6 +48,8 @@
 
 ## environment vars
 .env
+.env.testnet
+.env.mainnet
 
 ## docker compose file
 docker-compose.yml
