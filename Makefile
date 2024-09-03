@@ -27,11 +27,6 @@ db_migrate: ## Run database migrations
 	@echo "Running database migrations..."
 	./scripts/db_migrate.sh -u
 
-.PHONY: db_migrate
-db_migrate: ## Run database migrations
-	@echo "Running database migrations..."
-	./scripts/db_migrate.sh -u\
-
 
 PG_CMD := INSERT INTO pokt_applications (encrypted_private_key) VALUES (pgp_sym_encrypt('$(POKT_APPLICATION_PRIVATE_KEY)', '$(POKT_APPLICATIONS_ENCRYPTION_KEY)'));
 db_insert_app_private_key: ## Insert application private key into database
