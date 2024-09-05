@@ -177,5 +177,3 @@ A partial high-level view of the code structure (generated)
 _Generate via `tree -L 2`_
 
 ---
-
-Olshansky's stream of thought here: https://www.notion.so/buildwithgrove/Olshansky-PATH-Journal-dfc92813ca5945ac88035cca97ccbff5?pvs=4
