@@ -2,6 +2,10 @@
 <img src="https://github.com/pokt-network/gateway-server/blob/main/docs/resources/gateway-server-logo.jpg" width="500" alt="POKT Gateway Server">
 </div>
 
+> This repository is `Archived`!
+>
+> As of November 13, 2024 this repository is `Archived`. We encourage users to migrate and adopt the [Path API and Toolkit Harness (PATH)](https://github.com/buildwithgrove/path) 
+
 # What is POKT Gateway Server? <!-- omit in toc -->
 
 _tl;dr Streamline access to POKT Network's decentralized supply network._
